@@ -4,13 +4,8 @@ defmodule Calcinator.Controller.Ecto do
   JSONAPI/ActsAsResourceController).
   """
 
-  alias Alembic.Document
-  alias Alembic.Fetch
-  alias Alembic.Fetch.Includes
-  alias Alembic.Source
-  alias Alembic.ToParams
-  alias Calcinator.Controller.Authorization
-  alias Calcinator.Controller.Ecto.Query
+  alias Alembic.{Document, Fetch, Fetch.Includes, Source, ToParams}
+  alias Calcinator.Controller.{Authorization, Ecto.Query}
   alias Calcinator.Repo
   alias Plug.Conn
 
