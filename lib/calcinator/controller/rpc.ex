@@ -237,9 +237,12 @@ defmodule Calcinator.Controller.Rpc do
                              |> Authorization.filter_can(user, :show)
                              # Filter out preloaded models
                              |> Authorization.filter_associations_can(user, :show)
-      opts = params_to_render_opts(params)
 
-      render(conn, data: authorized_resources, opts: opts, pagination: pagination)
+      opts = params
+             |> params_to_render_opts()
+             |> render_opts_put_pagination(%{conn: conn, pagination: pagination})
+
+      render(conn, data: authorized_resources, opts: opts)
     end
   end
 
@@ -306,6 +309,8 @@ defmodule Calcinator.Controller.Rpc do
      end
   end
 
+  defp base_uri(%Plug.Conn{request_path: path}), do: %URI{path: path}
+
   defp changeset(model, input, configuration = %__MODULE__{changeset_function: changeset_function}) do
     ecto_schema_module = ecto_schema_module!(configuration)
     apply(ecto_schema_module, changeset_function, [model, input])
@@ -344,6 +349,12 @@ defmodule Calcinator.Controller.Rpc do
     Map.fetch!(ecto_schema_module_by_type, type)
   end
 
+  defp links_to_render_opts_page(links) when is_map(links) do
+    Enum.into links, %{}, fn {string_key, value} ->
+      {String.to_existing_atom(string_key), value}
+    end
+  end
+
   defp mergable_params(params) when is_map(params) do
     Map.drop(params, %Document{} |> Map.keys |> Enum.map(&to_string/1))
   end
@@ -354,6 +365,26 @@ defmodule Calcinator.Controller.Rpc do
         Calcinator.Controller.Rpc.unquote(quoted_name)(conn, params, __configuration__)
       end
     end
+  end
+
+  defp render_opts_put_meta(opts, %Pagination{total_size: record_count}) do
+    [{:meta, %{"record-count" => record_count}} | opts]
+  end
+
+  defp render_opts_put_page(opts, %{conn: conn, pagination: pagination}) do
+    base_uri = base_uri(conn)
+
+    render_opts_page = pagination
+                       |> Pagination.to_links(base_uri)
+                       |> links_to_render_opts_page
+
+    [{:page, render_opts_page} | opts]
+  end
+
+  defp render_opts_put_pagination(opts, %{conn: conn, pagination: pagination}) do
+    opts
+    |> render_opts_put_meta(pagination)
+    |> render_opts_put_page(%{conn: conn, pagination: pagination})
   end
 
   defp render_response_error(conn, %Response.Error{data: document = %Document{}}) do
