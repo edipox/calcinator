@@ -4,14 +4,8 @@ defmodule Calcinator.Controller.Rpc do
   JSONAPI/ActsAsResourceController), by delegating to an `Retort.Client.Generic`.
   """
 
-  alias Alembic.Document
-  alias Alembic.Pagination
-  alias Alembic.ToEctoSchema
-  alias Alembic.ToParams
-  alias Calcinator.Controller.Authorization
-  alias Calcinator.Rpc.Client
-  alias Calcinator.Rpc.Meta
-  alias Calcinator.Rpc.Response
+  alias Alembic.{Document, Pagination, ToEctoSchema, ToParams}
+  alias Retort.{Client, Meta, Response}
   alias Plug.Conn
 
   require Logger
@@ -40,7 +34,7 @@ defmodule Calcinator.Controller.Rpc do
   * `callback_module` - Module implementing the `Calcinator.Controller.Rpc` behaviour
   * `changeset_function` - function to call the on `Ecto.Schema` module from `ecto_schema_module_by_type` for `type`
   * `ecto_schema_module_by_type` - Maps JSON API `type` field to the corresponding Ecto.Schema Module for building
-    resources from `Calcinator.Rpc.Response` results.
+    resources from `Retort.Response` results.
   * `:queue` - The name of the queue on which this controller's client publishes requests.
   * `type` - Primary type.  Used to look up the Ecto.Schema Module in `ecto_schema_module_by_type`.
   """
