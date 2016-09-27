@@ -1,0 +1,2 @@
+defmodule Calcinator do
+end
