@@ -2,19 +2,30 @@ defmodule Calcinator.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :calcinator,
-     version: "0.1.0",
-     elixir: "~> 1.3",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps()]
+    [
+      app: :calcinator,
+      build_embedded: Mix.env == :prod,
+      deps: deps(),
+      docs: [
+        extras: ~w(README.md)
+      ],
+      elixir: "~> 1.3",
+      preferred_cli_env: [
+        "credo": :test,
+        "dialyze": :test,
+        "docs": :test
+      ],
+      source_url: "https://github.com/C-S-D/calcinator",
+      start_permanent: Mix.env == :prod,
+      version: "0.1.0"
+    ]
   end
 
   # Configuration for the OTP application
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger]]
+    [applications: ~w(alembic ja_serializer logger)a]
   end
 
   # Dependencies can be Hex packages:
@@ -27,6 +38,15 @@ defmodule Calcinator.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [
+      # JSONAPI document coding
+      {:alembic, "~> 2.2"},
+      # Static Analysis
+      {:credo, "0.4.11", only: [:test]},
+      # Type checking
+      {:dialyze, "~> 0.2.1", only: [:dev, :test]},
+      {:ex_doc, "~> 0.14.0", only: :test},
+      {:ja_serializer, "~> 0.11.0"}
+    ]
   end
 end

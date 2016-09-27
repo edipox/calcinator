@@ -1,0 +1,32 @@
+machine:
+  environment:
+    MIX_ENV: test
+dependencies:
+  cache_directories:
+    - ../erlang-solutions
+    - _build
+    - deps
+  pre:
+    - if [[ ! -e ../erlang-solutions ]]; then cd .. && wget http://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb && mkdir erlang-solutions && mv erlang-solutions_1.0_all.deb erlang-solutions && cd -; fi
+    - sudo dpkg -i /home/ubuntu/erlang-solutions/erlang-solutions_1.0_all.deb
+    - sudo apt-get update
+    - sudo apt-get remove -y erlang-syntax-tools=1:19.0-1
+    - sudo apt-get install -y esl-erlang=1:19.1.5
+    - sudo apt-get install -y elixir=1.3.3-1
+    - mix local.hex --force && mix local.rebar --force
+  post:
+    - mix deps.get
+    - mix deps.compile
+    - mix compile
+    # generate plts so they are stored in cache of /home/ubuntu/.mix and _build
+    - mix dialyze --no-analyse
+test:
+  override:
+    - mix test
+
+  post:
+    - mkdir -p ${CIRCLE_TEST_REPORTS}/calcinator
+    - mv _build/test/lib/calcinator/test-junit-report.xml ${CIRCLE_TEST_REPORTS}/calcinator/
+    - mix dialyze
+    - mix docs 2>&1 | tee mix-docs.txt
+    - if grep "Closing unclosed backquotes" mix-docs.txt; then exit 1; fi
