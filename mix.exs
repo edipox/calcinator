@@ -44,7 +44,7 @@ defmodule Calcinator.Mixfile do
       # Static Analysis
       {:credo, "0.4.11", only: [:test]},
       # Type checking
-      {:dialyze, "~> 0.2.1", only: [:dev, :test]},
+      {:dialyze, "~> 0.2.1", only: :test},
       {:ex_doc, "~> 0.14.0", only: :test},
       {:ja_serializer, "~> 0.11.0"}
     ]
