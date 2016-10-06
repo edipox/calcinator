@@ -1,6 +1,6 @@
 # Calcinator
 
-**TODO: Add description**
+JSONAPI views shared between the API controllers and RPC servers.
 
 ## Installation
 
