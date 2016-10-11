@@ -164,10 +164,12 @@ defmodule Calcinator.Controller.Ecto do
       case relationship(conn, Query.relationship(conn, params, configuration), configuration) do
         nil ->
           rendered = render(conn, data: nil)
-        shown ->
-          filtered = Authorization.filter_associations_can(shown, [owner], user, :show)
+        related ->
+          with true <- Authorization.can(conn, user, :show, [related, owner]) do
+            filtered = Authorization.filter_associations_can(related, [owner], user, :show)
 
-          render(conn, data: filtered)
+            render(conn, data: filtered)
+          end
       end
     end
   end
