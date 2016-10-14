@@ -139,6 +139,28 @@ defmodule Calcinator.Controller.Ecto do
     end
   end
 
+  @doc """
+  Puts 404 Resource Not Found JSONAPI error in `conn` with `parameter` as the source parameter.
+  """
+  @spec not_found(Conn.t, String.t) :: Conn.t
+  def not_found(conn, parameter) do
+    conn
+    |> put_jsonapi_and_status(:not_found)
+    |> json(
+         %Document{
+           errors: [
+             %Alembic.Error{
+               source: %Source{
+                 parameter: parameter
+               },
+               status: "404",
+               title: "Resource Not Found"
+             }
+           ]
+         }
+       )
+  end
+
   @spec show(Conn.t, params, t) :: Conn.t
   def show(conn = %Conn{assigns: %{user: user}},
            params = %{"id" => id},
@@ -273,25 +295,6 @@ defmodule Calcinator.Controller.Ecto do
     with {:error, error_changeset} <- apply(Repo, function, [mutation_changeset]) do
       render_changeset_error(conn, error_changeset)
     end
-  end
-
-  @spec not_found(Conn.t, String.t) :: Conn.t
-  defp not_found(conn, parameter) do
-    conn
-    |> put_jsonapi_and_status(:not_found)
-    |> json(
-         %Document{
-           errors: [
-             %Alembic.Error{
-               source: %Source{
-                 parameter: parameter
-               },
-               status: "404",
-               title: "Resource Not Found"
-             }
-           ]
-         }
-       )
   end
 
   defp preloads_from_include_param(conn, params, preload_by_include) do
