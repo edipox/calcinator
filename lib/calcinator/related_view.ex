@@ -1,39 +1,63 @@
 defmodule Calcinator.RelatedView do
   @moduledoc """
-  Defines `"get_related_resource.json-api"` and `"get_related_sorce.json"` `render/2` clauses that defer to
-  `render_related_resource/2` callbacks.
+  Defines `"get_related_resource.json-api"` `render/2` clauses that defer to `render_related_resource/2` callbacks.
   """
+
+  alias Alembic.Document
+
+  import JaSerializer.Formatter.Utils, only: [format_key: 1]
 
   # Functions
 
-  def render("get_related_resource.json-api", options) do
-    render("get_related_resource.json", options)
+  def base_url(options = %{source: %{view_module: view_module}}) do
+    Regex.replace(~r/:\w+/, view_module.__location, &id_key_for_id(&1, options))
   end
 
-  def render("get_related_resource.json", options) do
-    %Alembic.Document{
-      data: render_related_resource(options),
+  def relationship(association), do: format_key(association)
+
+  # The "show.json-api" for JaSerializer does not handle `nil` for `options[:data]`, but when `nil`, we don't care about
+  # the `attributes/2` callback anyway, so render directly using Alembic,
+  def render("get_related_resource.json-api", %{data: nil}) do
+    %Document{
+      data: nil,
       jsonapi: %{
         version: "1.0"
       }
     }
   end
 
-  ## Private Functions
-
-  defp render_attributes(%{data: model, view: view}) do
-    Enum.reduce view.__attributes, %{}, fn attribute, acc ->
-      Map.put(acc, attribute, Map.fetch!(model, attribute))
-    end
+  def render(
+        "get_related_resource.json-api",
+        options = %{
+          related: %{
+            view_module: related_view_module
+          }
+        }
+      ) do
+    "show.json-api"
+    |> related_view_module.render(Map.delete(options, [:related, :source]))
+    |> put_in(["data", "links"], links(options))
   end
 
-  defp render_related_resource(%{data: nil}), do: nil
-  defp render_related_resource(options = %{conn: conn, data: model, view: view}) do
-    %Alembic.Resource{
-      type: view.type,
-      id: model |> view.id(conn) |> to_string,
-      attributes: render_attributes(options),
-      links: view.render_related_links(options)
+  ## Private Functions
+
+  defp id_key_for_id(
+         ":id",
+         %{
+           conn: conn,
+           source: %{
+             resource: resource,
+             view_module: view_module
+           }
+         }
+       ), do: resource |> view_module.id(conn) |> to_string
+
+  defp links(options = %{source: %{association: association}}) do
+    base_url = base_url(options)
+    relationship = relationship(association)
+
+    %{
+      self: "#{base_url}/#{relationship}",
     }
   end
 end
