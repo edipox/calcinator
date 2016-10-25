@@ -104,6 +104,8 @@ defmodule Calcinator.Controller.Ecto do
         |> send_resp(:ok, Poison.encode!(rendered))
       {:error, :unauthorized} ->
         forbidden(conn)
+      {:error, document = %Document{}} ->
+         render_json(conn, document, :unprocessable_entity)
     end
   end
 
@@ -121,6 +123,8 @@ defmodule Calcinator.Controller.Ecto do
          not_found(conn, parameter)
        {:error, :unauthorized} ->
          forbidden(conn)
+       {:error, document = %Document{}} ->
+         render_json(conn, document, :unprocessable_entity)
      end
   end
 
