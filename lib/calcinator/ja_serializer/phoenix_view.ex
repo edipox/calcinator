@@ -3,6 +3,8 @@ defmodule Calcinator.JaSerializer.PhoenixView do
   An adapter between `JaSerializer.PhoenixView` modules and `Calcinator.View`
   """
 
+  alias Alembic.Pagination
+  alias JaSerializer.ParamParser
   alias Plug.Conn
 
   # Macros
@@ -57,10 +59,14 @@ defmodule Calcinator.JaSerializer.PhoenixView do
     )
   end
 
-  def index(phoenix_view_module, data, options) do
+  def index(phoenix_view_module, data, options = %{base_uri: base_uri}) do
+    pagination = Map.get(options, :pagination, nil)
     params = Map.get(options, :params, %{})
     subject = Map.get(options, :subject, nil)
-    opts = params_to_render_opts(params)
+
+    opts = []
+           |> Keyword.merge(params_to_render_opts(params))
+           |> Keyword.merge(pagination_to_render_opts(pagination, %{base_uri: base_uri}))
     # Only `:conn` option is passed to `attributes/2` callback, so have to fake `%Plug.Conn{}`
     phoenix_view_module.render("show.json-api", conn: %Conn{assigns: %{subject: subject}}, data: data, opts: opts)
   end
@@ -96,12 +102,38 @@ defmodule Calcinator.JaSerializer.PhoenixView do
 
   ## Private Functions
 
+  defp links_to_render_opts_page(links) when is_map(links) do
+    Enum.into links, %{}, fn {string_key, value} ->
+      {String.to_existing_atom(string_key), value}
+    end
+  end
+
+  defp pagination_to_render_opts(nil, %{base_uri: _}), do: []
+
+  defp pagination_to_render_opts(pagination, %{base_uri: base_uri}) do
+    []
+    |> Keyword.merge(pagination_to_render_opts_meta(pagination))
+    |> Keyword.merge(pagination_to_render_opts_page(pagination, %{base_uri: base_uri}))
+  end
+
+  defp pagination_to_render_opts_meta(%Pagination{total_size: record_count}) do
+    [meta: %{"record-count" => record_count}]
+  end
+
+  defp pagination_to_render_opts_page(pagination, %{base_uri: base_uri}) do
+    render_opts_page = pagination
+                       |> Pagination.to_links(base_uri)
+                       |> links_to_render_opts_page
+
+    [page: render_opts_page]
+  end
+
   defp params_to_render_opts(nil), do: []
   defp params_to_render_opts(params) when is_map(params) do
     # must only add :include to opts if "include" is in params so that default includes don't get overridden
     case Map.fetch(params, "include") do
       {:ok, include} ->
-        [include: include]
+        [include: ParamParser.Utils.format_key(include)]
       :error ->
         []
     end

@@ -99,18 +99,27 @@ defmodule Calcinator.Resources do
     related_property(state, params, put_in(options.related, Map.put(related, :property, :resource)))
   end
 
-  @spec index(t, params) :: {:error, :unauthorized} | {:ok, rendered}
+  @spec index(t, params, %{required(:base_uri) => URI.t}) ::
+        {:error, :timeout} | {:error, :unauthorized} | {:error, Document.t} | {:ok, rendered}
   def index(state = %__MODULE__{
                       ecto_schema_module: ecto_schema_module,
                       subject: subject,
                       view_module: view_module,
                     },
-            params) do
+            params,
+            %{base_uri: base_uri}) do
     with :ok <- can(state, :index, ecto_schema_module),
          :ok <- allow_sandbox_access(state, params),
          {:ok, list, pagination} <- list(state, params) do
       {authorized, authorized_pagination} = authorized(state, list, pagination)
-      {:ok, view_module.index(authorized, %{pagination: authorized_pagination, params: params, subject: subject})}
+
+      {
+        :ok,
+        view_module.index(
+          authorized,
+          %{base_uri: base_uri, pagination: authorized_pagination, params: params, subject: subject}
+        )
+      }
     end
   end
 
@@ -269,17 +278,10 @@ defmodule Calcinator.Resources do
   end
 
   @spec get(module, params, id_key :: String.t, Resources.query_options) ::
-        {:error, {:not_found, parameter}} | {:ok, Ecto.Schema.t}
+        {:error, {:not_found, parameter} | :timeout | term} | {:ok, Ecto.Schema.t}
   defp get(resources_module, params, id_key, query_options) when is_map(query_options) do
-    params
-    |> Map.fetch!(id_key)
-    |> resources_module.get(query_options)
-    |>
-    case do
-      nil ->
-        {:error, {:not_found, id_key}}
-      resource ->
-        {:ok, resource}
+    with {:error, :not_found} <- params |> Map.fetch!(id_key) |> resources_module.get(query_options) do
+      {:error, {:not_found, id_key}}
     end
   end
 
@@ -326,11 +328,13 @@ defmodule Calcinator.Resources do
     |> ToParams.nested_to_foreign_keys(ecto_schema_module)
   end
 
-  @spec list(t, params) :: {:error, Document.t} | {:ok, [struct], Resources.pagination}
+  @spec list(t, params) :: {:ok, [Ecto.Schema.t], Resources.pagination} |
+                           {:error, :timeout} |
+                           {:error, Document.t} |
+                           {:error, reason :: term}
   defp list(state = %__MODULE__{resources_module: resources_module}, params) do
-    with {:ok, query_options} <- params_to_query_options(state, params),
-         {list, pagination} <- resources_module.list(query_options) do
-      {:ok, list, pagination}
+    with {:ok, query_options} <- params_to_query_options(state, params) do
+      resources_module.list(query_options)
     end
   end
 
@@ -340,10 +344,16 @@ defmodule Calcinator.Resources do
     Includes.to_preloads(fetch.includes, associations_by_include)
   end
 
+  defp params_to_filters_query_option(params), do: {:ok, Map.get(params, "filter", [])}
+
+  defp params_to_page_query_option(params), do: Page.from_params(params)
+
   @spec params_to_query_options(t, params) :: {:ok, Resources.query_options} | {:error, Document.t}
   defp params_to_query_options(state = %__MODULE__{}, params) when is_map(params) do
-    with {:ok, associations} <- params_to_associations_query_option(state, params) do
-      {:ok, %{associations: associations}}
+    with {:ok, associations} <- params_to_associations_query_option(state, params),
+         {:ok, filters} <- params_to_filters_query_option(params),
+         {:ok, page} <- params_to_page_query_option(params) do
+      {:ok, %{associations: associations, filters: filters, page: page}}
     end
   end
 

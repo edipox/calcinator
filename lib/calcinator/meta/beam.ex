@@ -7,6 +7,17 @@ defmodule Calcinator.Meta.Beam do
 
   @version :v1
 
+  # Types
+
+  @typedoc """
+  A list of Ecto.Repo module names OR a single Ecto.Repo module name
+  """
+  @type repo :: [module, ...] | module
+
+  @opaque version1_token :: %{required(:owner) => pid, required(:repo) => repo}
+
+  @type token :: version1_token
+
   # Functions
 
   @doc """
@@ -28,9 +39,9 @@ defmodule Calcinator.Meta.Beam do
   @doc """
   Encodes and versions the repo and current process, so it can be used for the connection ownership
   """
-  @spec encode([module, ...] | module) :: String.t
-  def encode(repo) do
-    repo
+  @spec encode(repo | token) :: String.t
+  def encode(repo_or_token) do
+    repo_or_token
     |> versioned
     |> :erlang.term_to_binary
     |> Base.url_encode64
@@ -47,14 +58,26 @@ defmodule Calcinator.Meta.Beam do
   @doc """
   `repo` and owner process in a versioned format
   """
-  @spec versioned([module] | module) :: {unquote(@version), map}
+  @spec versioned(version1_token) :: {:v1, version1_token}
+  def versioned(version1_token = %{owner: owner, repo: _}) when is_pid(owner), do: {@version, version1_token}
+
+  @spec versioned(repo) :: {atom, token}
   def versioned(repo) do
-    {@version, Interpreter.Sandbox.version1_token(repo)}
+    repo
+    |> version1_token()
+    |> versioned()
   end
 
   @doc """
   Puts BEAM metadata into `meta`
   """
-  @spec put(map, [module, ...] | module) :: map
-  def put(meta, repo), do: Map.put(meta, :beam, encode(repo))
+  @spec put(map, repo | token) :: map
+  def put(meta, repo_or_token), do: Map.put(meta, :beam, encode(repo_or_token))
+
+  ## Private Functions
+
+  @spec version1_token(repo) :: version1_token
+  def version1_token(repo) do
+    %{owner: self, repo: repo}
+  end
 end
