@@ -1,4 +1,4 @@
-defmodule Calcinator.Controller.Ecto do
+defmodule Calcinator.Controller do
   @moduledoc """
   Controller that replicates [`JSONAPI::ActsAsResourceController`](http://www.rubydoc.info/gems/jsonapi-resources/
   JSONAPI/ActsAsResourceController).
@@ -96,7 +96,7 @@ defmodule Calcinator.Controller.Ecto do
   def index(conn = %Conn{assigns: %{user: user}},
             params,
             calcinator = %Calcinator{}) do
-    case Calcinator.index(%Calcinator{calcinator | subject: user}, params) do
+    case Calcinator.index(%Calcinator{calcinator | subject: user}, params, %{base_uri: base_uri(conn)}) do
       {:ok, rendered} ->
         conn
         |> put_status(:ok)
@@ -186,10 +186,12 @@ defmodule Calcinator.Controller.Ecto do
 
   ## Private Functions
 
+  defp base_uri(%Conn{request_path: path}), do: %URI{path: path}
+
   defp quoted_action(quoted_name, quoted_configuration) do
     quote do
       def unquote(quoted_name)(conn, params) do
-        Calcinator.Controller.Ecto.unquote(quoted_name)(conn, params, unquote(quoted_configuration))
+        Calcinator.Controller.unquote(quoted_name)(conn, params, unquote(quoted_configuration))
       end
     end
   end
