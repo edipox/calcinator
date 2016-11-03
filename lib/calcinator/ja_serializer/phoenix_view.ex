@@ -133,7 +133,7 @@ defmodule Calcinator.JaSerializer.PhoenixView do
     # must only add :include to opts if "include" is in params so that default includes don't get overridden
     case Map.fetch(params, "include") do
       {:ok, include} ->
-        [include: ParamParser.Utils.format_key(include)]
+        [include: include]
       :error ->
         []
     end
