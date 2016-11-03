@@ -4,7 +4,6 @@ defmodule Calcinator.JaSerializer.PhoenixView do
   """
 
   alias Alembic.Pagination
-  alias JaSerializer.ParamParser
   alias Plug.Conn
 
   # Macros

@@ -1,4 +1,9 @@
 defmodule Calcinator do
+  @moduledoc """
+  Converts actions from a controller or RPC server using JSONAPI formatted params to calls on a `Calcinator.Resources`
+  module.
+  """
+
   alias Alembic.{Document, Fetch, Fetch.Includes, FromJson, ToParams, Source}
   alias Calcinator.{Authorization, Meta, Resources.Page}
 
@@ -242,7 +247,8 @@ defmodule Calcinator do
     |> status_changeset()
   end
 
-  @spec create_changeset(t, Ecto.Changeset.t, params) :: {:ok, struct} | {:error, Document.t} | {:error, Ecto.Changeset.t}
+  @spec create_changeset(t, Ecto.Changeset.t, params) ::
+        {:ok, struct} | {:error, Document.t} | {:error, Ecto.Changeset.t}
   defp create_changeset(state = %__MODULE__{resources_module: resources_module}, changeset = %Ecto.Changeset{}, params)
       when not is_nil(resources_module) and is_atom(resources_module) do
     with {:ok, query_options} <- params_to_query_options(state, params),
