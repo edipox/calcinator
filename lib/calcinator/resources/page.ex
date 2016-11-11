@@ -3,7 +3,7 @@ defmodule Calcinator.Resources.Page do
   Page in `Calcinator.Resources.query_options`
   """
 
-  alias Alembic.{Document, Error, FromJson}
+  alias Alembic.{Document, Error, FromJson, Source}
 
   # Constants
   @error_template %Alembic.Error{
@@ -71,6 +71,19 @@ defmodule Calcinator.Resources.Page do
       ...>     "page" => %{
       ...>       "number" => 1,
       ...>       "size" => 2
+      ...>     }
+      ...>   }
+      ...> )
+      {:ok, %Calcinator.Resources.Page{number: 1, size: 2}}
+
+  In addition to be decoded JSON, the params can also be the raw `%{String.t => String.t}` and the quoted integers will
+  be decoded.
+
+      iex> Calcinator.Resources.Page.from_params(
+      ...>   %{
+      ...>     "page" => %{
+      ...>       "number" => "1",
+      ...>       "size" => "2"
       ...>     }
       ...>   }
       ...> )
@@ -260,6 +273,49 @@ defmodule Calcinator.Resources.Page do
   end
 
   ## Private Functions
+
+  defp integer_from_json(
+         quoted_integer,
+         error_template = %Error{
+           source: source = %Source{
+             pointer: pointer
+           }
+         }
+       ) when is_binary(quoted_integer) do
+    case Integer.parse(quoted_integer) do
+      :error ->
+        {
+          :error,
+          %Document{
+            errors: [
+              Error.type(error_template, "quoted integer")
+            ]
+          }
+        }
+      {integer, ""} ->
+        {:ok, integer}
+      {integer, remainder_of_binary} ->
+        {
+          :error,
+          %Document{
+            errors: [
+              %Error{
+                detail: "`#{pointer}` contains quoted integer (`#{integer}`), " <>
+                        "but also excess text (`#{inspect remainder_of_binary}`)",
+                meta: %{
+                  excess: remainder_of_binary,
+                  integer: integer,
+                  type: "quoted integer",
+                },
+                source: source,
+                status: "422",
+                title: "Excess text in quoted integer"
+              }
+            ]
+          }
+        }
+    end
+  end
 
   defp integer_from_json(integer, _) when is_integer(integer), do: {:ok, integer}
 
