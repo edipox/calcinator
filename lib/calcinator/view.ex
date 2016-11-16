@@ -26,11 +26,16 @@ defmodule Calcinator.View do
 
   @doc """
   Renders list of `struct` with optional pagination, params, and subject (for view-level authorization of individual
-  attributes)
+  attributes). `base_uri` is required when `pagination` is present.
   """
   @callback index(
               [struct],
-              %{optional(:pagination) => maybe_pagination, optional(:params) => params, optional(:subject) => subject}
+              %{
+                optional(:base_uri) => URI.t,
+                optional(:pagination) => maybe_pagination,
+                optional(:params) => params,
+                optional(:subject) => subject
+              }
             ) :: iodata
 
   @doc """
