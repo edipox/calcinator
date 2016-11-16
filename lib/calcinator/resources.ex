@@ -69,7 +69,7 @@ defmodule Calcinator.Resources do
     * `{:ok, struct}` - the delete succeeded and the returned struct is the state before delete
     * `{:error, Ecto.Changeset.t}` - errors while deleting the `struct`.  `Ecto.Changeset.t` `errors` contains errors.
   """
-  @callback delete(struct) :: {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
+  @callback delete(struct) :: {:ok, struct} | {:error, Ecto.Changeset.t}
 
   @doc """
   Gets a single `struct`
@@ -83,7 +83,7 @@ defmodule Calcinator.Resources do
 
   """
   @callback get(id, query_options) ::
-            {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :timeout} | {:error, reason :: term}
+            {:ok, struct} | {:error, :not_found} | {:error, :timeout} | {:error, reason :: term}
 
   @doc """
   Inserts `changeset` into a single new `struct`
