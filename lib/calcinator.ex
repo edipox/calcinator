@@ -355,7 +355,7 @@ defmodule Calcinator do
                    params,
                    %{
                      required(:association) => association,
-                     required(:id_key) => atom,
+                     required(:id_key) => String.t,
                    }) :: {:error, {:not_found, parameter}} | {:ok, Ecto.Schema.t}
   defp get_source(%{resources_module: resources_module},
                   params,
