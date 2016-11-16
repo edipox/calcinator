@@ -37,7 +37,7 @@ defmodule Calcinator.Resources do
     optional(:sorts) => Sorts.t
   }
 
-  @type sandbox_access_token :: %{required(:owner) => term}
+  @type sandbox_access_token :: %{required(:owner) => term, optional(atom) => any}
 
   @typedoc """
   A module that implements the `Resources` behaviour
