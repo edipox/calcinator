@@ -5,7 +5,8 @@ defmodule Calcinator do
   """
 
   alias Alembic.{Document, Fetch, Fetch.Includes, FromJson, ToParams, Source}
-  alias Calcinator.{Authorization, Meta, Resources.Page}
+  alias Calcinator.{Authorization, Meta}
+  alias Calcinator.Resources.{Page, Sorts}
 
   # Constants
 
@@ -227,6 +228,26 @@ defmodule Calcinator do
 
   ## Private Functions
 
+  defp alembic_fetch_to_associations_query_option(
+         %__MODULE__{associations_by_include: associations_by_include},
+         %Alembic.Fetch{includes: includes}
+       ) do
+    Includes.to_preloads(includes, associations_by_include)
+  end
+
+  defp alembic_fetch_to_sorts_query_option(
+         %__MODULE__{associations_by_include: associations_by_include, ecto_schema_module: ecto_schema_module},
+         fetch
+       ) do
+    Sorts.from_alembic_fetch(
+      fetch,
+      %{
+        associations_by_include: associations_by_include,
+        ecto_schema_module: ecto_schema_module
+      }
+    )
+  end
+
   defp allow_sandbox_access(
         %__MODULE__{resources_module: resources_module},
         %{
@@ -359,22 +380,19 @@ defmodule Calcinator do
     end
   end
 
-  defp params_to_associations_query_option(%__MODULE__{associations_by_include: associations_by_include}, params) do
-    fetch = Fetch.from_params(params)
-
-    Includes.to_preloads(fetch.includes, associations_by_include)
-  end
-
   defp params_to_filters_query_option(params), do: {:ok, Map.get(params, "filter", [])}
 
   defp params_to_page_query_option(params), do: Page.from_params(params)
 
   @spec params_to_query_options(t, params) :: {:ok, Resources.query_options} | {:error, Document.t}
   defp params_to_query_options(state = %__MODULE__{}, params) when is_map(params) do
-    with {:ok, associations} <- params_to_associations_query_option(state, params),
+    fetch = Fetch.from_params(params)
+
+    with {:ok, associations} <- alembic_fetch_to_associations_query_option(state, fetch),
          {:ok, filters} <- params_to_filters_query_option(params),
-         {:ok, page} <- params_to_page_query_option(params) do
-      {:ok, %{associations: associations, filters: filters, page: page}}
+         {:ok, page} <- params_to_page_query_option(params),
+         {:ok, sorts} <- alembic_fetch_to_sorts_query_option(state, fetch) do
+      {:ok, %{associations: associations, filters: filters, page: page, sorts: sorts}}
     end
   end
 
