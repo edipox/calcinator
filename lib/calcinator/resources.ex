@@ -28,14 +28,21 @@ defmodule Calcinator.Resources do
     * `:associations` - associations to load in the `struct`
     * `:filters` - filters on the result
     * `:page` - the page used for pagination.  `nil` implies no pagination, not default pagination.
+    * `:sorts` - the directions to sort fields on the primary resource or its associations
   """
   @type query_options :: %{
     optional(:associations) => atom | [atom],
     optional(:filters) => [filter],
-    optional(:page) => Page.t | nil
+    optional(:page) => Page.t | nil,
+    optional(:sorts) => Sorts.t
   }
 
   @type sandbox_access_token :: %{required(:owner) => term}
+
+  @typedoc """
+  A module that implements the `Resources` behaviour
+  """
+  @type t :: module
 
   # Callbacks
 
