@@ -10,6 +10,7 @@ defmodule Calcinator.Mixfile do
         extras: ~w(README.md)
       ],
       elixir: "~> 1.3",
+      elixirc_paths: elixirc_paths(Mix.env),
       preferred_cli_env: [
         "credo": :test,
         "dialyze": :test,
@@ -49,4 +50,8 @@ defmodule Calcinator.Mixfile do
       {:ja_serializer, "~> 0.11.0"}
     ]
   end
+
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_),     do: ["lib"]
 end
