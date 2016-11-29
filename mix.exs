@@ -47,7 +47,9 @@ defmodule Calcinator.Mixfile do
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
       {:ex_doc, "~> 0.14.0", only: :test},
-      {:ja_serializer, "~> 0.11.0"}
+      {:ja_serializer, "~> 0.11.0"},
+      # JUnit formatter, so that CircleCI can consume test output for CircleCI UI
+      {:junit_formatter, "~> 1.0", only: :test}
     ]
   end
 
