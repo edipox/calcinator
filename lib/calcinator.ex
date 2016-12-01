@@ -104,7 +104,9 @@ defmodule Calcinator do
 
   @spec update_changeset(t, Ecto.Changeset.t, params) :: {:ok, Ecto.Schema.t} |
                                                          {:error, Document.t} |
-                                                         {:error, Ecto.Changeset.t}
+                                                         {:error, Ecto.Changeset.t} |
+                                                         {:error, :bad_gateway} |
+                                                         {:error, :not_found}
   def update_changeset(state = %__MODULE__{resources_module: resources_module},
                        changeset = %Ecto.Changeset{},
                        params) do
@@ -205,7 +207,8 @@ defmodule Calcinator do
     related_property(state, params, put_in(options.related, Map.put(related, :property, :relationship)))
   end
 
-  @spec update(t, params) :: {:error, {:not_found, parameter}} |
+  @spec update(t, params) :: {:error, :bad_gateway} |
+                             {:error, {:not_found, parameter}} |
                              {:error, :unauthorized} |
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t} |
