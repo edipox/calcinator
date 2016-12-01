@@ -173,6 +173,8 @@ defmodule Calcinator.Controller do
          |> put_status(:ok)
          |> put_resp_content_type("application/vnd.api+json")
          |> send_resp(:ok, Poison.encode!(rendered))
+       {:error, :bad_gateway} ->
+         bad_gateway(conn)
        {:error, {:not_found, parameter}} ->
          not_found(conn, parameter)
        {:error, :unauthorized} ->
