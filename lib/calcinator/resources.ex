@@ -132,10 +132,14 @@ defmodule Calcinator.Resources do
   # Returns
 
     * `{:ok, struct}` - the update succeeded and the returned `struct` contains the updates
-    * `{error, Ecto.Changeset.t}` - errors while updating `struct` with `params`.  `Ecto.Changeset.t` `errors` contains
+    * `{:error, Ecto.Changeset.t}` - errors while updating `struct` with `params`.  `Ecto.Changeset.t` `errors` contains
       errors.
+    * `{:error, :bad_gateway}` - error in backing store that cannot be represented as another type of error
+    * `{:error, :not_found}` - the resource in the changeset was not found and so cannot be updated.  This may mean that
+      the resource was deleted with `delete/1` after the `get/2` or `list/1` returned.
   """
-  @callback update(Ecto.Schema.t, params, query_options) :: {:ok, struct} | {:error, Ecto.Changeset.t}
+  @callback update(Ecto.Schema.t, params, query_options) ::
+            {:ok, struct} | {:error, Ecto.Changeset.t} | {:error, :bad_gateway} | {:error, :not_found}
 
   @doc """
   Applies updates in `changeset`
