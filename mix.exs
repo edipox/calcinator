@@ -18,7 +18,7 @@ defmodule Calcinator.Mixfile do
       ],
       source_url: "https://github.com/C-S-D/calcinator",
       start_permanent: Mix.env == :prod,
-      version: "0.1.0"
+      version: "1.0.0"
     ]
   end
 
