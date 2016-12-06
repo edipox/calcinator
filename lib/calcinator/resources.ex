@@ -156,19 +156,37 @@ defmodule Calcinator.Resources do
 
 
   @doc """
-  Converts the attribute to a field if a corresponding field existings in `ecto_schema_module`
-   
+  Converts the attribute to a field if a corresponding field exists in `ecto_schema_module`
+
+  If a field exists, then it is returned.  This includes fields with `_` that have `-` in their attribute name and
+  virtual fields.
+
+      iex> Calcinator.Resources.attribute_to_field("name", Calcinator.Resources.TestAuthor)
+      {:ok, :name}
+      iex> Calcinator.Resources.attribute_to_field("password-confirmation", Calcinator.Resources.TestAuthor)
+      {:ok, :password_confirmation}
+
+  Invalid field names will return an error
+
+      iex> Calcinator.Resources.attribute_to_field("password-hash", Calcinator.Resources.TestAuthor)
+      {:error, "password-hash"}
+
+  Associations are not fields, so they will return an error
+
+      iex> Calcinator.Resources.attribute_to_field("author", Calcinator.Resources.TestPost)
+      {:error, "author"}
+
   ## Returns
-   
+
     * `{:ok, field}` - `attribute` with `-` has the corresponding `field` with `_` in `ecto_schema_module`
     * `{:error, attribute}` - `attribute` does not have corresponding field in `ecto_schema_module`
-   
+
   """
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def attribute_to_field(attribute, ecto_schema_module) when is_binary(attribute) and is_atom(ecto_schema_module) do
     field_string = String.replace(attribute, "-", "_")
 
-    for(potential_field <- ecto_schema_module.__schema__(:fields),
+    for(potential_field <- fields(ecto_schema_module),
         potential_field_string = to_string(potential_field),
         potential_field_string == field_string, do: potential_field)
     |> case do
@@ -177,5 +195,17 @@ defmodule Calcinator.Resources do
       [] ->
         {:error, attribute}
     end
+  end
+
+  ## Private Functions
+
+  # Returns both fields and virtual fields
+  defp fields(ecto_schema_module) do
+    associations = ecto_schema_module.__schema__(:associations)
+
+    # ecto_schema_module.__schema__(:fields) does not include virtual fields, so
+    # deduce real and virtual fields from struct keys
+    keys = ecto_schema_module.__struct__ |> Map.keys
+    keys -- [:__meta__, :__struct__ | associations]
   end
 end
