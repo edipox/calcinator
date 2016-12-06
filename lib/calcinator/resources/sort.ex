@@ -6,6 +6,8 @@ defmodule Calcinator.Resources.Sort do
   alias Alembic.{Document, Error, Fetch.Includes, Source}
   alias Calcinator.Resources
 
+  import Resources, only: [attribute_to_field: 2]
+
   # Struct
 
   defstruct field: nil,
@@ -355,7 +357,6 @@ defmodule Calcinator.Resources.Sort do
 
   defp attribute_error_result(sort), do: {:error, attribute_error_document(sort)}
 
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
   defp field(
          %{
            association: nil,
@@ -365,15 +366,12 @@ defmodule Calcinator.Resources.Sort do
            }
          }
        ) do
-    field_string = String.replace(attribute, "-", "_")
-
-    for(potential_field <- ecto_schema_module.__schema__(:fields),
-        potential_field_string = to_string(potential_field),
-        potential_field_string == field_string, do: potential_field)
+    attribute
+    |> attribute_to_field(ecto_schema_module)
     |> case do
-      [field] ->
+      {:ok, field} ->
         {:ok, field}
-      [] ->
+      {:error, ^attribute} ->
         attribute_error_result(sort)
     end
   end
