@@ -14,3 +14,12 @@
 
 ### Enhancements
 * [#1](https://github.com/C-S-D/calcinator/pull/1) - Expose `attribute_to_field` that was used in `Calcinator.Resources.Sort` as it is useful in other places instead of using `String.to_existing_atom`, which doesn't handle the hyphenation and can fail if the atom hasn't been loaded yet. - [@KronicDeth](https://github.com/KronicDeth)
+
+
+### Bug Fixes
+* [#1](https://github.com/C-S-D/calcinator/pull/1) - [@KronicDeth](https://github.com/KronicDeth)
+  * Add missing top-level files to extras:
+    * `CHANGELOG.md`
+    * `CODE_OF_CONDUCT.md`
+    * `CONTRIBUTING.md`
+    * `LICENSE.md`

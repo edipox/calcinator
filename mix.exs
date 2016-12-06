@@ -61,7 +61,7 @@ defmodule Calcinator.Mixfile do
 
   defp docs do
     [
-      extras: ~w(CHANGELOG.md README.md)
+      extras: ~w(CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE.md README.md)
     ]
   end
 
