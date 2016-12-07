@@ -66,11 +66,15 @@ defmodule Calcinator do
     allow_sandbox_access(state, params, resources_module.sandboxed?())
   end
 
+  # for docs
+  def authorized(calcinator, resource_or_related)
+
   # Filters a related resource that does not exist
+  @spec authorized(t, related :: nil) :: nil
   def authorized(%__MODULE__{}, nil), do: nil
 
   # Filters `struct` or list of `struct`s to only those that can be shown
-  @spec authorized(t, struct) :: struct
+  @spec authorized(t, resource :: struct) :: struct
   def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered = %_{}) do
     authorization_module.filter_associations_can(unfiltered, subject, :show)
   end
