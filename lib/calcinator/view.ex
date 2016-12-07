@@ -18,11 +18,29 @@ defmodule Calcinator.View do
   @type params :: %{String.t => term}
 
   @typedoc """
+  Resource(s) related to resource through a relationship
+  """
+  @type related :: nil | struct | [struct]
+
+  @typedoc """
   The subject that must be authorized to view the individual attributes in the view.
   """
   @type subject :: term
 
   # Callbacks
+
+  @doc """
+  Rendered `related` iodata.
+  """
+  @callback get_related_resource(
+              related,
+              %{
+                optional(:params) => params,
+                optional(:related) => related,
+                optional(:source) => struct,
+                optional(:subject) => subject
+              }
+            ) :: iodata
 
   @doc """
   Renders list of `struct` with optional pagination, params, and subject (for view-level authorization of individual
@@ -43,4 +61,17 @@ defmodule Calcinator.View do
   individual attributes).
   """
   @callback show(struct, %{optional(:params) => params, optional(:subject) => subject}) :: iodata
+
+  @doc """
+  Renders [the relationship iodata](http://jsonapi.org/format/#fetching-relationships) for the given `related`.
+  """
+  @callback show_relationship(
+              related,
+              %{
+                optional(:params) => params,
+                optional(:related) => related,
+                optional(:source) => struct,
+                optional(:subject) => subject
+              }
+            ) :: iodata
 end

@@ -14,6 +14,25 @@
 
 # Changelog
 
+## v1.3.0
+
+### Enhancements
+* [#3](https://github.com/C-S-D/calcinator/pull/3) - [@KronicDeth](https://github.com/KronicDeth)
+  * `Calcinator.Authorization` implementations
+    * `Calcinator.Authorization.SubjectLess` allows all `action`s on all `target`s, but only if the passed `subject` is `nil`.  Use it for when you don't actually want authorization checks.
+  * Document Steps and Returns of `Calcinator` actions.  Steps make it clearer which parts of `state` are used when.  Returns explain why a given return happens.
+  * Document and clarify `Calcinator.Authorization` calling patterns
+    * Document each callback with the target shape for each action.
+   * Break up the callbacks into multiple signatures for the different call site
+
+
+### Bug Fixes
+* [#3](https://github.com/C-S-D/calcinator/pull/3) - [@KronicDeth](https://github.com/KronicDeth)
+  * Add missing related `Calcinator.View` callbacks, `get_related_resource` and `show_relationship`, that are needed for their respective functions in `Calcinator`.
+  * Add missing newline at end of file.
+  * Remove `argN` arguments in docs by naming arguments in specs
+  * Remove extra blank line
+
 ## v1.2.0
 
 ### Enhancements

@@ -59,7 +59,7 @@ defmodule Calcinator.Resources do
   @doc """
   Changeset for updating `struct` with `params`
   """
-  @callback changeset(Ecto.Schema.t, params) :: Ecto.Changeset.t
+  @callback changeset(resource :: Ecto.Schema.t, params) :: Ecto.Changeset.t
 
   @doc """
   Deletes a single `struct`
@@ -138,7 +138,7 @@ defmodule Calcinator.Resources do
     * `{:error, :not_found}` - the resource in the changeset was not found and so cannot be updated.  This may mean that
       the resource was deleted with `delete/1` after the `get/2` or `list/1` returned.
   """
-  @callback update(Ecto.Schema.t, params, query_options) ::
+  @callback update(resource :: Ecto.Schema.t, params, query_options) ::
             {:ok, struct} | {:error, Ecto.Changeset.t} | {:error, :bad_gateway} | {:error, :not_found}
 
   @doc """
@@ -153,7 +153,6 @@ defmodule Calcinator.Resources do
   @callback update(Ecto.Changeset.t, query_options) :: {:ok, struct} | {:error, Ecto.Changeset.t}
 
   # Functions
-
 
   @doc """
   Converts the attribute to a field if a corresponding field exists in `ecto_schema_module`

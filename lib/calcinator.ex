@@ -66,11 +66,15 @@ defmodule Calcinator do
     allow_sandbox_access(state, params, resources_module.sandboxed?())
   end
 
+  # for docs
+  def authorized(calcinator, resource_or_related)
+
   # Filters a related resource that does not exist
+  @spec authorized(t, related :: nil) :: nil
   def authorized(%__MODULE__{}, nil), do: nil
 
   # Filters `struct` or list of `struct`s to only those that can be shown
-  @spec authorized(t, struct) :: struct
+  @spec authorized(t, resource :: struct) :: struct
   def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered = %_{}) do
     authorization_module.filter_associations_can(unfiltered, subject, :show)
   end
@@ -117,6 +121,27 @@ defmodule Calcinator do
 
   ## Actions
 
+  @doc """
+  [Creates resource](http://jsonapi.org/format/#crud-creating) from `params`.
+
+  ## Steps
+
+    1. `state` `authorization_module` `can?(subject, :create, ecto_schema_module)`
+    2. Check `params` are a valid JSONAPI document
+    3. `state` `authorization_module` `can?(subject, :create, Ecto.Changeset.t)`
+    4. `allow_sandbox_access/2`
+    5. `state` `authorization_module` `filter_associations_can(created, subject, :show)`
+    6. `state` `view_module` `show(authorized, ...)`
+
+  ## Returns
+
+    * `{:error, :unauthorized}` - if `state` `authorization_module` `can?(subject, :create, ecto_schema_module)` or
+      `can?(subject, :create, %Ecto.Changeset{})` returns `false`
+    * `{:error, Alembic.Document.t}` - if `params` is not a valid JSONAPI document
+    * `{:error, Ecto.Changeset.t}` - if validations errors inserting `Ecto.Changeset.t`
+    * `{:ok, rendereded}` - rendered view of created resource
+
+  """
   @spec create(t, params) :: {:error, :unauthorized} |
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t} |
@@ -141,6 +166,24 @@ defmodule Calcinator do
     end
   end
 
+  @doc """
+  [Deletes resource](http://jsonapi.org/format/#crud-deleting) with `"id"` in `params`.
+
+  ## Steps
+
+    1. `allow_sandbox_access/2`
+    2. `state` `resources_module` `get(id, ...)`
+    3. `state` `authorization_module` `can?(subject, :delete, struct)`
+    4. `state` `resources_module` `delete(struct)`
+
+  ## Returns
+
+    * `{:error, {:not_found, "id"}}` - The "id" did not correspond to resource in the backing store
+    * `{:error, :unauthorized}` - The `state` `subject` is not authorized to delete the resource
+    * `{:error, Ecto.Changeset.t}` - the deletion failed with the errors in `Ecto.Changeset.t`
+    * `:ok` - resource was successfully deleted
+
+  """
   @spec delete(t, params) ::
         {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:error, Ecto.Changeset.t} | :ok
   def delete(state = %__MODULE__{}, params) do
@@ -152,6 +195,27 @@ defmodule Calcinator do
     end
   end
 
+  @doc """
+  [Gets a resource related through a relationship]
+  (http://jsonapi.org/format/#document-resource-object-related-resource-links).
+
+  ## Steps
+
+    1. Gets source
+    2. `state` `authorization_module` `can?(subject, :show, source)`
+    3. Get related
+    4. `state` `authorization_module` `can?(subject, :show, [related, source])`
+    5. `state` `authorization_module` `filter_associations_can(related, subject, :show)`
+    6. `state` `view_module` `get_related_resource(authorized, ...)`
+
+  ## Returns
+
+    * `{:error, {:not_found, id_key}}` - The value of the `id_key` key in `params` did not correspond to a resource in
+      the backing store.
+    * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
+    * `{:ok, rendered}` - rendered view of related resource
+
+  """
   @spec get_related_resource(t, params, map) ::
         {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:ok, rendered}
   def get_related_resource(
@@ -162,6 +226,29 @@ defmodule Calcinator do
     related_property(state, params, put_in(options.related, Map.put(related, :property, :resource)))
   end
 
+  @doc """
+  [Gets index of a resource](http://jsonapi.org/format/#fetching-resources) with
+  [(optional) pagination](http://jsonapi.org/format/#fetching-pagination) depending on whether the `state`
+  `resources_module` supports pagination.
+
+  ## Steps
+
+    1. `state` `authorization_module` `can?(subject, :index, ecto_schema_module)`
+    2. `allow_sandbox_access/2`
+    3. `state` `resources_module` `list/1`
+    4. `state` `authorization_module` `filter_can(listed, subject, :show)`
+    5. `state` `authorization_module` `filter_associations_can(filtered_listed, subject, :show)`
+    6. `state` `view_module` `index(association_filtered,  ...)`
+
+  ## Returns
+
+    * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling `list/1`.
+    * `{:error, :unauthorized}` - if `state` `authorization_module` `can?(subject, :index, ecto_schema_module)` returns
+      `false`
+    * `{:error, Alembic.Document.t}` - if `params` are not valid JSONAPI.
+    * `{:ok, rendered}` - the rendered resources with (optional) pagination in the `"meta"`.
+
+  """
   @spec index(t, params, %{required(:base_uri) => URI.t}) ::
         {:error, :timeout} | {:error, :unauthorized} | {:error, Document.t} | {:ok, rendered}
   def index(state = %__MODULE__{
@@ -186,6 +273,25 @@ defmodule Calcinator do
     end
   end
 
+  @doc """
+  [Shows resource](http://jsonapi.org/format/#fetching-resources) with the `"id"` in `params`.
+
+  ## Steps
+
+    1. `allow_sandbox_acces/2`
+    2. `state` `resources_module` `get(id, ...)`
+    3. `state` `authorization_module` `can?(subject, :show, got)`
+    4. `state` `authorization_module` `filter_associations_can(got, subject, :show)`
+    5. `state` `view_module` `show(authorized, ...)`
+
+  ## Returns
+
+    * `{:error, {:not_found, "id"}}` - The "id" did not correspond to resource in the backing store
+    * `{:error, :unauthorized}` - `state` `authorization_module` `can?(subject, :show, got)` returns `false`
+    * `{:error, Alembic.Document.t}` - `params` is not valid JSONAPI
+    * `{:ok, rendered}` - rendered resource
+
+  """
   @spec show(t, params) ::
         {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:error, Document.t} | {:ok, rendered}
   def show(state = %__MODULE__{subject: subject, view_module: view_module}, params = %{"id" => _}) do
@@ -197,6 +303,26 @@ defmodule Calcinator do
     end
   end
 
+  @doc """
+  [Shows a relationship](http://jsonapi.org/format/#fetching-relationships).
+
+  ## Steps
+
+    1. Gets source
+    2. `state` `authorization_module` `can?(subject, :show, source)`
+    3. Get related
+    4. `state` `authorization_module` `can?(subject, :show, [related, source])`
+    5. `state` `authorization_module` `filter_associations_can(related, subject, :show)`
+    6. `state` `view_module` `show_relationship(authorized, ...)`
+
+  ## Returns
+
+    * `{:error, {:not_found, id_key}}` - The value of the `id_key` key in `params` did not correspond to a resource in
+      the backing store.
+    * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
+    * `{:ok, rendered}` - rendered view of relationship
+
+  """
   @spec show_relationship(t, params, map) ::
         {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:ok, rendered}
   def show_relationship(
@@ -207,6 +333,31 @@ defmodule Calcinator do
     related_property(state, params, put_in(options.related, Map.put(related, :property, :relationship)))
   end
 
+  @doc """
+  [Updates a resource](http://jsonapi.org/format/#crud-updating) with the `"id"` in `params`
+
+  ## Steps
+
+    1. `allow_sandbox_access/2`
+    2. `state` `resources_module` `get(id, ...)`
+    3. Check `params` are a valid JSONAPI document
+    4. `state` `authorization_module` `can?(subject, :update, Ecto.Changeset.t)`
+    5. `state` `resources_module` `update(Ecto.Changeset.t, ...)`
+    6. `state` `authorization_module` `filter_associations_can(updated, subject, :show)`
+    6. `state` `view_module` `show(authorized, ...)`
+
+  ## Returns
+
+    * `{:error, :bad_gateway}` - backing store as internal error that can't be represented in any other format.
+      Try again later or call support.
+    * `{:error, {:not_found, "id"}}` - get failed or update failed because the resource was deleted between the get and
+      update.
+    * `{:error, :unauthorized}` - the resource either can't be shown or can't be updated
+    * `{:error, Alembic.Document.t}` - the `params` are not valid JSONAPI
+    * `{:error, Ecto.Changeset.t}` - validations error when updating
+    * `{:ok, rendered}` - the rendered updated resource
+
+  """
   @spec update(t, params) :: {:error, :bad_gateway} |
                              {:error, {:not_found, parameter}} |
                              {:error, :unauthorized} |
