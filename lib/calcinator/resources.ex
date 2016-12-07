@@ -154,7 +154,6 @@ defmodule Calcinator.Resources do
 
   # Functions
 
-
   @doc """
   Converts the attribute to a field if a corresponding field exists in `ecto_schema_module`
 
