@@ -3,16 +3,24 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v1.2.0](#v120)
+  - [v1.4.0](#v140)
+  - [v1.3.0](#v130)
     - [Enhancements](#enhancements)
     - [Bug Fixes](#bug-fixes)
-  - [v1.1.0](#v110)
+  - [v1.2.0](#v120)
     - [Enhancements](#enhancements-1)
     - [Bug Fixes](#bug-fixes-1)
+  - [v1.1.0](#v110)
+    - [Enhancements](#enhancements-2)
+    - [Bug Fixes](#bug-fixes-2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v1.4.0
+
+* [#4](https://github.com/C-S-D/calcinator/pull/4) - `use Calcinator.Resources.Ecto.Repo` will define the callbacks for `Calcinator.Resources` backed by an `Ecto.Repo`.  The only callbacks that are required then are `ecto_schema_module/0`, `full_associations/1` and `repo/0`. - [@KronicDeth](https://github.com/KronicDeth)
 
 ## v1.3.0
 
