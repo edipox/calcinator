@@ -21,6 +21,9 @@
 ## v1.4.0
 
 * [#4](https://github.com/C-S-D/calcinator/pull/4) - `use Calcinator.Resources.Ecto.Repo` will define the callbacks for `Calcinator.Resources` backed by an `Ecto.Repo`.  The only callbacks that are required then are `ecto_schema_module/0`, `full_associations/1` and `repo/0`. - [@KronicDeth](https://github.com/KronicDeth)
+* [#5](https://github.com/C-S-D/calcinator/pull/5) - [@KronicDeth](https://github.com/KronicDeth)
+  * Update to `credo` `0.5.3`
+  * Update to `ja_serializer` `0.11.2`
 
 ## v1.3.0
 
