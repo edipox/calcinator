@@ -3,24 +3,31 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
+  - [v1.5.1](#v151)
+    - [Bug Fixes](#bug-fixes)
   - [v1.5.0](#v150)
     - [Enhancements](#enhancements)
-    - [Bug Fixes](#bug-fixes)
+    - [Bug Fixes](#bug-fixes-1)
   - [v1.4.0](#v140)
     - [Enhancements](#enhancements-1)
   - [v1.3.0](#v130)
     - [Enhancements](#enhancements-2)
-    - [Bug Fixes](#bug-fixes-1)
+    - [Bug Fixes](#bug-fixes-2)
   - [v1.2.0](#v120)
     - [Enhancements](#enhancements-3)
-    - [Bug Fixes](#bug-fixes-2)
+    - [Bug Fixes](#bug-fixes-3)
   - [v1.1.0](#v110)
     - [Enhancements](#enhancements-4)
-    - [Bug Fixes](#bug-fixes-3)
+    - [Bug Fixes](#bug-fixes-4)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v1.5.1
+
+### Bug Fixes
+* [#7](https://github.com/C-S-D/calcinator/pull/7) - `preload(module, queryable, opts)` returns `{:ok, query}` instead of just `query` now. - [@KronicDeth](https://github.com/KronicDeth)
 
 ## v1.5.0
 
