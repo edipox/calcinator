@@ -215,7 +215,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @spec list(module, Resources.query_options) :: {:ok, [Ecto.Schema.t], nil} | {:error, :ownership}
   def list(module, opts) do
     repo = module.repo()
-    query = preload(module, module.ecto_schema_module(), opts)
+    {:ok, query} = preload(module, module.ecto_schema_module(), opts)
 
     case wrap_ownership_error(repo, :all, [query]) do
       {:error, :ownership} ->
