@@ -135,6 +135,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :unauthorized}` - if `state` `authorization_module` `can?(subject, :create, ecto_schema_module)` or
       `can?(subject, :create, %Ecto.Changeset{})` returns `false`
     * `{:error, Alembic.Document.t}` - if `params` is not a valid JSONAPI document
@@ -142,7 +143,8 @@ defmodule Calcinator do
     * `{:ok, rendereded}` - rendered view of created resource
 
   """
-  @spec create(t, params) :: {:error, :unauthorized} |
+  @spec create(t, params) :: {:error, :ownership} |
+                             {:error, :unauthorized} |
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t} |
                              {:ok, rendered}
@@ -179,13 +181,17 @@ defmodule Calcinator do
   ## Returns
 
     * `{:error, {:not_found, "id"}}` - The "id" did not correspond to resource in the backing store
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :unauthorized}` - The `state` `subject` is not authorized to delete the resource
     * `{:error, Ecto.Changeset.t}` - the deletion failed with the errors in `Ecto.Changeset.t`
     * `:ok` - resource was successfully deleted
 
   """
-  @spec delete(t, params) ::
-        {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:error, Ecto.Changeset.t} | :ok
+  @spec delete(t, params) :: :ok |
+                             {:error, {:not_found, parameter}} |
+                             {:error, :ownership} |
+                             {:error, :unauthorized} |
+                             {:error, Ecto.Changeset.t}
   def delete(state = %__MODULE__{}, params) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, target} <- get(state, params),
@@ -212,12 +218,13 @@ defmodule Calcinator do
 
     * `{:error, {:not_found, id_key}}` - The value of the `id_key` key in `params` did not correspond to a resource in
       the backing store.
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
     * `{:ok, rendered}` - rendered view of related resource
 
   """
   @spec get_related_resource(t, params, map) ::
-        {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:ok, rendered}
+        {:error, {:not_found, parameter}} | {:error, :ownership} | {:error, :unauthorized} | {:ok, rendered}
   def get_related_resource(
         state = %__MODULE__{},
         params,
@@ -242,6 +249,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling `list/1`.
     * `{:error, :unauthorized}` - if `state` `authorization_module` `can?(subject, :index, ecto_schema_module)` returns
       `false`
@@ -287,13 +295,17 @@ defmodule Calcinator do
   ## Returns
 
     * `{:error, {:not_found, "id"}}` - The "id" did not correspond to resource in the backing store
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :unauthorized}` - `state` `authorization_module` `can?(subject, :show, got)` returns `false`
     * `{:error, Alembic.Document.t}` - `params` is not valid JSONAPI
     * `{:ok, rendered}` - rendered resource
 
   """
-  @spec show(t, params) ::
-        {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:error, Document.t} | {:ok, rendered}
+  @spec show(t, params) :: {:error, {:not_found, parameter}} |
+                           {:error, :ownership} |
+                           {:error, :unauthorized} |
+                           {:error, Document.t} |
+                           {:ok, rendered}
   def show(state = %__MODULE__{subject: subject, view_module: view_module}, params = %{"id" => _}) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, shown} <- get(state, params),
@@ -319,12 +331,13 @@ defmodule Calcinator do
 
     * `{:error, {:not_found, id_key}}` - The value of the `id_key` key in `params` did not correspond to a resource in
       the backing store.
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
     * `{:ok, rendered}` - rendered view of relationship
 
   """
   @spec show_relationship(t, params, map) ::
-        {:error, {:not_found, parameter}} | {:error, :unauthorized} | {:ok, rendered}
+        {:error, {:not_found, parameter}} | {:error, :ownership} | {:error, :unauthorized} | {:ok, rendered}
   def show_relationship(
         state = %__MODULE__{},
         params,
@@ -352,6 +365,7 @@ defmodule Calcinator do
       Try again later or call support.
     * `{:error, {:not_found, "id"}}` - get failed or update failed because the resource was deleted between the get and
       update.
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :unauthorized}` - the resource either can't be shown or can't be updated
     * `{:error, Alembic.Document.t}` - the `params` are not valid JSONAPI
     * `{:error, Ecto.Changeset.t}` - validations error when updating
@@ -360,6 +374,7 @@ defmodule Calcinator do
   """
   @spec update(t, params) :: {:error, :bad_gateway} |
                              {:error, {:not_found, parameter}} |
+                             {:error, :ownership} |
                              {:error, :unauthorized} |
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t} |
