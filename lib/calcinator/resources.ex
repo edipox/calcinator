@@ -67,9 +67,10 @@ defmodule Calcinator.Resources do
   # Returns
 
     * `{:ok, struct}` - the delete succeeded and the returned struct is the state before delete
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, Ecto.Changeset.t}` - errors while deleting the `struct`.  `Ecto.Changeset.t` `errors` contains errors.
   """
-  @callback delete(struct) :: {:ok, struct} | {:error, Ecto.Changeset.t}
+  @callback delete(struct) :: {:ok, struct} | {:error, :ownership} | {:error, Ecto.Changeset.t}
 
   @doc """
   Gets a single `struct`
@@ -78,21 +79,23 @@ defmodule Calcinator.Resources do
 
     * `{:ok, struct}` - `id` was found.
     * `{:error, :not_found}` - `id` was not found.
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :timeout}` - timeout occured while getting `id` from backing store .
     * `{:error, reason}` - an error occurred with the backing store for `reason` that is backing store specific.
 
   """
   @callback get(id, query_options) ::
-            {:ok, struct} | {:error, :not_found} | {:error, :timeout} | {:error, reason :: term}
+            {:ok, struct} | {:error, :not_found} | {:error, :ownership} | {:error, :timeout} | {:error, reason :: term}
 
   @doc """
   Inserts `changeset` into a single new `struct`
 
   # Returns
     * `{:ok, struct}` - `changeset` was inserted into `struct`
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, Ecto.Changeset.t}` - insert failed.  `Ecto.Changeset.t` `errors` contain errors.
   """
-  @callback insert(Ecto.Changeset.t, query_options) :: {:ok, struct} | {:error, Ecto.Changeset.t}
+  @callback insert(Ecto.Changeset.t, query_options) :: {:ok, struct} | {:error, :ownership} | {:error, Ecto.Changeset.t}
 
   @doc """
   Inserts `params` into a single new `struct`
@@ -100,10 +103,11 @@ defmodule Calcinator.Resources do
   # Returns
 
     * `{:ok, struct}` - params were inserted into `struct`
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, Ecto.Changeset.t}` - insert failed.  `Ecto.Changeset.t` `errors` contain errors.
 
   """
-  @callback insert(params, query_options) :: {:ok, struct} | {:error, Ecto.Changeset.t}
+  @callback insert(params, query_options) :: {:ok, struct} | {:error, :ownership} | {:error, Ecto.Changeset.t}
 
   @doc """
   Gets a list of `struct`s.
@@ -112,11 +116,15 @@ defmodule Calcinator.Resources do
 
     * `{:ok, [resource], nil}` - all resources matching query
     * `{:ok, [resource], pagination}` - page of resources matching query
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :timeout}` - timeout occured while getting resources from backing store .
     * `{:error, reason}` - an error occurred with the backing store for `reason` that is backing store specific.
 
   """
-  @callback list(query_options) :: {:ok, [struct], pagination | nil} | {:error, :timeout} | {:error, reason :: term}
+  @callback list(query_options) :: {:ok, [struct], pagination | nil} |
+                                   {:error, :ownership} |
+                                   {:error, :timeout} |
+                                   {:error, reason :: term}
 
   @doc """
   # Returns
@@ -135,11 +143,15 @@ defmodule Calcinator.Resources do
     * `{:error, Ecto.Changeset.t}` - errors while updating `struct` with `params`.  `Ecto.Changeset.t` `errors` contains
       errors.
     * `{:error, :bad_gateway}` - error in backing store that cannot be represented as another type of error
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :not_found}` - the resource in the changeset was not found and so cannot be updated.  This may mean that
       the resource was deleted with `delete/1` after the `get/2` or `list/1` returned.
   """
-  @callback update(resource :: Ecto.Schema.t, params, query_options) ::
-            {:ok, struct} | {:error, Ecto.Changeset.t} | {:error, :bad_gateway} | {:error, :not_found}
+  @callback update(resource :: Ecto.Schema.t, params, query_options) :: {:ok, struct} |
+                                                                        {:error, Ecto.Changeset.t} |
+                                                                        {:error, :bad_gateway} |
+                                                                        {:error, :ownership} |
+                                                                        {:error, :not_found}
 
   @doc """
   Applies updates in `changeset`
@@ -147,10 +159,11 @@ defmodule Calcinator.Resources do
   # Returns
 
     * `{:ok, struct}` - the update succeeded and the returned `struct` contains the updates
-    * `{error, Ecto.Changeset.t}` - errors while updating `struct` with `params`.  `Ecto.Changeset.t` `errors` contains
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
+    * `{:error, Ecto.Changeset.t}` - errors while updating `struct` with `params`.  `Ecto.Changeset.t` `errors` contains
       errors.
   """
-  @callback update(Ecto.Changeset.t, query_options) :: {:ok, struct} | {:error, Ecto.Changeset.t}
+  @callback update(Ecto.Changeset.t, query_options) :: {:ok, struct} | {:error, :ownership} | {:error, Ecto.Changeset.t}
 
   # Functions
 

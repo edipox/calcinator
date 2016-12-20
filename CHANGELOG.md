@@ -3,23 +3,38 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v1.4.0](#v140)
-  - [v1.3.0](#v130)
+  - [v1.5.0](#v150)
     - [Enhancements](#enhancements)
     - [Bug Fixes](#bug-fixes)
-  - [v1.2.0](#v120)
+  - [v1.4.0](#v140)
     - [Enhancements](#enhancements-1)
-    - [Bug Fixes](#bug-fixes-1)
-  - [v1.1.0](#v110)
+  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-2)
+    - [Bug Fixes](#bug-fixes-1)
+  - [v1.2.0](#v120)
+    - [Enhancements](#enhancements-3)
     - [Bug Fixes](#bug-fixes-2)
+  - [v1.1.0](#v110)
+    - [Enhancements](#enhancements-4)
+    - [Bug Fixes](#bug-fixes-3)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
 
+## v1.5.0
+
+### Enhancements
+* [#6](https://github.com/C-S-D/calcinator/pull/6) - [@KronicDeth](https://github.com/KronicDeth)
+  * Add `{:error, :ownership}` ∀ `Calcinator.Resources` callbacks
+  * Add `{:error, :ownership}` ∀ `Calcinator` actions
+
+### Bug Fixes
+* [#6](https://github.com/C-S-D/calcinator/pull/6) - Previously `get` and `list` were the only `Calcinator.Resources.Ecto.Repo` functions that converted `DBConnection.OwnershipError` to `{:error, :ownership}`, but the other `Ecto.Repo` calls could also throw the Error, so all calls need to be protected for consistency. - [@KronicDeth](https://github.com/KronicDeth)
+
 ## v1.4.0
 
+### Enhancements
 * [#4](https://github.com/C-S-D/calcinator/pull/4) - `use Calcinator.Resources.Ecto.Repo` will define the callbacks for `Calcinator.Resources` backed by an `Ecto.Repo`.  The only callbacks that are required then are `ecto_schema_module/0`, `full_associations/1` and `repo/0`. - [@KronicDeth](https://github.com/KronicDeth)
 * [#5](https://github.com/C-S-D/calcinator/pull/5) - [@KronicDeth](https://github.com/KronicDeth)
   * Update to `credo` `0.5.3`

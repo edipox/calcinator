@@ -69,14 +69,15 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
       def delete(data), do: EctoRepoResources.delete(__MODULE__, data)
 
-      @spec get(Resources.id, Resources.query_options) :: {:ok, Ecto.Schema.t} | {:error, :not_found}
+      @spec get(Resources.id, Resources.query_options) ::
+            {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
       def get(id, opts), do: EctoRepoResources.get(__MODULE__, id, opts)
 
       def insert(changeset_or_params, query_options) do
         EctoRepoResources.insert(__MODULE__, changeset_or_params, query_options)
       end
 
-      @spec list(Resources.query_options) :: {:ok, [Ecto.Schema.t], nil}
+      @spec list(Resources.query_options) :: {:ok, [Ecto.Schema.t], nil} | {:error, :ownership}
       def list(query_options), do: EctoRepoResources.list(__MODULE__, query_options)
 
       def sandboxed?(), do: EctoRepoResources.sandboxed?(__MODULE__)
@@ -134,7 +135,12 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @doc """
   Deletes `data` from `module`'s `repo/0`
   """
-  def delete(module, data), do: module.repo().delete(data)
+  @spec delete(module, Ecto.Schema.t) :: {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
+  def delete(module, data) do
+    repo = module.repo()
+
+    wrap_ownership_error(repo, :delete, [data])
+  end
 
   @doc """
   Uses `query_options` as full associatons with no additions.
@@ -158,49 +164,39 @@ defmodule Calcinator.Resources.Ecto.Repo do
     ecto_schema_module = module.ecto_schema_module()
     repo = module.repo()
 
-    try do
-      repo.get(ecto_schema_module, id)
-    rescue
-      ownership_error in DBConnection.OwnershipError ->
-        ownership_error
-        |> inspect()
-        |> Logger.error()
-
+    case wrap_ownership_error(repo, :get, [ecto_schema_module, id]) do
+      {:error, :ownership} ->
         {:error, :ownership}
-    else
       nil ->
         {:error, :not_found}
       data ->
-        {:ok, preload(module, data, opts)}
+        preload(module, data, opts)
     end
   end
 
   @doc """
-  Insert `changeset` into `module` `repo/0`
+  1. Insert `changeset` into `module` `repo/0`
+  2. Inserts `params` into `module` `repo/0` after converting them into an `Ecto.Changeset.t`
 
   ## Returns
 
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, Ecto.Changeset.t}` - if `changeset` cannot be inserted into `module` `repo/0`
     * `{:ok, struct}` - if `changeset` was inserted in to `module` `repo/0`.  `struct` is preloaded with associations
       according to `Resource.query_iptions` in `opts`.
 
   """
+  @spec insert(module, Ecto.Changeset.t | map, Resources.query_options) ::
+        {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
+
   def insert(module, changeset = %Ecto.Changeset{}, opts) when is_map(opts) do
-    with {:ok, inserted} <- module.repo().insert(changeset) do
-      {:ok, preload(module, inserted, opts)}
+    repo = module.repo()
+
+    with {:ok, inserted} <- wrap_ownership_error(repo, :insert, [changeset]) do
+      preload(module, inserted, opts)
     end
   end
 
-  @doc """
-  Inserts `params` into `module` `repo/0` after converting them into an `Ecto.Changeset.t`
-
-  ## Returns
-
-    * `{:error, Ecto.Changeset.t}` - if changeset cannot be inserted into `module` `repo/0`
-    * `{:ok, struct}` - if changeset was inserted in to `module` `repo/0`.  `struct` is preloaded with associations
-      according to `Resource.query_iptions` in `opts`.
-
-  """
   def insert(module, params, opts) when is_map(params) and is_map(opts) do
     params
     |> module.changeset()
@@ -211,25 +207,19 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   ## Returns
 
-    * `{:error, :ownership}` - if `DBConnection.OwnershipError` due to connection sharing error during tests.
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:ok, [struct], nil}` - `[struct]` is the list of all `module` `ecto_schema_module/0` in `module` `repo/0`.
       There is no (current) support for pagination: pagination is the `nil` in the 3rd element of the tuple.
 
   """
-  @spec list(module, Resources.query_options) :: {:ok, [Ecto.Schema.t], nil}
+  @spec list(module, Resources.query_options) :: {:ok, [Ecto.Schema.t], nil} | {:error, :ownership}
   def list(module, opts) do
     repo = module.repo()
     query = preload(module, module.ecto_schema_module(), opts)
 
-    try do
-      repo.all(query)
-    rescue
-      ownership_error in DBConnection.OwnershipError ->
-        ownership_error
-        |> inspect()
-        |> Logger.error()
+    case wrap_ownership_error(repo, :all, [query]) do
+      {:error, :ownership} ->
         {:error, :ownership}
-    else
       all ->
         {:ok, all, nil}
     end
@@ -247,16 +237,20 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   ## Returns
 
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, Ecto.Changeset.t}` - if the `changeset` had validations error or it could not be used to update `struct`
       in `module` `repo/0`.
     * `{:ok, struct}` - the updated `struct`.  Associations are preloaded using `Resources.query_options` in
       `query_options`.
 
   """
-  @spec update(module, Ecto.Changeset.t, Resources.query_options) :: {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
+  @spec update(module, Ecto.Changeset.t, Resources.query_options) ::
+        {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
   def update(module, changeset, query_options) do
-    with {:ok, updated} <- module.repo().update(changeset) do
-      {:ok, update_preload(module, updated, query_options)}
+    repo = module.repo()
+
+    with {:ok, updated} <- wrap_ownership_error(repo, :update, [changeset]) do
+      update_preload(module, updated, query_options)
     end
   end
 
@@ -265,6 +259,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   ## Returns
 
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, Ecto.Changeset.t}` - if the changeset derived from updating `data` with `params` had validations error
       or it could not be used to update `data` in `module` `repo/0`.
     * `{:ok, struct}` - the updated `struct`.  Associations are preloaded using `Resources.query_options` in
@@ -286,28 +281,65 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
     case data_or_queryable do
       data = %{__struct__: ^ecto_schema_module} ->
-        module.repo().preload(data, module.full_associations(query_options))
+        preload_data(module, data, query_options)
       queryable ->
-        Query.preload(queryable, ^module.full_associations(query_options))
+        {:ok, Query.preload(queryable, ^module.full_associations(query_options))}
     end
   end
 
+  defp preload_data(module, data, query_options) do
+    repo = module.repo()
+
+    case wrap_ownership_error(repo, :preload, [data, module.full_associations(query_options)]) do
+      {:error, :ownership} ->
+        {:error, :ownership}
+      preloaded ->
+        {:ok, preloaded}
+    end
+  end
+
+  # have to unload preloads that may have been updated
+  # See http://stackoverflow.com/a/34946099/470451
+  # See https://github.com/elixir-lang/ecto/issues/1212
+  defp unload_preloads(updated, preloads) do
+    Enum.reduce(
+      preloads,
+      updated,
+      fn
+        # preloads = [:<field>]
+        (field, acc) when is_atom(field) ->
+          Map.put(acc, field, Map.get(acc.__struct__.__struct__, field))
+        # preloads = [<field>: <association_preloads>]
+        ({field, _}, acc) when is_atom(field) ->
+          Map.put(acc, field, Map.get(acc.__struct__.__struct__, field))
+      end
+    )
+  end
+
+  @spec update_preload(module, Ecto.Schema.t, Resources.query_options) :: {:ok, Ecto.Schema.t} | {:error, :ownership}
   defp update_preload(module, updated, query_options) do
     preloads = module.full_associations(query_options)
     repo = module.repo()
+    unloaded_updated = unload_preloads(updated, preloads)
 
-    # have to unload preloads that may have been updated
-    # See http://stackoverflow.com/a/34946099/470451
-    # See https://github.com/elixir-lang/ecto/issues/1212
-    preloads
-    |> Enum.reduce(updated, fn
-         # preloads = [:<field>]
-         (field, acc) when is_atom(field) ->
-           Map.put(acc, field, Map.get(acc.__struct__.__struct__, field))
-         # preloads = [<field>: <association_preloads>]
-         ({field, _}, acc) when is_atom(field) ->
-           Map.put(acc, field, Map.get(acc.__struct__.__struct__, field))
-       end)
-    |> repo.preload(preloads)
+    case wrap_ownership_error(repo, :preload, [unloaded_updated, preloads]) do
+      {:error, :ownership} -> {:error, :ownership}
+      reloaded_updated -> {:ok, reloaded_updated}
+    end
+  end
+
+  defp wrap_ownership_error(repo, function, arguments) do
+    try do
+      apply(repo, function, arguments)
+    rescue
+      ownership_error in DBConnection.OwnershipError ->
+        ownership_error
+        |> inspect()
+        |> Logger.error()
+
+        {:error, :ownership}
+    else
+      other -> other
+    end
   end
 end
