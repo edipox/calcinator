@@ -7,6 +7,7 @@ defmodule Calcinator.Controller do
   alias Alembic.Document
   alias Plug.Conn
 
+  import Calcinator.Controller.Error
   import Conn
 
   # Macros
