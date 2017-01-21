@@ -76,6 +76,155 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 backing stores.  CSD itself, uses it to access PostgreSQL database owned by the project using `Ecto` and to access
 remote data over RabbitMQ.
 
+#### Database
+
+If you want to use `Calcinator` to access records in a database, you can use `Ecto`
+
+#### `Ecto.Schema` modules
+
+`MyApp.Author` and `MyAuthor.Post` are standard `use Ecto.Schema` modules.  `MyApp` is a separate OTP
+application in the umbrella project.
+
+```elixir
+defmodule MyApp.Author do
+  @moduledoc """
+  The author of `MyApp.Post`s
+  """
+
+  use Ecto.Schema
+
+  schema "authors" do
+    field :name, :string
+    field :password, :string, virtual: true
+    field :password_confirmation, :string, virtual: true
+
+    timestamps
+
+    has_many :posts, RemoteApp.Post, foreign_key: :author_id
+  end
+end
+```
+-- `apps/my_app/lib/my_app/author.ex`
+
+```elixir
+defmodule MyApp.Author do
+  @moduledoc """
+  Posts by a `MyApp.Author`.
+  """
+
+  use Ecto.Schema
+
+  schema "posts" do
+    field :text, :string
+
+    timestamps
+
+    belongs_to :author, MyApp.Author
+  end
+end
+```
+-- `apps/my_app/lib/my_app/post.ex`
+
+#### Resources module
+
+```elixir
+defmodule MyApp.Posts do
+  @moduledoc """
+  Retrieves `%MyApp.Post{}` from `MyApp.Repo`
+  """
+
+  use Calcinator.Resources.Ecto.Repo
+
+  # Functions
+
+  ## Calcinator.Resources.Ecto.Repo callbacks
+
+  def repo, do: MyApp.Repo
+end
+```
+##### View Module
+
+`Calcinator` relies on `JaSerializer` to define view module
+
+```elixir
+defmodule MyAppWeb.PostView do
+  @moduledoc """
+  Handles encoding the Post model into JSON:API format.
+  """
+
+  alias MyApp.Post
+
+  use MyAppWeb.Web, :view
+  use Calcinator.JaSerializer.PhoenixView,
+      phoenix_view_module: __MODULE__
+
+  # Attributes
+
+  attributes ~w(inserted_at
+                text
+                updated_at)a
+
+  # Location
+
+  location "/posts/:id"
+
+  # Relationships
+
+  has_one :author,
+          serializer: MyAppWeb.AuthorView
+
+  # Functions
+
+  def relationships(post = %Post{}, conn) do
+    partner
+    |> super(conn)
+    |> Enum.filter(relationships_filter(post))
+    |> Enum.into(%{})
+  end
+
+  def type(_data, _conn), do: "posts"
+
+  ## Private Functions
+
+  def relationships_filter(%Post{author: %Ecto.Association.NotLoaded{}}) do
+    fn {name, _relationship} ->
+      name != :author
+    end
+  end
+
+  def relationships_filter(_) do
+    fn {_name, _relationship} ->
+      true
+    end
+  end
+end
+```
+--- `apps/my_app_web/lib/my_app_web/post_view.ex`
+
+##### Controller Module
+
+```elixir
+defmodule MyAppWeb.PostController do
+  @moduledoc """
+  Allows reading of Post that are fetched from Remote Server via RPC.
+  """
+
+  use MyAppWeb.Web, :controller
+
+  alias InterpreterServerWeb.Controller
+
+  use Controller.Resources,
+      actions: ~w(index show)a,
+      configuration: %Calcinator{
+        authorization_module: MyAppWeb.Authorization,
+        ecto_schema_module: MyApp.Post,
+        resources_module: MyApp.Posts,
+        view_module: MyAppWeb.PostView
+      }
+end
+```
+--- `apps/my_app_web/lib/my_app_web/post_controller.ex`
+
 #### RabbitMQ
 
 If you want to use `Calcinator` over RabbitMQ, use [`Retort`](https://github.com/C-S-D/retort): it's

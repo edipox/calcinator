@@ -33,6 +33,7 @@
   * `use Calcinator.Controller` can be used inside a `Phoenix` controller to define JSONAPI actions.
   * `Calcinator.Controller.Error` defines functions for JSONAPI formatted errors that `Calcinator.Controller` may respond with.
   * Document how to use `Calcinator.Controller` to access `Retort.Client.Generic` backed `Calcinator.Resource`
+  * Document how to use `Calcinator.Controller` to access `Calcinator.Resources.Ecto.Repo`
 
 ## v1.5.1
 
