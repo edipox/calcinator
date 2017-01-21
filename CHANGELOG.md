@@ -26,6 +26,14 @@
 
 # Changelog
 
+## v1.7.0
+
+### Enhancements
+* [#9](https://github.com/C-S-D/calcinator/pull/9) - Examples for how to `use Calcinator.Resources.Ecto.Repo` in `Calcinator.Resources.Ecto.Repo`'s `@moduledoc` - [@KronicDeth](https://github.com/KronicDeth)
+
+### Bug Fixes
+* [#9](https://github.com/C-S-D/calcinator/pull/9) - Add missing `ecto_schema_module/0` callback to `README` example of `use Calcinator.Resources.Ecto.Repo` - [@KronicDeth](https://github.com/KronicDeth)
+
 ## v1.6.0
 
 ### Enhancements
