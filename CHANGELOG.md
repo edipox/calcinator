@@ -3,26 +3,37 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
+  - [v1.6.0](#v160)
+    - [Enhancements](#enhancements)
   - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes)
   - [v1.5.0](#v150)
-    - [Enhancements](#enhancements)
+    - [Enhancements](#enhancements-1)
     - [Bug Fixes](#bug-fixes-1)
   - [v1.4.0](#v140)
-    - [Enhancements](#enhancements-1)
-  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-2)
+  - [v1.3.0](#v130)
+    - [Enhancements](#enhancements-3)
     - [Bug Fixes](#bug-fixes-2)
   - [v1.2.0](#v120)
-    - [Enhancements](#enhancements-3)
+    - [Enhancements](#enhancements-4)
     - [Bug Fixes](#bug-fixes-3)
   - [v1.1.0](#v110)
-    - [Enhancements](#enhancements-4)
+    - [Enhancements](#enhancements-5)
     - [Bug Fixes](#bug-fixes-4)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v1.6.0
+
+### Enhancements
+* [#8](https://github.com/C-S-D/calcinator/pull/8) - [@KronicDeth](https://github.com/KronicDeth)
+  * `use Calcinator.Controller` can be used inside a `Phoenix` controller to define JSONAPI actions.
+  * `Calcinator.Controller.Error` defines functions for JSONAPI formatted errors that `Calcinator.Controller` may respond with.
+  * Document how to use `Calcinator.Controller` to access `Retort.Client.Generic` backed `Calcinator.Resource`
+  * Document how to use `Calcinator.Controller` to access `Calcinator.Resources.Ecto.Repo`
 
 ## v1.5.1
 

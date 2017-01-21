@@ -18,7 +18,7 @@ defmodule Calcinator.Mixfile do
       ],
       source_url: "https://github.com/C-S-D/calcinator",
       start_permanent: Mix.env == :prod,
-      version: "1.5.1"
+      version: "1.6.0"
     ]
   end
 
@@ -49,7 +49,9 @@ defmodule Calcinator.Mixfile do
       {:ex_doc, "~> 0.14.0", only: [:dev, :test]},
       {:ja_serializer, "~> 0.11.0"},
       # JUnit formatter, so that CircleCI can consume test output for CircleCI UI
-      {:junit_formatter, "~> 1.0", only: :test}
+      {:junit_formatter, "~> 1.0", only: :test},
+      # Phoenix.Controller is used in Calcinator.Controller.Error
+      {:phoenix, "~> 1.0", optional: true}
     ]
   end
 

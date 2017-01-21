@@ -2,7 +2,7 @@
   configs: [
     %{
       checks: [
-        {Credo.Check.Design.AliasUsage, excluded_namespaces: ~w(Meta)},
+        {Credo.Check.Design.AliasUsage, excluded_lastnames: ~w(Controller), excluded_namespaces: ~w(Meta)},
         {Credo.Check.Readability.MaxLineLength, priority: :low, max_length: 120}
       ],
       files: %{
