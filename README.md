@@ -139,9 +139,12 @@ defmodule MyApp.Posts do
 
   ## Calcinator.Resources.Ecto.Repo callbacks
 
-  def repo, do: MyApp.Repo
+  def ecto_schema_module(), do: MyApp.Post
+
+  def repo(), do: MyApp.Repo
 end
 ```
+
 ##### View Module
 
 `Calcinator` relies on `JaSerializer` to define view module

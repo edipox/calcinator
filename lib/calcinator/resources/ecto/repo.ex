@@ -1,6 +1,50 @@
 defmodule Calcinator.Resources.Ecto.Repo do
   @moduledoc """
   Default callbacks for `Calcinator.Resources` behaviour when backed by a single `Ecto.Repo`
+
+  If you don't have any default loaded associations, you only need to define `ecto_schema_module/0` and `repo/0`
+
+      defmodule MyApp.Posts do
+        @moduledoc \"""
+        Retrieves `%MyApp.Post{}` from `MyApp.Repo`
+        \"""
+
+        use Calcinator.Resources.Ecto.Repo
+
+        # Functions
+
+        ## Calcinator.Resources.Ecto.Repo callbacks
+
+        def ecto_schema_module(), do: MyApp.Post
+
+        def repo(), do: MyApp.Repo
+      end
+
+  If you need to override the loaded associations also override `full_associations/1`
+
+       defmodule MyApp.Posts do
+        @moduledoc \"""
+        Retrieves `%MyApp.Post{}` from `MyApp.Repo`
+        \"""
+
+        use Calcinator.Resources.Ecto.Repo
+
+        # Functions
+
+        ## Calcinator.Resources.Ecto.Repo callbacks
+
+        def ecto_schema_module(), do: MyApp.Post
+
+        @doc \"""
+        Always loads post author
+        \"""
+        def full_associations(query_options) do
+          [:author | super(query_options)]
+        end
+
+        def repo(), do: MyApp.Repo
+      end
+
   """
 
   alias Ecto.{Adapters.SQL.Sandbox, Query}
