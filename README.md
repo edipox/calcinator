@@ -107,7 +107,7 @@ end
 -- `apps/my_app/lib/my_app/author.ex`
 
 ```elixir
-defmodule MyApp.Author do
+defmodule MyApp.Post do
   @moduledoc """
   Posts by a `MyApp.Author`.
   """
@@ -264,7 +264,7 @@ end
 -- `apps/remote_app/lib/remote_app/author.ex`
 
 ```elixir
-defmodule RemoteApp.Author do
+defmodule RemoteApp.Post do
   @moduledoc """
   Posts by a `RemoteApp.Author`.
   """
