@@ -204,6 +204,10 @@ end
 ```
 --- `apps/my_app_web/lib/my_app_web/post_view.ex`
 
+The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
+to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
+free, so the `relationships/2` override excludes the relationship from including even linkage data when it's not loaded
+
 ##### Controller Module
 
 ```elixir
@@ -424,6 +428,10 @@ defmodule LocalAppWeb.PostView do
 end
 ```
 --- `apps/local_app_web/lib/local_app_web/post_view.ex`
+
+The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
+to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
+free, so the `relationships/2` override excludes the relationship from including even linkage data when it's not loaded
 
 ##### Controller Module
 
