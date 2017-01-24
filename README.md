@@ -157,7 +157,7 @@ defmodule MyAppWeb.PostView do
 
   alias MyApp.Post
 
-  use MyAppWeb.Web, :view
+  use JaSerializer.PhoenixView
   use Calcinator.JaSerializer.PhoenixView,
       phoenix_view_module: __MODULE__
 
@@ -368,7 +368,7 @@ end
 
 ##### View Module
 
-`Calcinator` relies on `JaSerializer` to define view module
+`Calcinator` relies on `JaSerializer` to define view module.
 
 ```elixir
 defmodule LocalAppWeb.PostView do
@@ -378,7 +378,7 @@ defmodule LocalAppWeb.PostView do
 
   alias RemoteApp.Post
 
-  use LocalAppWeb.Web, :view
+  use JaSerializer.PhoenixView
   use Calcinator.JaSerializer.PhoenixView,
       phoenix_view_module: __MODULE__
 
