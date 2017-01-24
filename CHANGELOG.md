@@ -3,28 +3,57 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v1.6.0](#v160)
+  - [v2.0.0](#v200)
     - [Enhancements](#enhancements)
-  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes)
-  - [v1.5.0](#v150)
+    - [Incompatible Changes](#incompatible-changes)
+  - [v1.7.0](#v170)
     - [Enhancements](#enhancements-1)
     - [Bug Fixes](#bug-fixes-1)
-  - [v1.4.0](#v140)
+  - [v1.6.0](#v160)
     - [Enhancements](#enhancements-2)
-  - [v1.3.0](#v130)
-    - [Enhancements](#enhancements-3)
+  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-2)
-  - [v1.2.0](#v120)
-    - [Enhancements](#enhancements-4)
+  - [v1.5.0](#v150)
+    - [Enhancements](#enhancements-3)
     - [Bug Fixes](#bug-fixes-3)
-  - [v1.1.0](#v110)
+  - [v1.4.0](#v140)
+    - [Enhancements](#enhancements-4)
+  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-5)
     - [Bug Fixes](#bug-fixes-4)
+  - [v1.2.0](#v120)
+    - [Enhancements](#enhancements-6)
+    - [Bug Fixes](#bug-fixes-5)
+  - [v1.1.0](#v110)
+    - [Enhancements](#enhancements-7)
+    - [Bug Fixes](#bug-fixes-6)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v2.0.0
+
+### Enhancements
+* [#10](https://github.com/C-S-D/calcinator/pull/10) - [@KronicDeth](https://github.com/KronicDeth)
+  * Explain why `relationships/2` is overridden in views
+  * Routing docs for `get_related_resource` and `show_relationship`
+  * Actions and related Authorization docs for `Calcinator.Controller`
+  * Use `Ecto.Repo` `config/0` instead of requiring `sandboxed?/0` to be defined.
+
+### Bug Fixes
+* [#10](https://github.com/C-S-D/calcinator/pull/10) - [@KronicDeth](https://github.com/KronicDeth)
+  * Add missing renames for README controllers
+    * `alias InterpreterServerWeb.Controller` -> `alias Calcinator.Controller`
+    * `use Controller.Resources,` -> `use Controller,`
+  * Replace `use MyApp.Web, :view` with `use JaSerializer.PhoenixView`, so it doesn't require `MyApp.Web.view/0` to include `use JaSerializer.PhoenixView`
+  * Renamed second `Author` `Ecto.Schema` modules to `Post`
+  * Don't require `user` assign in `Calcinator.Controller`
+  * Fix Elixir 1.4 `()` warnings.
+
+### Incompatible Changes
+* [#10](https://github.com/C-S-D/calcinator/pull/10) - Instead of requiring user assign in `Plug.Conn` to get `subject` for `%Calcinator{}`, a private key, `:calcinator_subject`, will be used using `Plug.Conn.put_private`.  The `subject` will be stored using `Calcinator.Controller.put_subject` and retrieved with `Calcinator.Controller.get_subject`.  Calling `put_subject` in a plug is shown in README and `Calcinator.Controller` examples. - [@KronicDeth](https://github.com/KronicDeth)
 
 ## v1.7.0
 
