@@ -107,7 +107,7 @@ end
 -- `apps/my_app/lib/my_app/author.ex`
 
 ```elixir
-defmodule MyApp.Author do
+defmodule MyApp.Post do
   @moduledoc """
   Posts by a `MyApp.Author`.
   """
@@ -157,7 +157,7 @@ defmodule MyAppWeb.PostView do
 
   alias MyApp.Post
 
-  use MyAppWeb.Web, :view
+  use JaSerializer.PhoenixView
   use Calcinator.JaSerializer.PhoenixView,
       phoenix_view_module: __MODULE__
 
@@ -204,22 +204,61 @@ end
 ```
 --- `apps/my_app_web/lib/my_app_web/post_view.ex`
 
+The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
+to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
+free, so the `relationships/2` override excludes the relationship from including even linkage data when it's not loaded
+
 ##### Controller Module
+
+*NOTE: Assumes that `user` assign is set by an authorization plug before the controller is called.*
+
+###### Authenticated/Authorized Read/Write Controller
 
 ```elixir
 defmodule MyAppWeb.PostController do
   @moduledoc """
-  Allows reading of Post that are fetched from Remote Server via RPC.
+  Allows authenticated and authorized reading and writing of `%MyApp.Post{}` that are fetched from `MyApp.Repo`.
   """
 
+  alias Calcinator.Controller
+
   use MyAppWeb.Web, :controller
-
-  alias InterpreterServerWeb.Controller
-
-  use Controller.Resources,
-      actions: ~w(index show)a,
+  use Controller,
+      actions: ~w(create delete get_related_resource index show show_relationship update)a,
       configuration: %Calcinator{
         authorization_module: MyAppWeb.Authorization,
+        ecto_schema_module: MyApp.Post,
+        resources_module: MyApp.Posts,
+        view_module: MyAppWeb.PostView
+      }
+
+  # Plugs
+
+  plug :put_subject
+
+  # Functions
+
+  def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
+end
+```
+--- `apps/my_app_web/lib/my_app_web/post_controller.ex`
+
+###### Public Read-only Controller
+
+*NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
+read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
+
+defmodule MyAppWeb.PostController do
+  @moduledoc """
+  Allows public reading of `MyApp.Post` that are fetched from `MyApp.Repo`.
+  """
+
+  alias Calcinator.Controller
+
+  use MyAppWeb.Web, :controller
+  use Controller,
+      actions: ~w(get_related_resource index show show_relationship)a,
+      configuration: %Calcinator{
         ecto_schema_module: MyApp.Post,
         resources_module: MyApp.Posts,
         view_module: MyAppWeb.PostView
@@ -260,7 +299,7 @@ end
 -- `apps/remote_app/lib/remote_app/author.ex`
 
 ```elixir
-defmodule RemoteApp.Author do
+defmodule RemoteApp.Post do
   @moduledoc """
   Posts by a `RemoteApp.Author`.
   """
@@ -368,7 +407,7 @@ end
 
 ##### View Module
 
-`Calcinator` relies on `JaSerializer` to define view module
+`Calcinator` relies on `JaSerializer` to define view module.
 
 ```elixir
 defmodule LocalAppWeb.PostView do
@@ -378,7 +417,7 @@ defmodule LocalAppWeb.PostView do
 
   alias RemoteApp.Post
 
-  use LocalAppWeb.Web, :view
+  use JaSerializer.PhoenixView
   use Calcinator.JaSerializer.PhoenixView,
       phoenix_view_module: __MODULE__
 
@@ -425,22 +464,61 @@ end
 ```
 --- `apps/local_app_web/lib/local_app_web/post_view.ex`
 
+The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
+to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
+free, so the `relationships/2` override excludes the relationship from including even linkage data when it's not loaded
+
 ##### Controller Module
+
+###### Authenticated/Authorized Read/Write Controller
+
+*NOTE: Assumes that `user` assign is set by an authorization plug before the controller is called.*
 
 ```elixir
 defmodule LocalAppWeb.PostController do
   @moduledoc """
-  Allows reading of Post that are fetched from Remote Server via RPC.
+  Allows authenticated and authorized reading and writing of `MyApp.Post` that are fetched from remote server over RPC.
   """
 
+  alias Calcinator.Controller
+
   use LocalAppWeb.Web, :controller
-
-  alias InterpreterServerWeb.Controller
-
-  use Controller.Resources,
-      actions: ~w(index show)a,
+  use Controller,
+      actions: ~w(create delete get_related_resource index show show_relationship update)a,
       configuration: %Calcinator{
         authorization_module: LocalAppWeb.Authorization,
+        ecto_schema_module: RemoteApp.Post,
+        resources_module: RemoteApp.Posts,
+        view_module: LocalAppWeb.PostView
+      }
+
+  # Plugs
+
+  plug :put_subject
+
+  # Functions
+
+  def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
+end
+```
+--- `apps/local_app_web/lib/local_app_web/post_controller.ex`
+
+###### Public Read-only Controller
+
+*NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
+read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
+
+defmodule LocalAppWeb.PostController do
+  @moduledoc """
+  Allows public reading of `%RemoteApp.Post{}` that are fetched from remote server over RPC.
+  """
+
+  alias Calcinator.Controller
+
+  use MyAppWeb.Web, :controller
+  use Controller,
+      actions: ~w(get_related_resource index show show_relationship)a,
+      configuration: %Calcinator{
         ecto_schema_module: RemoteApp.Post,
         resources_module: RemoteApp.Posts,
         view_module: LocalAppWeb.PostView
@@ -448,4 +526,3 @@ defmodule LocalAppWeb.PostController do
 end
 ```
 --- `apps/local_app_web/lib/local_app_web/post_controller.ex`
-

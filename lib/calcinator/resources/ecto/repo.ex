@@ -155,7 +155,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   def allow_sandbox_access(%{owner: owner, repo: repo}) do
     repo
     |> List.wrap()
-    |> Enum.each(&Sandbox.allow(&1, owner, self))
+    |> Enum.each(&Sandbox.allow(&1, owner, self()))
   end
 
   @doc """
@@ -272,9 +272,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @doc """
   Whether `module` `repo/0` is sandboxed and `allow_sandbox_access/1` should be called.
   """
-  def sandboxed?(module) do
-    module.repo().sandboxed?()
-  end
+  def sandboxed?(module), do: module.repo().config[:pool] == Ecto.Adapters.SQL.Sandbox
 
   @doc """
   Updates `struct` in `module` `repo/0` using `changeset`.
