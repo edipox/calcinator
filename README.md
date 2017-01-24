@@ -210,20 +210,55 @@ free, so the `relationships/2` override excludes the relationship from including
 
 ##### Controller Module
 
+*NOTE: Assumes that `user` assign is set by an authorization plug before the controller is called.*
+
+###### Authenticated/Authorized Read/Write Controller
+
 ```elixir
 defmodule MyAppWeb.PostController do
   @moduledoc """
-  Allows reading of Post that are fetched from Remote Server via RPC.
+  Allows authenticated and authorized reading and writing of `%MyApp.Post{}` that are fetched from `MyApp.Repo`.
   """
-
-  use MyAppWeb.Web, :controller
 
   alias Calcinator.Controller
 
+  use MyAppWeb.Web, :controller
   use Controller,
-      actions: ~w(index show)a,
+      actions: ~w(create delete get_related_resource index show show_relationship update)a,
       configuration: %Calcinator{
         authorization_module: MyAppWeb.Authorization,
+        ecto_schema_module: MyApp.Post,
+        resources_module: MyApp.Posts,
+        view_module: MyAppWeb.PostView
+      }
+
+  # Plugs
+
+  plug :put_subject
+
+  # Functions
+
+  def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
+end
+```
+--- `apps/my_app_web/lib/my_app_web/post_controller.ex`
+
+###### Public Read-only Controller
+
+*NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
+read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
+
+defmodule MyAppWeb.PostController do
+  @moduledoc """
+  Allows public reading of `MyApp.Post` that are fetched from `MyApp.Repo`.
+  """
+
+  alias Calcinator.Controller
+
+  use MyAppWeb.Web, :controller
+  use Controller,
+      actions: ~w(get_related_resource index show show_relationship)a,
+      configuration: %Calcinator{
         ecto_schema_module: MyApp.Post,
         resources_module: MyApp.Posts,
         view_module: MyAppWeb.PostView
@@ -435,20 +470,55 @@ free, so the `relationships/2` override excludes the relationship from including
 
 ##### Controller Module
 
+###### Authenticated/Authorized Read/Write Controller
+
+*NOTE: Assumes that `user` assign is set by an authorization plug before the controller is called.*
+
 ```elixir
 defmodule LocalAppWeb.PostController do
   @moduledoc """
-  Allows reading of Post that are fetched from Remote Server via RPC.
+  Allows authenticated and authorized reading and writing of `MyApp.Post` that are fetched from remote server over RPC.
   """
-
-  use LocalAppWeb.Web, :controller
 
   alias Calcinator.Controller
 
+  use LocalAppWeb.Web, :controller
   use Controller,
-      actions: ~w(index show)a,
+      actions: ~w(create delete get_related_resource index show show_relationship update)a,
       configuration: %Calcinator{
         authorization_module: LocalAppWeb.Authorization,
+        ecto_schema_module: RemoteApp.Post,
+        resources_module: RemoteApp.Posts,
+        view_module: LocalAppWeb.PostView
+      }
+
+  # Plugs
+
+  plug :put_subject
+
+  # Functions
+
+  def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
+end
+```
+--- `apps/local_app_web/lib/local_app_web/post_controller.ex`
+
+###### Public Read-only Controller
+
+*NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
+read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
+
+defmodule LocalAppWeb.PostController do
+  @moduledoc """
+  Allows public reading of `%RemoteApp.Post{}` that are fetched from remote server over RPC.
+  """
+
+  alias Calcinator.Controller
+
+  use MyAppWeb.Web, :controller
+  use Controller,
+      actions: ~w(get_related_resource index show show_relationship)a,
+      configuration: %Calcinator{
         ecto_schema_module: RemoteApp.Post,
         resources_module: RemoteApp.Posts,
         view_module: LocalAppWeb.PostView
@@ -456,4 +526,3 @@ defmodule LocalAppWeb.PostController do
 end
 ```
 --- `apps/local_app_web/lib/local_app_web/post_controller.ex`
-
