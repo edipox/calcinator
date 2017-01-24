@@ -2,6 +2,57 @@ defmodule Calcinator.Controller do
   @moduledoc """
   Controller that replicates [`JSONAPI::ActsAsResourceController`](http://www.rubydoc.info/gems/jsonapi-resources/
   JSONAPI/ActsAsResourceController).
+
+  ## Routing
+
+  ### CRUD
+
+  If you only the standard CRUD actions
+
+      use Calcinator.Controller,
+          actions: ~w(create delete index show update)a,
+          ...
+
+  then the normal Phoenix `resources` macro will work
+
+     resources "/posts", PostController
+
+  ### `get_related_resource/3` and `show_relationship/3`
+
+  If you use the `get_related_resource/3` or `show_relationship/3` actions
+
+      use Calcinator.Controller,
+          actions: ~w(get_related_resource index show show_relationship),
+          ...
+
+  You'll need custom routes
+
+      resources "/posts", PostController do
+         get "/author",
+             PostController,
+             :get_related_resource,
+             as: :author,
+             assigns: %{
+               related: %{
+                 view_module: AuthorView
+               },
+               source: %{
+                 association: :credential_source,
+                 id_key: "credential_id"
+               }
+             }
+         get "/relationships/author"",
+            PostController,
+            :show_relationship,
+            as: :relationships_author,
+            assigns: %{
+              association: :author,
+              source: %{
+                id_key: "author_id"
+              }
+            }
+      end
+
   """
 
   alias Alembic.Document
@@ -113,6 +164,27 @@ defmodule Calcinator.Controller do
     end
   end
 
+  @doc """
+  Unlike `show`, which can infer its information from the default routing information provided by Phoenix's `resources`
+  routing macro, `get_related_resource/3` requires manual routing to setup the `related` and `source` assigns.
+
+      resources "/posts", PostController do
+         get "/author",
+             PostController,
+             :get_related_resource,
+             as: :author,
+             assigns: %{
+               related: %{
+                 view_module: AuthorView
+               },
+               source: %{
+                 association: :credential_source,
+                 id_key: "credential_id"
+               }
+             }
+      end
+
+  """
   @spec get_related_resource(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
   def get_related_resource(
         conn = %Conn{
@@ -176,6 +248,24 @@ defmodule Calcinator.Controller do
      end
   end
 
+  @doc """
+  Unlike `show`, which can infer its information from the default routing information provided by Phoenix's `resources`
+  routing macro, `show_relationship/3` requires manual routing to setup the `association` and `source` assigns.
+
+      resources "/posts", PostController do
+        get "/relationships/author"",
+            PostController,
+            :show_relationship,
+            as: :relationships_author,
+            assigns: %{
+              association: :author,
+              source: %{
+                id_key: "author_id"
+              }
+            }
+      end
+
+  """
   @spec show_relationship(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
   def show_relationship(
         conn = %Conn{
