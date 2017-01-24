@@ -3,6 +3,62 @@ defmodule Calcinator.Controller do
   Controller that replicates [`JSONAPI::ActsAsResourceController`](http://www.rubydoc.info/gems/jsonapi-resources/
   JSONAPI/ActsAsResourceController).
 
+  ## Actions
+
+  The available actions:
+    * `create`
+    * `delete`
+    * `get_related_resource`
+    * `index`
+    * `show`
+    * `show_relationship`
+    * `update`
+
+  Chosen actions are specified to the `use Calcinator.Controller` call as a list of atoms:
+
+      use Calcinator.Controller,
+          actions: ~w(create delete get_related_resource index show show_relationship update)a,
+          ...
+
+  ## Authorization
+
+  ### Authenticated/Authorized Read/Write
+
+  If you authenticate users, you need to tell `Calcinator.Controller` they are your `subject` for the
+  `authorization_module`
+
+      alias Calcinator.Controller
+
+      use Controller,
+          actions: ~w(create delete get_related_resource index show show_relationship update)a,
+          configuration: %Controller{
+            authorization_module: MyApp.Authorization,
+            ...
+          }
+
+      # Plugs
+
+      plug :put_subject
+
+      # Functions
+
+      def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
+
+  ### Public Read-Only
+
+  If the controller exposes a read-only resource that you're comfortable being publicly-readable, you can skip
+  authorization: it will default to `Calcinator.Authorization.Subjectless`.  `Calcinator.Authorization.Subjectless` will
+  error out if you starts to have a non-`nil` `subject`, so it will catch if you're mixing authenticated and
+  unauthenticated pipelines accidentally.
+
+      alias Calcinator.Controller
+
+      use Controller,
+          actions: ~w(get_related_resource index show show_relationship)a,
+          configuration: %Controller{
+            ...
+          }
+
   ## Routing
 
   ### CRUD
