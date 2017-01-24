@@ -272,9 +272,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @doc """
   Whether `module` `repo/0` is sandboxed and `allow_sandbox_access/1` should be called.
   """
-  def sandboxed?(module) do
-    module.repo().sandboxed?()
-  end
+  def sandboxed?(module), do: module.repo().config[:pool] == Ecto.Adapters.SQL.Sandbox
 
   @doc """
   Updates `struct` in `module` `repo/0` using `changeset`.
