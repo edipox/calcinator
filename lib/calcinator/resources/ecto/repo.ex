@@ -155,7 +155,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   def allow_sandbox_access(%{owner: owner, repo: repo}) do
     repo
     |> List.wrap()
-    |> Enum.each(&Sandbox.allow(&1, owner, self))
+    |> Enum.each(&Sandbox.allow(&1, owner, self()))
   end
 
   @doc """

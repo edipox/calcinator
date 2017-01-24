@@ -78,6 +78,6 @@ defmodule Calcinator.Meta.Beam do
 
   @spec version1_token(repo) :: version1_token
   def version1_token(repo) do
-    %{owner: self, repo: repo}
+    %{owner: self(), repo: repo}
   end
 end
