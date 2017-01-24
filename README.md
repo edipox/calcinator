@@ -214,9 +214,9 @@ defmodule MyAppWeb.PostController do
 
   use MyAppWeb.Web, :controller
 
-  alias InterpreterServerWeb.Controller
+  alias Calcinator.Controller
 
-  use Controller.Resources,
+  use Controller,
       actions: ~w(index show)a,
       configuration: %Calcinator{
         authorization_module: MyAppWeb.Authorization,
@@ -435,9 +435,9 @@ defmodule LocalAppWeb.PostController do
 
   use LocalAppWeb.Web, :controller
 
-  alias InterpreterServerWeb.Controller
+  alias Calcinator.Controller
 
-  use Controller.Resources,
+  use Controller,
       actions: ~w(index show)a,
       configuration: %Calcinator{
         authorization_module: LocalAppWeb.Authorization,
