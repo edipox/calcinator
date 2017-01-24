@@ -51,6 +51,7 @@
   * Renamed second `Author` `Ecto.Schema` modules to `Post`
   * Don't require `user` assign in `Calcinator.Controller`
   * Fix Elixir 1.4 `()` warnings.
+* [#11](https://github.com/C-S-D/calcinator/pull/11) - `Code.ensure_loaded?(Phoenix.Controller)` can be used to protect `Calcinator.Controller.Error` and `Calcinator.Controller`, so that it is not defined when its dependency, `Phoenix.Controller` is not available.  Without this change, `(CompileError) lib/calcinator/controller/error.ex:12: module Phoenix.Controller is not loaded and could not be found` is raised in retort. - [@KronicDeth](https://github.com/KronicDeth)
 
 ### Incompatible Changes
 * [#10](https://github.com/C-S-D/calcinator/pull/10) - Instead of requiring user assign in `Plug.Conn` to get `subject` for `%Calcinator{}`, a private key, `:calcinator_subject`, will be used using `Plug.Conn.put_private`.  The `subject` will be stored using `Calcinator.Controller.put_subject` and retrieved with `Calcinator.Controller.get_subject`.  Calling `put_subject` in a plug is shown in README and `Calcinator.Controller` examples. - [@KronicDeth](https://github.com/KronicDeth)
