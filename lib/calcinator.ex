@@ -6,7 +6,7 @@ defmodule Calcinator do
 
   alias Alembic.{Document, Fetch, Fetch.Includes, FromJson, ToParams, Source}
   alias Calcinator.{Authorization, Meta}
-  alias Calcinator.Authorization.Subjectless
+  alias Calcinator.Authorization.SubjectLess
   alias Calcinator.Resources.{Page, Sorts}
 
   # Constants
@@ -16,7 +16,7 @@ defmodule Calcinator do
   # Struct
 
   defstruct associations_by_include: %{},
-            authorization_module: Subjectless,
+            authorization_module: SubjectLess,
             ecto_schema_module: nil,
             params: %{},
             resources_module: nil,
