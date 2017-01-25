@@ -3,35 +3,46 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v2.0.0](#v200)
+  - [v2.1.0](#v210)
     - [Enhancements](#enhancements)
     - [Bug Fixes](#bug-fixes)
-    - [Incompatible Changes](#incompatible-changes)
-  - [v1.7.0](#v170)
+  - [v2.0.0](#v200)
     - [Enhancements](#enhancements-1)
     - [Bug Fixes](#bug-fixes-1)
-  - [v1.6.0](#v160)
+    - [Incompatible Changes](#incompatible-changes)
+  - [v1.7.0](#v170)
     - [Enhancements](#enhancements-2)
-  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-2)
-  - [v1.5.0](#v150)
+  - [v1.6.0](#v160)
     - [Enhancements](#enhancements-3)
+  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-3)
-  - [v1.4.0](#v140)
+  - [v1.5.0](#v150)
     - [Enhancements](#enhancements-4)
-  - [v1.3.0](#v130)
-    - [Enhancements](#enhancements-5)
     - [Bug Fixes](#bug-fixes-4)
-  - [v1.2.0](#v120)
+  - [v1.4.0](#v140)
+    - [Enhancements](#enhancements-5)
+  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-6)
     - [Bug Fixes](#bug-fixes-5)
-  - [v1.1.0](#v110)
+  - [v1.2.0](#v120)
     - [Enhancements](#enhancements-7)
     - [Bug Fixes](#bug-fixes-6)
+  - [v1.1.0](#v110)
+    - [Enhancements](#enhancements-8)
+    - [Bug Fixes](#bug-fixes-7)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v2.1.0
+
+### Enhancements
+* [#12](https://github.com/C-S-D/calcinator/pull/12) - Regression tests that `%Calcinator{}` default `authorization_module` implements `Calcinator.Authorization` behaviour. - [@KronicDeth](https://github.com/KronicDeth)
+
+### Bug Fixes
+* [#12](https://github.com/C-S-D/calcinator/pull/12) - Fix capitalization of `SubjectLess` when used as the `%Calcinator{}` default `authorization_module`. - [@KronicDeth](https://github.com/KronicDeth)
 
 ## v2.0.0
 
