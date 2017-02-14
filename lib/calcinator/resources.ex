@@ -3,6 +3,7 @@ defmodule Calcinator.Resources do
   A module that exposes Ecto schema structs
   """
 
+  alias Alembic.{Document, Error, Source}
   alias Resources.Page
 
   # Types
@@ -206,6 +207,40 @@ defmodule Calcinator.Resources do
       [] ->
         {:error, attribute}
     end
+  end
+
+  @doc """
+  Error when a filter `name` is not supported by the callback module.
+
+      iex> Calcinator.Resources.unknown_filter("name")
+      %Alembic.Document{
+        errors: [
+          %Alembic.Error{
+            detail: "Unknown name filter",
+            source: %Alembic.Source{
+              pointer: "/filter/name"
+            },
+            status: "422",
+            title: "Unknown Filter"
+          }
+        ]
+      }
+
+  """
+  @spec unknown_filter(name :: String.t) :: Document.t
+  def unknown_filter(name) do
+    %Document{
+      errors: [
+        %Error{
+          detail: "Unknown #{name} filter",
+          title: "Unknown Filter",
+          source: %Source{
+            pointer: "/filter/#{name}"
+          },
+          status: "422"
+        }
+      ]
+    }
   end
 
   ## Private Functions

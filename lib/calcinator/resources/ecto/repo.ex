@@ -47,11 +47,13 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
 
+  alias Alembic.Document
   alias Ecto.{Adapters.SQL.Sandbox, Query}
 
   require Ecto.Query
   require Logger
 
+  import Calcinator.Resources, only: [unknown_filter: 1]
   import Ecto.Changeset, only: [cast: 3]
 
   # Types
@@ -67,6 +69,18 @@ defmodule Calcinator.Resources.Ecto.Repo do
   The `Ecto.Schema` module stored in `repo/0`.
   """
   @callback ecto_schema_module() :: module
+
+  @doc """
+  Filters `query` by `name` with the given `value` prior to running query on `module` `repo` in `list/1`
+
+  ## Returns
+
+    `{:ok, query}` - given `query` with `name` filter with `value` applied
+    `{:error, Alembic.Document.t}` - JSONAPI error document with error(s) showing why either `name` filter was not
+      supported or `value` was not supported for `name` filter.
+
+  """
+  @callback filter(Ecto.Query.t, name :: String.t, value :: String.t) :: {:ok, Ecto.Query.t} | {:error, Document.t}
 
   @doc """
   The full list of associations to preload in
@@ -86,6 +100,8 @@ defmodule Calcinator.Resources.Ecto.Repo do
   The `Ecto.Repo` that stores `ecto_schema_module/0`.
   """
   @callback repo() :: module
+
+  @optional_callbacks filter: 3
 
   # Macros
 
@@ -251,21 +267,25 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   ## Returns
 
+    * `{:error, Alembic.Document.t}` - JSONAPI error listing the unknown filters in `opts`
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:ok, [struct], nil}` - `[struct]` is the list of all `module` `ecto_schema_module/0` in `module` `repo/0`.
       There is no (current) support for pagination: pagination is the `nil` in the 3rd element of the tuple.
 
   """
-  @spec list(module, Resources.query_options) :: {:ok, [Ecto.Schema.t], nil} | {:error, :ownership}
+  @spec list(module, Resources.query_options) ::
+        {:ok, [Ecto.Schema.t], nil} | {:error, :ownership} | {:error, Document.t}
   def list(module, opts) do
     repo = module.repo()
     {:ok, query} = preload(module, module.ecto_schema_module(), opts)
 
-    case wrap_ownership_error(repo, :all, [query]) do
-      {:error, :ownership} ->
-        {:error, :ownership}
-      all ->
-        {:ok, all, nil}
+    with {:ok, query} <- filter(module, query, opts) do
+      case wrap_ownership_error(repo, :all, [query]) do
+        {:error, :ownership} ->
+          {:error, :ownership}
+        all ->
+          {:ok, all, nil}
+      end
     end
   end
 
@@ -317,6 +337,33 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   ## Private Functions
+
+  defp apply_filter(module, query, name, value) when is_binary(name) and is_binary(value) do
+    if function_exported?(module, :filter, 3) do
+      module.filter(query, name, value)
+    else
+      {:error, unknown_filter(name)}
+    end
+  end
+
+  defp apply_filters(module, query, filters) when is_map(filters) do
+    Enum.reduce filters, {:ok, query}, fn {name, value}, acc ->
+       case acc do
+         {:ok, acc_query} ->
+           apply_filter(module, acc_query, name, value)
+         acc = {:error, acc_document = %Document{}} ->
+           case apply_filter(module, query, name, value) do
+             {:ok, _} -> acc
+             {:error, filter_document = %Document{}} -> {:error, Document.merge(acc_document, filter_document)}
+           end
+       end
+    end
+  end
+
+  defp filter(module, query, query_options) when is_map(query_options) do
+    filters = Map.get(query_options, :filters, [])
+    apply_filters(module, query, filters)
+  end
 
   defp preload(module, data_or_queryable, query_options) do
     ecto_schema_module = module.ecto_schema_module()

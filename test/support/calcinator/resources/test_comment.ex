@@ -8,7 +8,7 @@ defmodule Calcinator.Resources.TestComment do
   schema "comments" do
     field :text, :string
 
-    timestamps
+    timestamps()
 
     belongs_to :post, Calcinator.Resources.TestPost
   end
