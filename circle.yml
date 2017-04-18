@@ -22,8 +22,7 @@ dependencies:
     - mix dialyze --no-analyse
 test:
   override:
-    - mix test
-
+    - mix coveralls.circle
   post:
     - mkdir -p ${CIRCLE_TEST_REPORTS}/calcinator
     - mv _build/test/lib/calcinator/test-junit-report.xml ${CIRCLE_TEST_REPORTS}/calcinator/

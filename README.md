@@ -1,5 +1,7 @@
 # Calcinator
 
+[![Coverage Status](https://coveralls.io/repos/github/C-S-D/calcinator/badge.svg)](https://coveralls.io/github/C-S-D/calcinator)
+
 Calcinator provides a standardized interface for processing JSONAPI request that is transport neutral.  CSD uses it
 for both API controllers and RPC servers.
 
