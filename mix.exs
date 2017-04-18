@@ -46,7 +46,7 @@ defmodule Calcinator.Mixfile do
       {:credo, "0.5.3", only: [:test]},
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
-      {:ex_doc, "~> 0.14.0", only: [:dev, :test]},
+      {:ex_doc, "~> 0.15.1", only: [:dev, :test]},
       {:ja_serializer, "~> 0.11.0"},
       # JUnit formatter, so that CircleCI can consume test output for CircleCI UI
       {:junit_formatter, "~> 1.0", only: :test},
