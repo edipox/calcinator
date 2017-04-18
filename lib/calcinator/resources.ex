@@ -194,7 +194,6 @@ defmodule Calcinator.Resources do
     * `{:error, attribute}` - `attribute` does not have corresponding field in `ecto_schema_module`
 
   """
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def attribute_to_field(attribute, ecto_schema_module) when is_binary(attribute) and is_atom(ecto_schema_module) do
     field_string = String.replace(attribute, "-", "_")
 

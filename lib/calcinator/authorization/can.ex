@@ -22,8 +22,7 @@ defmodule Calcinator.Authorization.Can do
   """
   defmacro __using__([]) do
     quote do
-      alias Calcinator.Authorization
-      alias Calcinator.Authorization.Can
+      alias Calcinator.{Authorization, Authorization.Can}
 
       @behaviour Authorization
 

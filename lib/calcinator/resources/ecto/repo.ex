@@ -49,8 +49,8 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   alias Ecto.{Adapters.SQL.Sandbox, Query}
 
+  require Ecto.Query
   require Logger
-  require Query
 
   import Ecto.Changeset, only: [cast: 3]
 
@@ -371,17 +371,15 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   defp wrap_ownership_error(repo, function, arguments) do
-    try do
-      apply(repo, function, arguments)
-    rescue
-      ownership_error in DBConnection.OwnershipError ->
-        ownership_error
-        |> inspect()
-        |> Logger.error()
+    apply(repo, function, arguments)
+  rescue
+    ownership_error in DBConnection.OwnershipError ->
+      ownership_error
+      |> inspect()
+      |> Logger.error()
 
-        {:error, :ownership}
-    else
-      other -> other
-    end
+      {:error, :ownership}
+  else
+    other -> other
   end
 end

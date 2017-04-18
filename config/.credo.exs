@@ -2,6 +2,7 @@
   configs: [
     %{
       checks: [
+        {Credo.Check.Consistency.MultiAliasImportRequireUse, false},
         {Credo.Check.Design.AliasUsage, excluded_lastnames: ~w(Controller), excluded_namespaces: ~w(Meta)},
         {Credo.Check.Readability.MaxLineLength, priority: :low, max_length: 120}
       ],
@@ -10,7 +11,8 @@
         # "spec/"
         included: ["lib/", "test/"]
       },
-      name: "default"
+      name: "default",
+      strict: true
     }
   ]
 }
