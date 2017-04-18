@@ -57,6 +57,8 @@ defmodule Calcinator.Mixfile do
       # Code coverage
       {:excoveralls, "~> 0.6.3", only: :test},
       {:ex_doc, "~> 0.15.1", only: [:dev, :test]},
+      # documentation coverage
+      {:inch_ex, "~> 0.5.1", only: [:dev, :test]},
       {:ja_serializer, ">= 0.11.2 and < 0.13.0"},
       # JUnit formatter, so that CircleCI can consume test output for CircleCI UI
       {:junit_formatter, "~> 1.0", only: :test},
