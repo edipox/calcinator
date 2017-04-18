@@ -1,5 +1,6 @@
 # Calcinator
 
+[![CircleCI](https://circleci.com/gh/C-S-D/calcinator.svg?style=svg)](https://circleci.com/gh/C-S-D/calcinator)
 [![Coverage Status](https://coveralls.io/repos/github/C-S-D/calcinator/badge.svg)](https://coveralls.io/github/C-S-D/calcinator)
 
 Calcinator provides a standardized interface for processing JSONAPI request that is transport neutral.  CSD uses it
