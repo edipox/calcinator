@@ -12,13 +12,21 @@ defmodule Calcinator.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env),
       package: package(),
       preferred_cli_env: [
+        "coveralls": :test,
+        "coveralls.circle": :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        "coveralls.post": :test,
         "credo": :test,
         "dialyze": :test,
         "docs": :test
       ],
       source_url: "https://github.com/C-S-D/calcinator",
       start_permanent: Mix.env == :prod,
-      version: "2.1.0"
+      test_coverage: [
+        tool: ExCoveralls
+      ],
+      version: "2.2.0"
     ]
   end
 
@@ -41,13 +49,17 @@ defmodule Calcinator.Mixfile do
   defp deps do
     [
       # JSONAPI document coding
-      {:alembic, ">= 3.1.1 and < 3.2.0"},
+      {:alembic, ">= 3.1.1 and < 4.0.0"},
       # Static Analysis
-      {:credo, "0.5.3", only: [:test]},
+      {:credo, "0.7.3", only: [:test]},
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
-      {:ex_doc, "~> 0.14.0", only: [:dev, :test]},
-      {:ja_serializer, "~> 0.11.0"},
+      # Code coverage
+      {:excoveralls, "~> 0.6.3", only: :test},
+      {:ex_doc, "~> 0.15.1", only: [:dev, :test]},
+      # documentation coverage
+      {:inch_ex, "~> 0.5.1", only: [:dev, :test]},
+      {:ja_serializer, ">= 0.11.2 and < 0.13.0"},
       # JUnit formatter, so that CircleCI can consume test output for CircleCI UI
       {:junit_formatter, "~> 1.0", only: :test},
       # Phoenix.Controller is used in Calcinator.Controller.Error
