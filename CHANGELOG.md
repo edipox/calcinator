@@ -36,6 +36,23 @@
 
 # Changelog
 
+## v2.2.0
+
+### Enhancements
+* [#14](https://github.com/C-S-D/calcinator/pull/14) - [@KronicDeth](https://github.com/KronicDeth)
+  * Dependency updates
+    * `alembic` to `3.2.0`
+    * `ex_doc` to `0.15.1`
+    * `ja_serializer` to `0.12.0` (but continue compatibility with older versions)
+    * `phoenix` to `1.2.3`
+    * `credo` to `0.7.3`
+  * Add `excoveralls` for coverage tracking
+  * Add CircleCI build status badge
+  * Add CodeClimate `credo` status badge
+  * Add HexFaktor dependencies status badge
+  * Add InchEx documentation badge
+  * Use Erlang 19.3 and Elixir 1.4.1 on CircleCI
+
 ## v2.1.0
 
 ### Enhancements
