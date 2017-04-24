@@ -3,40 +3,47 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v2.2.0](#v220)
+  - [v2.3.0](#v230)
     - [Enhancements](#enhancements)
-  - [v2.1.0](#v210)
+  - [v2.2.0](#v220)
     - [Enhancements](#enhancements-1)
+  - [v2.1.0](#v210)
+    - [Enhancements](#enhancements-2)
     - [Bug Fixes](#bug-fixes)
   - [v2.0.0](#v200)
-    - [Enhancements](#enhancements-2)
+    - [Enhancements](#enhancements-3)
     - [Bug Fixes](#bug-fixes-1)
     - [Incompatible Changes](#incompatible-changes)
   - [v1.7.0](#v170)
-    - [Enhancements](#enhancements-3)
+    - [Enhancements](#enhancements-4)
     - [Bug Fixes](#bug-fixes-2)
   - [v1.6.0](#v160)
-    - [Enhancements](#enhancements-4)
+    - [Enhancements](#enhancements-5)
   - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-3)
   - [v1.5.0](#v150)
-    - [Enhancements](#enhancements-5)
+    - [Enhancements](#enhancements-6)
     - [Bug Fixes](#bug-fixes-4)
   - [v1.4.0](#v140)
-    - [Enhancements](#enhancements-6)
-  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-7)
+  - [v1.3.0](#v130)
+    - [Enhancements](#enhancements-8)
     - [Bug Fixes](#bug-fixes-5)
   - [v1.2.0](#v120)
-    - [Enhancements](#enhancements-8)
+    - [Enhancements](#enhancements-9)
     - [Bug Fixes](#bug-fixes-6)
   - [v1.1.0](#v110)
-    - [Enhancements](#enhancements-9)
+    - [Enhancements](#enhancements-10)
     - [Bug Fixes](#bug-fixes-7)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v2.3.0
+
+### Enhancements
+* [#16](https://github.com/C-S-D/calcinator/pull/16) - `Calcinator.Resources.Ecto.Repo.filter(query, name, value)` is a new optional callback that `use Calcinator.Resources.Ecto.Repo` modules can implement to support filters on the query before `module` `repo` `all` is called. - [@KronicDeth](https://github.com/KronicDeth)
 
 ## v2.2.0
 
