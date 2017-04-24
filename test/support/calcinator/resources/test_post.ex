@@ -6,7 +6,7 @@ defmodule Calcinator.Resources.TestPost do
   use Ecto.Schema
 
   schema "posts" do
-    timestamps
+    timestamps()
 
     belongs_to :author, Calcinator.Resources.TestAuthor
     has_many :comments, Calcinator.Resources.TestComment
