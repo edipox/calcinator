@@ -362,7 +362,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   defp filter(module, query, query_options) when is_map(query_options) do
-    filters = Map.get(query_options, :filters, [])
+    filters = Map.get(query_options, :filters, %{})
     apply_filters(module, query, filters)
   end
 

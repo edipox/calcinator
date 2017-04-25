@@ -551,7 +551,7 @@ defmodule Calcinator do
     end
   end
 
-  defp params_to_filters_query_option(params), do: {:ok, Map.get(params, "filter", [])}
+  defp params_to_filters_query_option(params), do: {:ok, Map.get(params, "filter", %{})}
 
   defp params_to_page_query_option(params), do: Page.from_params(params)
 
