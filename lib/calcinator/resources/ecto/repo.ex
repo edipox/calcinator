@@ -178,13 +178,14 @@ defmodule Calcinator.Resources.Ecto.Repo do
   `Ecto.Changeset.t` using the default `Ecto.Schema.t` for `module` with `params`
   """
   @spec changeset(module, Resources.params) :: Ecto.Changeset.t
-  def changeset(module, params), do: module.changeset(module.ecto_schema_module.__struct__, params)
+  def changeset(module, params) when is_map(params), do: module.changeset(module.ecto_schema_module.__struct__, params)
 
   @doc """
   1. Casts `params` into `data` using `optional_field/0` and `required_fields/0` of `module`
   2. Validates changeset with `module` `ecto_schema_module/0` `changeset/0`
   """
-  def changeset(module, data, params) do
+  @spec changeset(module, Ecto.Schema.t, Resources.params) :: Ecto.Changeset.t
+  def changeset(module, data, params) when is_map(params) do
     ecto_schema_module = module.ecto_schema_module()
 
     data
@@ -205,7 +206,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @doc """
   Uses `query_options` as full associatons with no additions.
   """
-  def full_associations(query_options), do: Map.get(query_options, :associations, [])
+  def full_associations(query_options) when is_map(query_options), do: Map.get(query_options, :associations, [])
 
   @doc """
   Gets resource with `id` from `module` `repo/0`.
@@ -220,7 +221,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   """
   @spec get(module, Resources.id, Resources.query_options) ::
         {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
-  def get(module, id, opts) do
+  def get(module, id, query_options) when is_map(query_options) do
     ecto_schema_module = module.ecto_schema_module()
     repo = module.repo()
 
@@ -230,7 +231,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
       nil ->
         {:error, :not_found}
       data ->
-        preload(module, data, opts)
+        preload(module, data, query_options)
     end
   end
 
@@ -249,18 +250,18 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @spec insert(module, Ecto.Changeset.t | map, Resources.query_options) ::
         {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
 
-  def insert(module, changeset = %Ecto.Changeset{}, opts) when is_map(opts) do
+  def insert(module, changeset = %Ecto.Changeset{}, query_options) when is_map(query_options) do
     repo = module.repo()
 
     with {:ok, inserted} <- wrap_ownership_error(repo, :insert, [changeset]) do
-      preload(module, inserted, opts)
+      preload(module, inserted, query_options)
     end
   end
 
-  def insert(module, params, opts) when is_map(params) and is_map(opts) do
+  def insert(module, params, query_options) when is_map(params) and is_map(query_options) do
     params
     |> module.changeset()
-    |> module.insert(opts)
+    |> module.insert(query_options)
   end
 
   @doc """
@@ -275,11 +276,11 @@ defmodule Calcinator.Resources.Ecto.Repo do
   """
   @spec list(module, Resources.query_options) ::
         {:ok, [Ecto.Schema.t], nil} | {:error, :ownership} | {:error, Document.t}
-  def list(module, opts) do
+  def list(module, query_options) when is_map(query_options) do
     repo = module.repo()
-    {:ok, query} = preload(module, module.ecto_schema_module(), opts)
+    {:ok, query} = preload(module, module.ecto_schema_module(), query_options)
 
-    with {:ok, query} <- filter(module, query, opts) do
+    with {:ok, query} <- filter(module, query, query_options) do
       case wrap_ownership_error(repo, :all, [query]) do
         {:error, :ownership} ->
           {:error, :ownership}
@@ -308,7 +309,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   """
   @spec update(module, Ecto.Changeset.t, Resources.query_options) ::
         {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
-  def update(module, changeset, query_options) do
+  def update(module, changeset, query_options) when is_map(query_options) do
     repo = module.repo()
 
     with {:ok, updated} <- wrap_ownership_error(repo, :update, [changeset]) do
@@ -330,7 +331,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   """
   @spec update(module, Ecto.Schema.t, Resources.params, Resources.query_options) ::
           {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-  def update(module, data, params, query_options) do
+  def update(module, data, params, query_options) when is_map(params) and is_map(query_options) do
     data
     |> module.changeset(params)
     |> module.update(query_options)
@@ -361,11 +362,11 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   defp filter(module, query, query_options) when is_map(query_options) do
-    filters = Map.get(query_options, :filters, [])
+    filters = Map.get(query_options, :filters, %{})
     apply_filters(module, query, filters)
   end
 
-  defp preload(module, data_or_queryable, query_options) do
+  defp preload(module, data_or_queryable, query_options) when is_map(query_options) do
     ecto_schema_module = module.ecto_schema_module()
 
     case data_or_queryable do
@@ -376,7 +377,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     end
   end
 
-  defp preload_data(module, data, query_options) do
+  defp preload_data(module, data, query_options) when is_map(query_options) do
     repo = module.repo()
 
     case wrap_ownership_error(repo, :preload, [data, module.full_associations(query_options)]) do
@@ -406,7 +407,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   @spec update_preload(module, Ecto.Schema.t, Resources.query_options) :: {:ok, Ecto.Schema.t} | {:error, :ownership}
-  defp update_preload(module, updated, query_options) do
+  defp update_preload(module, updated, query_options) when is_map(query_options) do
     preloads = module.full_associations(query_options)
     repo = module.repo()
     unloaded_updated = unload_preloads(updated, preloads)

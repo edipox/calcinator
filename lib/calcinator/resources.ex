@@ -9,11 +9,6 @@ defmodule Calcinator.Resources do
   # Types
 
   @typedoc """
-  Invoke `name` filter with `value`.
-  """
-  @type filter :: %{name :: String.t => value :: term}
-
-  @typedoc """
   ID that uniquely identifies the `struct`
   """
   @type id :: term
@@ -33,7 +28,7 @@ defmodule Calcinator.Resources do
   """
   @type query_options :: %{
     optional(:associations) => atom | [atom],
-    optional(:filters) => [filter],
+    optional(:filters) => %{String.t => String.t},
     optional(:page) => Page.t | nil,
     optional(:sorts) => Sorts.t
   }

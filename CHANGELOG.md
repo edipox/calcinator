@@ -40,6 +40,16 @@
 
 # Changelog
 
+## v2.3.1
+
+### Bug Fixes
+* [#17](https://github.com/C-S-D/calcinator/pull/17) - [@KronicDeth](https://github.com/KronicDeth)
+  # Changelog
+  ## Bug Fixes
+  * Guard `Calcinator.Resources.params` and `Calcinator.Resources.query_options` with `is_map/1`
+  * Update to `postgrex` `0.13.2` for Elixir `1.5.0-dev` compatibility
+  * `Calcinator.Resources.query_options` `:filters` should be a map from filter name to filter value, each being a `String.t` instead of a list single-entry maps because filter names can only be used once and order should not matter.
+
 ## v2.3.0
 
 ### Enhancements
