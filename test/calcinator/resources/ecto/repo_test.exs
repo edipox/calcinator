@@ -14,7 +14,39 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     test "valid filter filters the list" do
       [first_author, second_author, third_author] = Factory.insert_list(3, :test_author)
 
-      assert {:ok, list_authors, nil} = TestAuthors.list(%{filters: %{"id" => "1,3"}})
+      assert {:ok, list_authors, nil} = TestAuthors.list(%{filters: %{"id" => "#{first_author.id},#{third_author.id}"}})
+
+      assert length(list_authors) == 2
+
+      list_author_ids = Enum.map(list_authors, &(&1.id))
+
+      assert first_author.id in list_author_ids
+      refute second_author.id in list_author_ids
+      assert third_author.id in list_author_ids
+    end
+
+    test "filtered queries pass through distinct/2 before returning results" do
+      insert! = fn ->
+        author = Factory.insert(:test_author)
+
+        # Needs to be > 1 matching posts per body to check distinct is happening
+        Factory.insert_list(2, :test_post, author: author, body: "Shared Body")
+
+        author
+      end
+
+      [first_author, second_author, third_author] = Stream.repeatedly(insert!)
+                                                    |> Enum.take(3)
+
+      assert {:ok, list_authors, nil} =
+               TestAuthors.list(
+                 %{
+                   filters: %{
+                     "id" => "#{first_author.id},#{third_author.id}",
+                     "posts.body" => "Shared"
+                   }
+                 }
+               )
 
       assert length(list_authors) == 2
 

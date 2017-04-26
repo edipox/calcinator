@@ -55,6 +55,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   import Calcinator.Resources, only: [unknown_filter: 1]
   import Ecto.Changeset, only: [cast: 3]
+  import Ecto.Query, only: [distinct: 2]
 
   # Types
 
@@ -281,7 +282,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     {:ok, query} = preload(module, module.ecto_schema_module(), query_options)
 
     with {:ok, query} <- filter(module, query, query_options) do
-      case wrap_ownership_error(repo, :all, [query]) do
+      case wrap_ownership_error(repo, :all, [distinct(query, true)]) do
         {:error, :ownership} ->
           {:error, :ownership}
         all ->
