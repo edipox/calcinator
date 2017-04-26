@@ -40,12 +40,16 @@
 
 # Changelog
 
+## v2.4.0
+
+* [#18](https://github.com/C-S-D/calcinator/pull/18) - [@KronicDeth](https://github.com/KronicDeth)
+  * JSONAPI filter values that allow multiple values, similar to includes, are comma separated without spaces, instead of having to do `String.split(comma_separated_values, ",")` in all filters that accept multiple values, `Calcinator.Resources.split_filter_value/1` can be used.
+  * Pass the final `query` with all filters applied through `distinct(query, true)`, so that filters don't need to ensure they return distinct results, which is an expectation of JSONAPI.
+
 ## v2.3.1
 
 ### Bug Fixes
 * [#17](https://github.com/C-S-D/calcinator/pull/17) - [@KronicDeth](https://github.com/KronicDeth)
-  # Changelog
-  ## Bug Fixes
   * Guard `Calcinator.Resources.params` and `Calcinator.Resources.query_options` with `is_map/1`
   * Update to `postgrex` `0.13.2` for Elixir `1.5.0-dev` compatibility
   * `Calcinator.Resources.query_options` `:filters` should be a map from filter name to filter value, each being a `String.t` instead of a list single-entry maps because filter names can only be used once and order should not matter.

@@ -6,6 +6,8 @@ defmodule Calcinator.Resources.TestPost do
   use Ecto.Schema
 
   schema "posts" do
+    field :body, :string
+
     timestamps()
 
     belongs_to :author, Calcinator.Resources.TestAuthor
