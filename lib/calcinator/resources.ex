@@ -205,6 +205,18 @@ defmodule Calcinator.Resources do
   end
 
   @doc """
+  JSONAPI filter values that allow multiple values, similar to includes, are comma separated without spaces, instead of
+  having to do `String.split(comma_separated_values, ",")` in all filters that accept multiple values, this function can
+  be used.
+
+      iex> Calcinator.Resources.split_filter_value("1,2,3")
+      ["1", "2", "3"]
+
+  """
+  @spec split_filter_value(String.t) :: [String.t]
+  def split_filter_value(comma_separated), do: String.split(comma_separated, ",")
+
+  @doc """
   Error when a filter `name` is not supported by the callback module.
 
       iex> Calcinator.Resources.unknown_filter("name")
