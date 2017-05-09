@@ -121,7 +121,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
       ## Resources callbacks
 
-      @spec allow_sandbox_access(Resources.sandbox_access_token) :: :ok | {:already, :owner | :allowed} | :not_found
+      @spec allow_sandbox_access(Resources.sandbox_access_token) :: :ok | {:error, :sandbox_access_disallowed}
       def allow_sandbox_access(token), do: EctoRepoResources.allow_sandbox_access(token)
 
       def changeset(params), do: EctoRepoResources.changeset(__MODULE__, params)
@@ -168,11 +168,19 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @doc """
   Allows access to `Ecto.Adapters.SQL.Sandbox`
   """
-  @spec allow_sandbox_access(Resources.sandbox_access_token) :: :ok | {:already, :owner | :allowed} | :not_found
+  @spec allow_sandbox_access(Resources.sandbox_access_token) :: :ok | {:error, :sandbox_access_disallowed}
   def allow_sandbox_access(%{owner: owner, repo: repo}) do
     repo
     |> List.wrap()
-    |> Enum.each(&Sandbox.allow(&1, owner, self()))
+    |> Enum.reduce_while(
+         :ok,
+         fn repo_element, :ok ->
+           case allow_sandbox_access(repo_element, owner) do
+             :ok -> {:cont, :ok}
+             error = {:error, :sandbox_access_disallowed} -> {:halt, error}
+           end
+         end
+       )
   end
 
   @doc """
@@ -339,6 +347,15 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   ## Private Functions
+
+  defp allow_sandbox_access(repo, owner) do
+    case Sandbox.allow(repo, owner, self()) do
+      {:already, :allowed} -> :ok
+      {:already, :owner} -> :ok
+      :not_found -> {:error, :sandbox_access_disallowed}
+      :ok -> :ok
+    end
+  end
 
   defp apply_filter(module, query, name, value) when is_binary(name) and is_binary(value) do
     if function_exported?(module, :filter, 3) do
