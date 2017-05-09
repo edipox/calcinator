@@ -3,44 +3,80 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v2.3.0](#v230)
+  - [v3.0.0](#v300)
     - [Enhancements](#enhancements)
-  - [v2.2.0](#v220)
-    - [Enhancements](#enhancements-1)
-  - [v2.1.0](#v210)
-    - [Enhancements](#enhancements-2)
     - [Bug Fixes](#bug-fixes)
-  - [v2.0.0](#v200)
-    - [Enhancements](#enhancements-3)
-    - [Bug Fixes](#bug-fixes-1)
     - [Incompatible Changes](#incompatible-changes)
-  - [v1.7.0](#v170)
+  - [v2.4.0](#v240)
+    - [Enhancements](#enhancements-1)
+  - [v2.3.1](#v231)
+    - [Bug Fixes](#bug-fixes-1)
+  - [v2.3.0](#v230)
+    - [Enhancements](#enhancements-2)
+  - [v2.2.0](#v220)
+    - [Enhancements](#enhancements-3)
+  - [v2.1.0](#v210)
     - [Enhancements](#enhancements-4)
     - [Bug Fixes](#bug-fixes-2)
-  - [v1.6.0](#v160)
+  - [v2.0.0](#v200)
     - [Enhancements](#enhancements-5)
-  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-3)
-  - [v1.5.0](#v150)
+    - [Incompatible Changes](#incompatible-changes-1)
+  - [v1.7.0](#v170)
     - [Enhancements](#enhancements-6)
     - [Bug Fixes](#bug-fixes-4)
-  - [v1.4.0](#v140)
+  - [v1.6.0](#v160)
     - [Enhancements](#enhancements-7)
-  - [v1.3.0](#v130)
-    - [Enhancements](#enhancements-8)
+  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-5)
-  - [v1.2.0](#v120)
-    - [Enhancements](#enhancements-9)
+  - [v1.5.0](#v150)
+    - [Enhancements](#enhancements-8)
     - [Bug Fixes](#bug-fixes-6)
-  - [v1.1.0](#v110)
+  - [v1.4.0](#v140)
+    - [Enhancements](#enhancements-9)
+  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-10)
     - [Bug Fixes](#bug-fixes-7)
+  - [v1.2.0](#v120)
+    - [Enhancements](#enhancements-11)
+    - [Bug Fixes](#bug-fixes-8)
+  - [v1.1.0](#v110)
+    - [Enhancements](#enhancements-12)
+    - [Bug Fixes](#bug-fixes-9)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
 
+## v3.0.0
+
+### Enhancements
+* [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
+  * Can now return (and is preferred to return instead of a timeout exit) `{:error, :timeout}` from all `Calcinator.Resources` action `@callbacks`.  The following were added:
+    * `Calcinator.Resources.delete/2`
+    * `Calcinator.Resources.get/2`
+    * `Calcinator.Resources.insert/2`
+    * `Calcinator.Resources.update/2`
+    * `Calcinator.Resources.update/3`
+
+### Bug Fixes
+* [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
+  * Previously, the `Calcinator` actions (`create/2`, `delete/2`, `get_related_resource/3`, `index/3`, `show/2`, `show_relationship/3`, and `update/2`) `@spec` and `@doc` include (hopefully) all the errors they can return now
+    * `{:error, :sandbox_access_disallowed}`
+    * `{:error, :sandbox_token_missing}`
+    * `{:error, :timeout}`
+  * `@callback`s with the same name/arity can only have on `@doc`, so the second form of `Calcinator.Resources.insert/2` did not show up.
+  * Change first level of header to `##` to match style guide for ex_doc in `Calcinator.Resources`.
+  * Rearrange `Calcinator.Resources.update/2`, so it's before `Calcinator.Resources.update/3` to match doc sorted order.
+
+### Incompatible Changes
+* [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
+  * `Calcinator.Resources.allow_sandbox_access/1` must now return `:ok | {:error, :sandbox_access_disallowed}`.  The previous `{:already, :allowed | :owner}` maps to `:ok` while `:not_found` maps to `{:error, :sandbox_access_disallowed}`.
+  * If you previously had total coverage for all return types from `Calcinator` actions, they now also return `{:error, :sandbox_access_disallowed}` and `{:error, :timeout}`.  Previously, instead of `{:error, :sandbox_access_disallowed}`, `:not_found` may been returned, but that was a bug that leaked an implementation detail from how `DBConnection.Ownership` works, so it was removed.
+
 ## v2.4.0
+
+### Enhancements
 
 * [#18](https://github.com/C-S-D/calcinator/pull/18) - [@KronicDeth](https://github.com/KronicDeth)
   * JSONAPI filter values that allow multiple values, similar to includes, are comma separated without spaces, instead of having to do `String.split(comma_separated_values, ",")` in all filters that accept multiple values, `Calcinator.Resources.split_filter_value/1` can be used.
