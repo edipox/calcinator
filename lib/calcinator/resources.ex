@@ -45,7 +45,7 @@ defmodule Calcinator.Resources do
   @doc """
   Allows access to sandbox for testing
   """
-  @callback allow_sandbox_access(sandbox_access_token) :: :ok | {:already, :owner | :allowed} | :not_found
+  @callback allow_sandbox_access(sandbox_access_token) :: :ok | {:error, :sandbox_access_disallowed}
 
   @doc """
   Changeset for creating a struct from the `params`
