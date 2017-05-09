@@ -1,7 +1,11 @@
 defmodule Calcinator.Resources.Ecto.Repo.Factory do
-  alias Calcinator.Resources.{TestAuthor, TestPost}
+  @moduledoc """
+  Factories for test schemas.
+  """
 
-  use ExMachina.Ecto, repo: Calcinator.Resources.Ecto.Repo.Repo
+  alias Calcinator.Resources.{Ecto.Repo.Repo, TestAuthor, TestPost}
+
+  use ExMachina.Ecto, repo: Repo
 
   @dialyzer {:no_return, create: 1, create: 2, create_list: 3, create_pair: 2, fields_for: 1}
 
