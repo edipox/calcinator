@@ -1,11 +1,17 @@
 defmodule Calcinator.Resources.Ecto.Repo.TestComments do
+  @moduledoc """
+  `Calcinator.Resources.Ecto.Repo.TestComment` resources
+  """
+
   use Calcinator.Resources.Ecto.Repo
+
+  alias Calcinator.Resources.{Ecto.Repo.Repo, TestComment}
 
   # Functions
 
   ## Calcinator.Resources.Ecto.Repo callbacks
 
-  def ecto_schema_module(), do: Calcinator.Resources.TestComment
+  def ecto_schema_module, do: TestComment
 
-  def repo(), do: Calcinator.Resources.Ecto.Repo.Repo
+  def repo, do: Repo
 end

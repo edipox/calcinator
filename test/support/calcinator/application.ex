@@ -1,4 +1,8 @@
 defmodule Calcinator.Application do
+  @moduledoc """
+  Application for supervising `Calcinator.Resources.Ecto.Repo.Repo` for tests
+  """
+
   use Application
 
   def start(_type, _args) do

@@ -1,11 +1,12 @@
 defmodule Calcinator.Resources.Ecto.RepoTest do
   alias Alembic.{Document, Error, Source}
   alias Calcinator.Resources.Ecto.Repo.{Factory, TestAuthors, TestComments}
+  alias Calcinator.Resources.Ecto.Repo.Repo
 
   use ExUnit.Case, async: true
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Calcinator.Resources.Ecto.Repo.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
 
     :ok
   end
@@ -35,7 +36,8 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
         author
       end
 
-      [first_author, second_author, third_author] = Stream.repeatedly(insert!)
+      [first_author, second_author, third_author] = insert!
+                                                    |> Stream.repeatedly()
                                                     |> Enum.take(3)
 
       assert {:ok, list_authors, nil} =

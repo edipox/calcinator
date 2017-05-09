@@ -367,15 +367,15 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   defp apply_filters(module, query, filters) when is_map(filters) do
     Enum.reduce filters, {:ok, query}, fn {name, value}, acc ->
-       case acc do
-         {:ok, acc_query} ->
-           apply_filter(module, acc_query, name, value)
-         acc = {:error, acc_document = %Document{}} ->
-           case apply_filter(module, query, name, value) do
-             {:ok, _} -> acc
-             {:error, filter_document = %Document{}} -> {:error, Document.merge(acc_document, filter_document)}
-           end
-       end
+      case acc do
+        {:ok, acc_query} ->
+          apply_filter(module, acc_query, name, value)
+        acc = {:error, acc_document = %Document{}} ->
+          case apply_filter(module, query, name, value) do
+            {:ok, _} -> acc
+            {:error, filter_document = %Document{}} -> {:error, Document.merge(acc_document, filter_document)}
+          end
+      end
     end
   end
 
