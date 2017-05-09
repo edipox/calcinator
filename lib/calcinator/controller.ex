@@ -198,6 +198,14 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           |> put_status(:created)
           |> put_resp_content_type("application/vnd.api+json")
           |> send_resp(:created, Poison.encode!(rendered))
+        {:error, :ownership} ->
+          ownership_error(conn)
+        {:error, :sandbox_access_disallowed} ->
+          sandbox_access_disallowed(conn)
+        {:error, :sandbox_token_missing} ->
+          sandbox_token_missing(conn)
+        {:error, :timeout} ->
+          gateway_timeout(conn)
         {:error, :unauthorized} ->
           forbidden(conn)
         {:error, changeset = %Ecto.Changeset{}} ->
@@ -216,8 +224,22 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           |> send_resp(:no_content, "")
         {:error, {:not_found, parameter}} ->
           not_found(conn, parameter)
+        {:error, :ownership} ->
+          ownership_error(conn)
+        {:error, :sandbox_access_disallowed} ->
+          sandbox_access_disallowed(conn)
+        {:error, :sandbox_token_missing} ->
+          sandbox_token_missing(conn)
+        {:error, :timeout} ->
+          gateway_timeout(conn)
         {:error, :unauthorized} ->
           forbidden(conn)
+        {:error, document = %Document{}} ->
+          render_json(conn, document, :unprocessable_entity)
+        {:error, changeset = %Ecto.Changeset{}} ->
+          render_changeset_error(conn, changeset)
+        {:error, reason} ->
+          render_error_reason(conn, reason)
       end
     end
 
@@ -269,8 +291,18 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           |> send_resp(:ok, Poison.encode!(rendered))
         {:error, {:not_found, parameter}} ->
           not_found(conn, parameter)
+        {:error, :ownership} ->
+          ownership_error(conn)
+        {:error, :sandbox_access_disallowed} ->
+          sandbox_access_disallowed(conn)
+        {:error, :sandbox_token_missing} ->
+          sandbox_token_missing(conn)
+        {:error, :timeout} ->
+          gateway_timeout(conn)
         {:error, :unauthorized} ->
           forbidden(conn)
+        {:error, reason} ->
+          render_error_reason(conn, reason)
       end
     end
 
@@ -284,10 +316,18 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           |> put_status(:ok)
           |> put_resp_content_type("application/vnd.api+json")
           |> send_resp(:ok, Poison.encode!(rendered))
+        {:error, :ownership} ->
+          ownership_error(conn)
+        {:error, :sandbox_access_disallowed} ->
+          sandbox_access_disallowed(conn)
+        {:error, :sandbox_token_missing} ->
+          sandbox_token_missing(conn)
+        {:error, :timeout} ->
+          gateway_timeout(conn)
         {:error, :unauthorized} ->
           forbidden(conn)
         {:error, document = %Document{}} ->
-           render_json(conn, document, :unprocessable_entity)
+          render_json(conn, document, :unprocessable_entity)
       end
     end
 
@@ -301,10 +341,20 @@ if Code.ensure_loaded?(Phoenix.Controller) do
            |> send_resp(:ok, Poison.encode!(rendered))
          {:error, {:not_found, parameter}} ->
            not_found(conn, parameter)
+         {:error, :ownership} ->
+           ownership_error(conn)
+         {:error, :sandbox_access_disallowed} ->
+           sandbox_access_disallowed(conn)
+         {:error, :sandbox_token_missing} ->
+           sandbox_token_missing(conn)
+         {:error, :timeout} ->
+           gateway_timeout(conn)
          {:error, :unauthorized} ->
            forbidden(conn)
          {:error, document = %Document{}} ->
            render_json(conn, document, :unprocessable_entity)
+         {:error, reason} ->
+           render_error_reason(conn, reason)
        end
     end
 
@@ -350,8 +400,18 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           |> send_resp(:ok, Poison.encode!(rendered))
         {:error, {:not_found, parameter}} ->
           not_found(conn, parameter)
+        {:error, :ownership} ->
+          ownership_error(conn)
+        {:error, :sandbox_access_disallowed} ->
+          sandbox_access_disallowed(conn)
+        {:error, :sandbox_token_missing} ->
+          sandbox_token_missing(conn)
+        {:error, :timeout} ->
+          gateway_timeout(conn)
         {:error, :unauthorized} ->
           forbidden(conn)
+         {:error, reason} ->
+          render_error_reason(conn, reason)
       end
     end
 
@@ -367,12 +427,22 @@ if Code.ensure_loaded?(Phoenix.Controller) do
            bad_gateway(conn)
          {:error, {:not_found, parameter}} ->
            not_found(conn, parameter)
+         {:error, :ownership} ->
+           ownership_error(conn)
+         {:error, :sandbox_access_disallowed} ->
+           sandbox_access_disallowed(conn)
+         {:error, :sandbox_token_missing} ->
+           sandbox_token_missing(conn)
+         {:error, :timeout} ->
+           gateway_timeout(conn)
          {:error, :unauthorized} ->
            forbidden(conn)
          {:error, changeset = %Ecto.Changeset{}} ->
            render_changeset_error(conn, changeset)
          {:error, document = %Document{}} ->
            render_json(conn, document, :unprocessable_entity)
+         {:error, reason} ->
+           render_error_reason(conn, reason)
        end
     end
 

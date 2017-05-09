@@ -92,7 +92,9 @@ defmodule Calcinator.Mixfile do
       # Phoenix.Controller is used in Calcinator.Controller.Error
       {:phoenix, "~> 1.0", optional: true},
       # PostgreSQL DB access for Calcinator.Resources.Ecto.Repo.Repo used in tests
-      {:postgrex, "~> 0.13.0", only: :test}
+      {:postgrex, "~> 0.13.0", only: :test},
+      # UUID for `errors` `0` `id` in `Calcinator.Controller.backing_store_error`
+      {:uuid, "~> 1.1", optional: true}
     ]
   end
 
