@@ -143,6 +143,8 @@ defmodule Calcinator do
       information to grant access.
     * `{:error, :sandbox_token_missing}` - Sandbox token was required (because `state` `resources_module`
       `Calcinator.Resources.sandboxed?/0` returned `true`), but `params["meta"]["beam"]` was not present.
+    * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
+      `Calcinator.Resources.insert/2`.
     * `{:error, :unauthorized}` - if `state` `authorization_module` `can?(subject, :create, ecto_schema_module)` or
       `can?(subject, :create, %Ecto.Changeset{})` returns `false`
     * `{:error, Alembic.Document.t}` - if `params` is not a valid JSONAPI document
@@ -153,6 +155,7 @@ defmodule Calcinator do
   @spec create(t, params) :: {:error, :ownership} |
                              {:error, :sandbox_access_disallowed} |
                              {:error, :sandbox_token_missing} |
+                             {:error, :timeout} |
                              {:error, :unauthorized} |
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t} |
@@ -195,6 +198,8 @@ defmodule Calcinator do
       information to grant access.
     * `{:error, :sandbox_token_missing}` - Sandbox token was required (because `state` `resources_module`
       `Calcinator.Resources.sandboxed?/0` returned `true`), but `params["meta"]["beam"]` was not present.
+    * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
+      `Calcinator.Resources.get/2` or `Calcinator.Resources.delete/1`.
     * `{:error, :unauthorized}` - The `state` `subject` is not authorized to delete the resource
     * `{:error, Ecto.Changeset.t}` - the deletion failed with the errors in `Ecto.Changeset.t`
     * `:ok` - resource was successfully deleted
@@ -205,6 +210,7 @@ defmodule Calcinator do
                              {:error, :ownership} |
                              {:error, :sandbox_access_disallowed} |
                              {:error, :sandbox_token_missing} |
+                             {:error, :timeout} |
                              {:error, :unauthorized} |
                              {:error, Ecto.Changeset.t}
   def delete(state = %__MODULE__{}, params) do
@@ -238,6 +244,8 @@ defmodule Calcinator do
       information to grant access.
     * `{:error, :sandbox_token_missing}` - Sandbox token was required (because `state` `resources_module`
       `Calcinator.Resources.sandboxed?/0` returned `true`), but `params["meta"]["beam"]` was not present.
+    * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
+      `Calcinator.Resources.get/2`.
     * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
     * `{:ok, rendered}` - rendered view of related resource
 
@@ -246,6 +254,7 @@ defmodule Calcinator do
                                                 {:error, :ownership} |
                                                 {:error, :sandbox_access_disallowed} |
                                                 {:error, :sandbox_token_missing} |
+                                                {:error, :timeout} |
                                                 {:error, :unauthorized} |
                                                 {:ok, rendered}
   def get_related_resource(
@@ -332,6 +341,8 @@ defmodule Calcinator do
       information to grant access.
     * `{:error, :sandbox_token_missing}` - Sandbox token was required (because `state` `resources_module`
       `Calcinator.Resources.sandboxed?/0` returned `true`), but `params["meta"]["beam"]` was not present.
+    * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
+      `Calcinator.Resources.get/2`.
     * `{:error, :unauthorized}` - `state` `authorization_module` `can?(subject, :show, got)` returns `false`
     * `{:error, Alembic.Document.t}` - `params` is not valid JSONAPI
     * `{:ok, rendered}` - rendered resource
@@ -341,6 +352,7 @@ defmodule Calcinator do
                            {:error, :ownership} |
                            {:error, :sandbox_access_disallowed} |
                            {:error, :sandbox_token_missing} |
+                           {:error, :timeout} |
                            {:error, :unauthorized} |
                            {:error, Document.t} |
                            {:ok, rendered}
@@ -374,6 +386,8 @@ defmodule Calcinator do
       information to grant access.
     * `{:error, :sandbox_token_missing}` - Sandbox token was required (because `state` `resources_module`
       `Calcinator.Resources.sandboxed?/0` returned `true`), but `params["meta"]["beam"]` was not present.
+    * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
+      `Calcinator.Resources.get/2`.
     * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
     * `{:ok, rendered}` - rendered view of relationship
 
@@ -382,6 +396,7 @@ defmodule Calcinator do
                                              {:error, :ownership} |
                                              {:error, :sandbox_access_disallowed} |
                                              {:error, :sandbox_token_missing} |
+                                             {:error, :timeout} |
                                              {:error, :unauthorized} |
                                              {:ok, rendered}
   def show_relationship(
@@ -416,6 +431,8 @@ defmodule Calcinator do
       information to grant access.
     * `{:error, :sandbox_token_missing}` - Sandbox token was required (because `state` `resources_module`
       `Calcinator.Resources.sandboxed?/0` returned `true`), but `params["meta"]["beam"]` was not present.
+    * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
+      `Calcinator.Resources.get/2` or `Calcinator.Resources.update/2`.
     * `{:error, :unauthorized}` - the resource either can't be shown or can't be updated
     * `{:error, Alembic.Document.t}` - the `params` are not valid JSONAPI
     * `{:error, Ecto.Changeset.t}` - validations error when updating
