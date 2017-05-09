@@ -60,7 +60,7 @@ defmodule Calcinator.Resources do
   @doc """
   Deletes a single `struct`
 
-  # Returns
+  ## Returns
 
     * `{:ok, struct}` - the delete succeeded and the returned struct is the state before delete
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
@@ -72,7 +72,7 @@ defmodule Calcinator.Resources do
   @doc """
   Gets a single `struct`
 
-  # Returns
+  ## Returns
 
     * `{:ok, struct}` - `id` was found.
     * `{:error, :not_found}` - `id` was not found.
@@ -88,35 +88,36 @@ defmodule Calcinator.Resources do
                                       {:error, reason :: term}
 
   @doc """
-  Inserts `changeset` into a single new `struct`
+  ## `insert(changeset, query_options)`
 
-  # Returns
+  Inserts `changeset` into a single new `struct`.
+
+  ### Returns
+
     * `{:ok, struct}` - `changeset` was inserted into `struct`
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
-    * `{:error, :timeout}` - timeout occured while inserting changeset into backing store.
+    * `{:error, :timeout}` - timeout occured while inserting `changeset` into backing store.
     * `{:error, Ecto.Changeset.t}` - insert failed.  `Ecto.Changeset.t` `errors` contain errors.
-  """
-  @callback insert(Ecto.Changeset.t, query_options) ::
-              {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
 
-  @doc """
-  Inserts `params` into a single new `struct`
+  ## `insert(params, query_options)`
 
-  # Returns
+  Inserts `params` into a single new `struct`.
 
-    * `{:ok, struct}` - params were inserted into `struct`
+  ### Returns
+
+    * `{:ok, struct}` - `params` were inserted into `struct`
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
-    * `{:error, :timeout}` - timeout occured while inserting params into backing store.
+    * `{:error, :timeout}` - timeout occured while inserting `params` into backing store.
     * `{:error, Ecto.Changeset.t}` - insert failed.  `Ecto.Changeset.t` `errors` contain errors.
 
   """
-  @callback insert(params, query_options) ::
+  @callback insert(changeset :: Ecto.Changeset.t | params, query_options) ::
               {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
 
   @doc """
   Gets a list of `struct`s.
 
-  # Returns
+  ## Returns
 
     * `{:ok, [resource], nil}` - all resources matching query
     * `{:ok, [resource], pagination}` - page of resources matching query
@@ -139,6 +140,20 @@ defmodule Calcinator.Resources do
   @callback sandboxed?() :: boolean
 
   @doc """
+  Applies updates in `changeset`
+
+  # Returns
+
+    * `{:ok, struct}` - the update succeeded and the returned `struct` contains the updates
+    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
+    * `{:error, :timeout}` - timeout occured while updating `changeset` with `params` in backing store.
+    * `{:error, Ecto.Changeset.t}` - errors while updating `struct` with `params`.  `Ecto.Changeset.t` `errors` contains
+      errors.
+  """
+  @callback update(changeset :: Ecto.Changeset.t, query_options) ::
+              {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
+
+  @doc """
   Updates `struct`
 
   # Returns
@@ -158,20 +173,6 @@ defmodule Calcinator.Resources do
                                                                         {:error, :not_found} |
                                                                         {:error, :ownership} |
                                                                         {:error, :timeout}
-
-  @doc """
-  Applies updates in `changeset`
-
-  # Returns
-
-    * `{:ok, struct}` - the update succeeded and the returned `struct` contains the updates
-    * `{:error, :ownership}` - connection to backing store was not owned by the calling process
-    * `{:error, :timeout}` - timeout occured while updating `changeset` with `params` in backing store.
-    * `{:error, Ecto.Changeset.t}` - errors while updating `struct` with `params`.  `Ecto.Changeset.t` `errors` contains
-      errors.
-  """
-  @callback update(changeset :: Ecto.Changeset.t, query_options) ::
-              {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
 
   # Functions
 
