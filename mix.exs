@@ -83,7 +83,7 @@ defmodule Calcinator.Mixfile do
       # documentation coverage
       {:inch_ex, "~> 0.5.1", only: [:dev, :test]},
       # Calcinator.Resources.Ecto.Repo tests
-      {:ex_machina, "~> 1.0", only: :test},
+      {:ex_machina, "~> 2.0", only: :test},
       # Fake data for tests, so we don't have to come up with our own sequences for ExMachina
       {:faker, "~> 0.8.0", only: :test},
       {:ja_serializer, ">= 0.11.2 and < 0.13.0"},
