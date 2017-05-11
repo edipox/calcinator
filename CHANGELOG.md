@@ -58,6 +58,18 @@
     * `Calcinator.Resources.insert/2`
     * `Calcinator.Resources.update/2`
     * `Calcinator.Resources.update/3`
+* [#21](https://github.com/C-S-D/calcinator/pull/21) - [@KronicDeth](https://github.com/KronicDeth)
+  * Pass all JSON errors through `Calcinator.Controller.Error.render_json` to eliminate redundant pipelines.
+  *  When structs are deleted directly instead of changesets, there's no way to add constraints, such as `no_assoc_constraint` or `assoc_constraint` that would transform DB errors into validation errors, so
+     * `Calcinator.delete/3` generate a changeset from `Calcinator.Resources.changeset(struct, %{})`
+     * Docs are updated to include tips are using changeset to add constraints
+     * The docs for `Calcinator.Resources.changeset/2` is updated so that it states it will be used for both updating (which it was previously) and (now) deleting
+  * Comment the expected path in the `get_related_resource` and `show_relationship` examples to makes it easier to remember when `get_related_resource` and `show_relationship` are called.
+  * Test reproducible clauses in `Calcinator.Controller` cases (the majority of the bug fixes came from this testing).  [I couldn't remember how to trigger `{:error, :ownership}` and didn't want to fake it since I know I've produced it before because that's why `wrap_ownership_error` exists.]
+  * Remove `{:ok, rendered}` duplication in `Calcinator.Controller`
+  * Deduplicate `related_property` responses in `Calcinator.Controller`
+  * Extract all the error-tuple handling in `Calcinator.Controller` to `Calcinator.Controller.Error.put_calcinator_error` as most clauses were duplicated in the various actions.  This would technically allow some unexpected errors (like `{:error, {:not_found, parameter}}` for create) to be handled, but it is unlikely to cause problems since it will lead to
+  `conn` response instead of a `CaseClauseError` as would be the case if some of the clauses were missing as was the case before this PR.
 
 ### Bug Fixes
 * [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
@@ -68,11 +80,26 @@
   * `@callback`s with the same name/arity can only have on `@doc`, so the second form of `Calcinator.Resources.insert/2` did not show up.
   * Change first level of header to `##` to match style guide for ex_doc in `Calcinator.Resources`.
   * Rearrange `Calcinator.Resources.update/2`, so it's before `Calcinator.Resources.update/3` to match doc sorted order.
+* [#21](https://github.com/C-S-D/calcinator/pull/21) - [@KronicDeth](https://github.com/KronicDeth)
+  * Ensure `Calcinator.Controller` actions have `case` clauses for all the declared return types from `Calcinator` calls.
+  * Disable `mix docs` backquote check
+  * `get_related_resources` could not handle has_many related resources, specifically
+    * `Calcinator.JaSerializer.PhoenixView.get_related_resource/3` would not allow `data` to be a `list`.
+    * `Calcinator.RelatedView.render` with data assumes the data was singular and "links" could be added to that "data" map.
+    * `Calcinator.authorized` did not allow the unfiltered data to be `list`.
+  * Fix `source` `assigns` for `get_related_resource` example: example still used pre-open-sourcing `association` and `id_key`.
+  * Fix show_relationship example that was just wrong. The same `assigns` as `get_related_resource` should be used.  Since at first I couldn't figure out why showing a relationship would need a view module and I wrote the code, I added a note explaining its for the `view_module.type/0` callback since relationships are resource identifiers with `id` and `type`.
+  * `Calcinator.RelationshipView.data/1` assumed that `[:related][:resource]` was `nil` or a `map`, which didn't handle the `list` for has_many relationships.
+
 
 ### Incompatible Changes
 * [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
   * `Calcinator.Resources.allow_sandbox_access/1` must now return `:ok | {:error, :sandbox_access_disallowed}`.  The previous `{:already, :allowed | :owner}` maps to `:ok` while `:not_found` maps to `{:error, :sandbox_access_disallowed}`.
   * If you previously had total coverage for all return types from `Calcinator` actions, they now also return `{:error, :sandbox_access_disallowed}` and `{:error, :timeout}`.  Previously, instead of `{:error, :sandbox_access_disallowed}`, `:not_found` may been returned, but that was a bug that leaked an implementation detail from how `DBConnection.Ownership` works, so it was removed.
+* [#21](https://github.com/C-S-D/calcinator/pull/21) - [@KronicDeth](https://github.com/KronicDeth)
+  * `Calcinator.delete` deletes a changeset instead of a resource struct
+    * `Calcinator.Resources.delete/1` must expect an `Ecto.Changeset.t`instead of a resource `struct`
+    * `use Calcinator.Resources.Ecto.Repo` generates `delete/1` that expects an `Ecto.Changeset.t` and calls `Calcinator.Resources.Ecto.Repo.delete/2`, which now expects a changeset instead of resource struct as the second argument.
 
 ## v2.4.0
 
