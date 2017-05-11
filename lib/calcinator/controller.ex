@@ -249,6 +249,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     assigns.
 
         resources "/posts", PostController do
+           # Route will be `/posts/:author_id/author`
            get "/author",
                PostController,
                :get_related_resource,
@@ -364,6 +365,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     assigns.
 
         resources "/posts", PostController do
+          # Route will be `/posts/:post_id/relationships/author`
           get "/relationships/author"",
               PostController,
               :show_relationship,
