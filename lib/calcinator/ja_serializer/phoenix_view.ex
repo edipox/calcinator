@@ -36,7 +36,7 @@ defmodule Calcinator.JaSerializer.PhoenixView do
   # Functions
 
   def get_related_resource(phoenix_view_module, data, options = %{related: related, source: source})
-      when is_nil(data) or is_map(data) do
+      when is_list(data) or is_map(data) or is_nil(data) do
     params = Map.get(options, :params, %{})
     subject = Map.get(options, :subject, nil)
     opts = params_to_render_opts(params)

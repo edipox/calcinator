@@ -77,8 +77,14 @@ defmodule Calcinator do
   def authorized(%__MODULE__{}, nil), do: nil
 
   # Filters `struct` or list of `struct`s to only those that can be shown
-  @spec authorized(t, resource :: struct) :: struct
+  @spec authorized(t, unfiltered :: struct) :: struct
   def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered = %_{}) do
+    authorization_module.filter_associations_can(unfiltered, subject, :show)
+  end
+
+  @spec authorized(t, unfiltered :: [struct]) :: [struct]
+  def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered)
+      when is_list(unfiltered) do
     authorization_module.filter_associations_can(unfiltered, subject, :show)
   end
 
