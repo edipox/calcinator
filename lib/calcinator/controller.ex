@@ -194,10 +194,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     def create(conn = %Conn{}, params, calcinator = %Calcinator{}) do
       case Calcinator.create(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
         {:ok, rendered} ->
-          conn
-          |> put_status(:created)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:created, Poison.encode!(rendered))
+          render_json(conn, rendered, :created)
         {:error, :ownership} ->
           ownership_error(conn)
         {:error, :sandbox_access_disallowed} ->
@@ -219,9 +216,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     def delete(conn, params = %{"id" => _}, calcinator = %Calcinator{}) do
       case Calcinator.delete(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
         :ok ->
-          conn
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:no_content, "")
+          deleted(conn)
         {:error, {:not_found, parameter}} ->
           not_found(conn, parameter)
         {:error, :ownership} ->
@@ -286,10 +281,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
              }
            ) do
         {:ok, rendered} ->
-          conn
-          |> put_status(:ok)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:ok, Poison.encode!(rendered))
+          render_json(conn, rendered, :ok)
         {:error, {:not_found, parameter}} ->
           not_found(conn, parameter)
         {:error, :ownership} ->
@@ -313,10 +305,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
                             params,
                             %{base_uri: base_uri(conn)}) do
         {:ok, rendered} ->
-          conn
-          |> put_status(:ok)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:ok, Poison.encode!(rendered))
+          render_json(conn, rendered, :ok)
         {:error, :ownership} ->
           ownership_error(conn)
         {:error, :sandbox_access_disallowed} ->
@@ -336,10 +325,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     def show(conn, params = %{"id" => _}, calcinator = %Calcinator{}) do
        case Calcinator.show(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
          {:ok, rendered} ->
-           conn
-           |> put_status(:ok)
-           |> put_resp_content_type("application/vnd.api+json")
-           |> send_resp(:ok, Poison.encode!(rendered))
+          render_json(conn, rendered, :ok)
          {:error, {:not_found, parameter}} ->
            not_found(conn, parameter)
          {:error, :ownership} ->
@@ -402,10 +388,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
              %{related: related, source: source}
            ) do
         {:ok, rendered} ->
-          conn
-          |> put_status(:ok)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:ok, Poison.encode!(rendered))
+          render_json(conn, rendered, :ok)
         {:error, {:not_found, parameter}} ->
           not_found(conn, parameter)
         {:error, :ownership} ->
@@ -427,10 +410,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     def update(conn, params, calcinator = %Calcinator{}) do
        case Calcinator.update(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
          {:ok, rendered} ->
-           conn
-           |> put_status(:ok)
-           |> put_resp_content_type("application/vnd.api+json")
-           |> send_resp(:ok, Poison.encode!(rendered))
+           render_json(conn, rendered, :ok)
          {:error, :bad_gateway} ->
            bad_gateway(conn)
          {:error, {:not_found, parameter}} ->

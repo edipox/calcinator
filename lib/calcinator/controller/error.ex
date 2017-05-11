@@ -11,7 +11,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
 
     require Logger
 
-    import Conn, only: [halt: 1, put_resp_content_type: 2, put_status: 2]
+    import Conn, only: [halt: 1, put_resp_content_type: 2, put_status: 2, send_resp: 3]
     import Phoenix.Controller, only: [json: 2, render: 4]
 
     @doc """
@@ -29,6 +29,16 @@ if Code.ensure_loaded?(Phoenix.Controller) do
                     ]
                   },
                   :bad_gateway
+    end
+
+    @doc """
+    The resource was deleted
+    """
+    @spec deleted(Conn.t) :: Conn.t
+    def deleted(conn) do
+      conn
+      |> put_resp_content_type()
+      |> send_resp(:no_content, "")
     end
 
     @doc """
@@ -111,6 +121,11 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     end
 
     @doc """
+    Puts JSONAPI Content Type in the Response of the `conn`
+    """
+    def put_resp_content_type(conn), do: put_resp_content_type(conn, "application/vnd.api+json")
+
+    @doc """
     Converts an error `reason` from that isn't a standard format (such as those from the backing store) to a
     500 Internal Server Error JSONAPI error, but with `id` set to `id` that is also used in `Logger.error`, so that
     `reason`, which should remain private to limit implementation disclosures that could lead to security issues.
@@ -154,7 +169,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     def render_changeset_error(conn, changeset) do
       conn
       |> put_status(:unprocessable_entity)
-      |> put_resp_content_type("application/vnd.api+json")
+      |> put_resp_content_type()
       |> render(ChangesetView, "error-object.json", changeset)
       |> halt()
     end
@@ -166,7 +181,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     def render_json(conn, encodable, status) do
       conn
       |> put_status(status)
-      |> put_resp_content_type("application/vnd.api+json")
+      |> put_resp_content_type()
       |> json(encodable)
       |> halt()
     end
