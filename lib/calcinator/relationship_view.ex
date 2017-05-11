@@ -28,15 +28,24 @@ defmodule Calcinator.RelationshipView do
          %{
            conn: conn,
            related: %{
+             resource: related_resources,
+             view_module: view_module
+           }
+         }
+       ) when is_list(related_resources) do
+    Enum.map related_resources, &resource_identifier(&1, %{conn: conn, view_module: view_module})
+  end
+
+  defp data(
+         %{
+           conn: conn,
+           related: %{
              resource: related,
              view_module: view_module
            }
          }
        ) do
-    %ResourceIdentifier{
-      type: view_module.type,
-      id: related |> view_module.id(conn) |> to_string
-    }
+    resource_identifier(related, %{conn: conn, view_module: view_module})
   end
 
   defp links(options = %{source: %{association: association}}) do
@@ -46,6 +55,17 @@ defmodule Calcinator.RelationshipView do
     %{
       related: "#{base_url}/#{relationship}",
       self: "#{base_url}/relationships/#{relationship}"
+    }
+  end
+
+  defp resource_identifier(resource, %{conn: conn, view_module: view_module}) do
+    id = resource
+         |> view_module.id(conn)
+         |> to_string()
+
+    %ResourceIdentifier{
+      type: view_module.type(),
+      id: id
     }
   end
 end
