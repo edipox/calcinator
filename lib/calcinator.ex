@@ -224,7 +224,9 @@ defmodule Calcinator do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, target} <- get(state, params),
          :ok <- can(state, :delete, target),
-         {:ok, _deleted} <- delete_ecto_schema(state, target) do
+         # generate a changeset, so `resources_module` can add constraints
+         {:ok, changeset} <- changeset(state, target, %{}),
+         {:ok, _deleted} <- delete_changeset(state, changeset) do
       :ok
     end
   end
@@ -568,11 +570,13 @@ defmodule Calcinator do
     end
   end
 
-  @spec delete_ecto_schema(t, Ecto.Schema.t) :: {:ok, Ecto.Schema.t} |
-                                                {:error, :ownership} |
-                                                {:error, :timeout} |
-                                                {:error, Ecto.Changeset.t}
-  defp delete_ecto_schema(%__MODULE__{resources_module: resources_module}, schema), do: resources_module.delete(schema)
+  @spec delete_changeset(t, Ecto.Changeset.t) :: {:ok, Ecto.Schema.t} |
+                                                 {:error, :ownership} |
+                                                 {:error, :timeout} |
+                                                 {:error, Ecto.Changeset.t}
+  defp delete_changeset(%__MODULE__{resources_module: resources_module}, changeset) do
+    resources_module.delete(changeset)
+  end
 
   @spec document(params, FromJson.action) :: {:ok, Document.t}  | {:error, Document.t}
   defp document(raw_params, action) do
