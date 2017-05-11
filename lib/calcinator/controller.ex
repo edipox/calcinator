@@ -272,31 +272,12 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           params,
           calcinator = %Calcinator{}
         ) do
-      case Calcinator.get_related_resource(
-             %Calcinator{calcinator | subject: get_subject(conn)},
-             params,
-             %{
-               related: related,
-               source: source
-             }
-           ) do
-        {:ok, rendered} ->
-          render_json(conn, rendered, :ok)
-        {:error, {:not_found, parameter}} ->
-          not_found(conn, parameter)
-        {:error, :ownership} ->
-          ownership_error(conn)
-        {:error, :sandbox_access_disallowed} ->
-          sandbox_access_disallowed(conn)
-        {:error, :sandbox_token_missing} ->
-          sandbox_token_missing(conn)
-        {:error, :timeout} ->
-          gateway_timeout(conn)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-        {:error, reason} ->
-          render_error_reason(conn, reason)
-      end
+      %Calcinator{calcinator | subject: get_subject(conn)}
+      |> Calcinator.get_related_resource(
+           params,
+           %{related: related, source: source}
+         )
+      |> respond_to_related_property(conn)
     end
 
     @spec index(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
@@ -382,28 +363,12 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           params,
           calcinator = %Calcinator{}
         ) do
-      case Calcinator.show_relationship(
-             %Calcinator{calcinator | subject: get_subject(conn)},
-             params,
-             %{related: related, source: source}
-           ) do
-        {:ok, rendered} ->
-          render_json(conn, rendered, :ok)
-        {:error, {:not_found, parameter}} ->
-          not_found(conn, parameter)
-        {:error, :ownership} ->
-          ownership_error(conn)
-        {:error, :sandbox_access_disallowed} ->
-          sandbox_access_disallowed(conn)
-        {:error, :sandbox_token_missing} ->
-          sandbox_token_missing(conn)
-        {:error, :timeout} ->
-          gateway_timeout(conn)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-         {:error, reason} ->
-          render_error_reason(conn, reason)
-      end
+      %Calcinator{calcinator | subject: get_subject(conn)}
+      |> Calcinator.show_relationship(
+           params,
+           %{related: related, source: source}
+         )
+      |> respond_to_related_property(conn)
     end
 
     @spec update(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
@@ -437,6 +402,27 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     ## Private Functions
 
     defp base_uri(%Conn{request_path: path}), do: %URI{path: path}
+
+    defp respond_to_related_property(related_property_return, conn) do
+      case related_property_return do
+        {:ok, rendered} ->
+          render_json(conn, rendered, :ok)
+        {:error, {:not_found, parameter}} ->
+          not_found(conn, parameter)
+        {:error, :ownership} ->
+          ownership_error(conn)
+        {:error, :sandbox_access_disallowed} ->
+          sandbox_access_disallowed(conn)
+        {:error, :sandbox_token_missing} ->
+          sandbox_token_missing(conn)
+        {:error, :timeout} ->
+          gateway_timeout(conn)
+        {:error, :unauthorized} ->
+          forbidden(conn)
+         {:error, reason} ->
+          render_error_reason(conn, reason)
+      end
+    end
 
     defp quoted_action(quoted_name, quoted_configuration) do
       quote do
