@@ -121,6 +121,24 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     end
 
     @doc """
+    Converts an `{:error, _}` tuple from `Calcinator` into a JSONAPI document and encodes it as the `conn` response.
+    """
+    def put_calcinator_error(conn, {:error, :bad_gateway}), do: bad_gateway(conn)
+    def put_calcinator_error(conn, {:error, {:not_found, parameter}}), do: not_found(conn, parameter)
+    def put_calcinator_error(conn, {:error, :ownership}), do: ownership_error(conn)
+    def put_calcinator_error(conn, {:error, :sandbox_access_disallowed}), do: sandbox_access_disallowed(conn)
+    def put_calcinator_error(conn, {:error, :sandbox_token_missing}), do: sandbox_token_missing(conn)
+    def put_calcinator_error(conn, {:error, :timeout}), do: gateway_timeout(conn)
+    def put_calcinator_error(conn, {:error, :unauthorized}), do: forbidden(conn)
+    def put_calcinator_error(conn, {:error, document = %Document{}}) do
+      render_json(conn, document, :unprocessable_entity)
+    end
+    def put_calcinator_error(conn, {:error, changeset = %Ecto.Changeset{}}) do
+      render_changeset_error(conn, changeset)
+    end
+    def put_calcinator_error(conn, {:error, reason}), do: render_error_reason(conn, reason)
+
+    @doc """
     Puts JSONAPI Content Type in the Response of the `conn`
     """
     def put_resp_content_type(conn), do: put_resp_content_type(conn, "application/vnd.api+json")

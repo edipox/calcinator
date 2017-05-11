@@ -112,7 +112,6 @@ if Code.ensure_loaded?(Phoenix.Controller) do
 
     """
 
-    alias Alembic.Document
     alias Plug.Conn
 
     import Calcinator.{Authorization, Controller.Error}
@@ -192,24 +191,11 @@ if Code.ensure_loaded?(Phoenix.Controller) do
 
     @spec create(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def create(conn = %Conn{}, params, calcinator = %Calcinator{}) do
-      case Calcinator.create(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
-        {:ok, rendered} ->
-          render_json(conn, rendered, :created)
-        {:error, :ownership} ->
-          ownership_error(conn)
-        {:error, :sandbox_access_disallowed} ->
-          sandbox_access_disallowed(conn)
-        {:error, :sandbox_token_missing} ->
-          sandbox_token_missing(conn)
-        {:error, :timeout} ->
-          gateway_timeout(conn)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-        {:error, changeset = %Ecto.Changeset{}} ->
-          render_changeset_error(conn, changeset)
-        {:error, document = %Document{}} ->
-          render_json(conn, document, :unprocessable_entity)
-      end
+      put_rendered_or_error(
+        conn,
+        Calcinator.create(%Calcinator{calcinator | subject: get_subject(conn)}, params),
+        :created
+      )
     end
 
     @spec delete(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
@@ -217,24 +203,8 @@ if Code.ensure_loaded?(Phoenix.Controller) do
       case Calcinator.delete(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
         :ok ->
           deleted(conn)
-        {:error, {:not_found, parameter}} ->
-          not_found(conn, parameter)
-        {:error, :ownership} ->
-          ownership_error(conn)
-        {:error, :sandbox_access_disallowed} ->
-          sandbox_access_disallowed(conn)
-        {:error, :sandbox_token_missing} ->
-          sandbox_token_missing(conn)
-        {:error, :timeout} ->
-          gateway_timeout(conn)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-        {:error, document = %Document{}} ->
-          render_json(conn, document, :unprocessable_entity)
-        {:error, changeset = %Ecto.Changeset{}} ->
-          render_changeset_error(conn, changeset)
-        {:error, reason} ->
-          render_error_reason(conn, reason)
+        error ->
+          put_calcinator_error(conn, error)
       end
     end
 
@@ -272,58 +242,34 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           params,
           calcinator = %Calcinator{}
         ) do
-      %Calcinator{calcinator | subject: get_subject(conn)}
-      |> Calcinator.get_related_resource(
+      put_rendered_or_error(
+         conn,
+         Calcinator.get_related_resource(
+           %Calcinator{calcinator | subject: get_subject(conn)},
            params,
            %{related: related, source: source}
          )
-      |> respond_to_related_property(conn)
+      )
     end
 
     @spec index(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def index(conn, params, calcinator = %Calcinator{}) do
-      case Calcinator.index(%Calcinator{calcinator | subject: get_subject(conn)},
-                            params,
-                            %{base_uri: base_uri(conn)}) do
-        {:ok, rendered} ->
-          render_json(conn, rendered, :ok)
-        {:error, :ownership} ->
-          ownership_error(conn)
-        {:error, :sandbox_access_disallowed} ->
-          sandbox_access_disallowed(conn)
-        {:error, :sandbox_token_missing} ->
-          sandbox_token_missing(conn)
-        {:error, :timeout} ->
-          gateway_timeout(conn)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-        {:error, document = %Document{}} ->
-          render_json(conn, document, :unprocessable_entity)
-      end
+      put_rendered_or_error(
+        conn,
+        Calcinator.index(
+          %Calcinator{calcinator | subject: get_subject(conn)},
+          params,
+          %{base_uri: base_uri(conn)}
+        )
+      )
     end
 
     @spec show(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def show(conn, params = %{"id" => _}, calcinator = %Calcinator{}) do
-       case Calcinator.show(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
-         {:ok, rendered} ->
-          render_json(conn, rendered, :ok)
-         {:error, {:not_found, parameter}} ->
-           not_found(conn, parameter)
-         {:error, :ownership} ->
-           ownership_error(conn)
-         {:error, :sandbox_access_disallowed} ->
-           sandbox_access_disallowed(conn)
-         {:error, :sandbox_token_missing} ->
-           sandbox_token_missing(conn)
-         {:error, :timeout} ->
-           gateway_timeout(conn)
-         {:error, :unauthorized} ->
-           forbidden(conn)
-         {:error, document = %Document{}} ->
-           render_json(conn, document, :unprocessable_entity)
-         {:error, reason} ->
-           render_error_reason(conn, reason)
-       end
+      put_rendered_or_error(
+        conn,
+        Calcinator.show(%Calcinator{calcinator | subject: get_subject(conn)}, params)
+      )
     end
 
     @doc """
@@ -363,66 +309,31 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           params,
           calcinator = %Calcinator{}
         ) do
-      %Calcinator{calcinator | subject: get_subject(conn)}
-      |> Calcinator.show_relationship(
-           params,
-           %{related: related, source: source}
-         )
-      |> respond_to_related_property(conn)
+      put_rendered_or_error(
+        conn,
+        Calcinator.show_relationship(
+          %Calcinator{calcinator | subject: get_subject(conn)},
+          params,
+          %{related: related, source: source}
+        )
+      )
     end
 
     @spec update(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def update(conn, params, calcinator = %Calcinator{}) do
-       case Calcinator.update(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
-         {:ok, rendered} ->
-           render_json(conn, rendered, :ok)
-         {:error, :bad_gateway} ->
-           bad_gateway(conn)
-         {:error, {:not_found, parameter}} ->
-           not_found(conn, parameter)
-         {:error, :ownership} ->
-           ownership_error(conn)
-         {:error, :sandbox_access_disallowed} ->
-           sandbox_access_disallowed(conn)
-         {:error, :sandbox_token_missing} ->
-           sandbox_token_missing(conn)
-         {:error, :timeout} ->
-           gateway_timeout(conn)
-         {:error, :unauthorized} ->
-           forbidden(conn)
-         {:error, changeset = %Ecto.Changeset{}} ->
-           render_changeset_error(conn, changeset)
-         {:error, document = %Document{}} ->
-           render_json(conn, document, :unprocessable_entity)
-         {:error, reason} ->
-           render_error_reason(conn, reason)
-       end
+      put_rendered_or_error(
+        conn,
+        Calcinator.update(%Calcinator{calcinator | subject: get_subject(conn)}, params)
+      )
     end
 
     ## Private Functions
 
     defp base_uri(%Conn{request_path: path}), do: %URI{path: path}
 
-    defp respond_to_related_property(related_property_return, conn) do
-      case related_property_return do
-        {:ok, rendered} ->
-          render_json(conn, rendered, :ok)
-        {:error, {:not_found, parameter}} ->
-          not_found(conn, parameter)
-        {:error, :ownership} ->
-          ownership_error(conn)
-        {:error, :sandbox_access_disallowed} ->
-          sandbox_access_disallowed(conn)
-        {:error, :sandbox_token_missing} ->
-          sandbox_token_missing(conn)
-        {:error, :timeout} ->
-          gateway_timeout(conn)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-         {:error, reason} ->
-          render_error_reason(conn, reason)
-      end
-    end
+    defp put_rendered_or_error(conn, rendered_or_error, status \\ :ok)
+    defp put_rendered_or_error(conn, {:ok, rendered}, status), do: render_json(conn, rendered, status)
+    defp put_rendered_or_error(conn, error, _), do: put_calcinator_error(conn, error)
 
     defp quoted_action(quoted_name, quoted_configuration) do
       quote do
