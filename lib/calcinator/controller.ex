@@ -258,8 +258,8 @@ if Code.ensure_loaded?(Phoenix.Controller) do
                    view_module: AuthorView
                  },
                  source: %{
-                   association: :credential_source,
-                   id_key: "credential_id"
+                   association: :author,
+                   id_key: "post_id"
                  }
                }
         end
