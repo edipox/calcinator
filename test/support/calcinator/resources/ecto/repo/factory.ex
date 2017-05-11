@@ -18,7 +18,7 @@ defmodule Calcinator.Resources.Ecto.Repo.Factory do
   def test_post_factory do
     %TestPost{
       author: build(:test_author),
-      body: Faker.Lorem.paragraphs()
+      body: Faker.Lorem.sentence()
     }
   end
 end

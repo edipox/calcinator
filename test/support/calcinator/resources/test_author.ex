@@ -5,7 +5,7 @@ defmodule Calcinator.Resources.TestAuthor do
 
   use Ecto.Schema
 
-  import Ecto.Changeset, only: [cast: 3, validate_required: 2]
+  import Ecto.Changeset, only: [cast: 3, no_assoc_constraint: 2, validate_required: 2]
 
   schema "authors" do
     field :name, :string
@@ -17,9 +17,19 @@ defmodule Calcinator.Resources.TestAuthor do
 
   # Functions
 
+  def changeset(changeset) do
+    changeset
+    |> no_assoc_constraint(:posts)
+    |> validate_required(required_fields())
+  end
+
   def changeset(model, params) do
     model
-    |> cast(params, ~w(name password password_confirmation)a)
-    |> validate_required(:name)
+    |> cast(params, optional_fields() ++ required_fields())
+    |> changeset()
   end
+
+  def optional_fields, do: ~w(password password_confirmation)a
+
+  def required_fields, do: ~w(name)a
 end
