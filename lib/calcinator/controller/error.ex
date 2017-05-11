@@ -19,19 +19,16 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     """
     @spec bad_gateway(Conn.t) :: Conn.t
     def bad_gateway(conn) do
-      conn
-      |> put_status(:bad_gateway)
-      |> put_resp_content_type("application/vnd.api+json")
-      |> json(
-           %Document{
-             errors: [
-               %Error{
-                 status: "502",
-                 title: "Bad Gateway"
-               }
-             ]
-           }
-         )
+      render_json conn,
+                  %Document{
+                    errors: [
+                      %Error{
+                        status: "502",
+                        title: "Bad Gateway"
+                      }
+                    ]
+                  },
+                  :bad_gateway
     end
 
     @doc """
@@ -39,21 +36,17 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     """
     @spec forbidden(Conn.t) :: Conn.t
     def forbidden(conn) do
-      conn
-      |> put_status(:forbidden)
-      |> put_resp_content_type("application/vnd.api+json")
-      |> json(
-           %Document{
-             errors: [
-               %Error{
-                 detail: "You do not have permission for this resource.",
-                 status: "403",
-                 title: "Forbidden"
-               }
-             ]
-           }
-         )
-      |> halt()
+      render_json conn,
+                  %Document{
+                    errors: [
+                      %Error{
+                        detail: "You do not have permission for this resource.",
+                        status: "403",
+                        title: "Forbidden"
+                      }
+                    ]
+                  },
+                  :forbidden
     end
 
     @doc """
@@ -61,19 +54,16 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     """
     @spec gateway_timeout(Conn.t) :: Conn.t
     def gateway_timeout(conn) do
-      conn
-      |> put_status(:gateway_timeout)
-      |> put_resp_content_type("applicaton/vnd.api+json")
-      |> json(
-           %Document{
-             errors: [
-               %Error{
-                 status: "504",
-                 title: "Gateway Timeout"
-               }
-             ]
-           }
-         )
+      render_json conn,
+                  %Document{
+                    errors: [
+                      %Error{
+                        status: "504",
+                        title: "Gateway Timeout"
+                      }
+                    ]
+                  },
+                  :gateway_timeout
     end
 
     @doc """
@@ -81,23 +71,19 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     """
     @spec not_found(Conn.t, String.t) :: Conn.t
     def not_found(conn, parameter) do
-      conn
-      |> put_status(:not_found)
-      |> put_resp_content_type("application/vnd.api+json")
-      |> json(
-           %Document{
-             errors: [
-               %Error{
-                 source: %Source{
-                   parameter: parameter
-                 },
-                 status: "404",
-                 title: "Resource Not Found"
-               }
-             ]
-           }
-         )
-      |> halt()
+      render_json conn,
+                  %Document{
+                    errors: [
+                      %Error{
+                        source: %Source{
+                          parameter: parameter
+                        },
+                        status: "404",
+                        title: "Resource Not Found"
+                      }
+                    ]
+                  },
+                  :not_found
     end
 
     @doc """
@@ -105,27 +91,23 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     """
     @spec ownership_error(Conn.t) :: Conn.t
     def ownership_error(conn) do
-      conn
-      # DBConnection.OwnershipError raised when the connection was checked out from the pool too long and the lease was
-      # revoked.  This could be a 504 Gateway Timeout, but that pool is inside Elixir and not part of the Database
-      # itself, so keeping as 500 Internal Server Error.  504 Gateway Timeout is also not accurate, because the
-      # "gateway" is responding, it's just saying you can't do it.
-      #
-      # See 5XX section of http://racksburg.com/choosing-an-http-status-code/
-      |> put_status(:internal_server_error)
-      |> put_resp_content_type("application/vnd.api+json")
-      |> json(
-           %Document{
-             errors: [
-               %Error{
-                 detail: "Owner of backing store connection could not be found",
-                 status: "500",
-                 title: "Ownership Error"
-               }
-             ]
-           }
-         )
-      |> halt()
+      render_json conn,
+                   %Document{
+                     errors: [
+                       %Error{
+                         detail: "Owner of backing store connection could not be found",
+                         status: "500",
+                         title: "Ownership Error"
+                       }
+                     ]
+                   },
+                   # DBConnection.OwnershipError raised when the connection was checked out from the pool too long and
+                   # the lease was # revoked.  This could be a 504 Gateway Timeout, but that pool is inside Elixir and
+                   # not part of the Database # itself, so keeping as 500 Internal Server Error.  504 Gateway Timeout is
+                   # also not accurate, because the # "gateway" is responding, it's just saying you can't do it.
+                   #
+                   # See 5XX section of http://racksburg.com/choosing-an-http-status-code/
+                   :internal_server_error
     end
 
     @doc """
@@ -194,23 +176,20 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     """
     @spec sandbox_access_disallowed(Conn.t) :: Conn.t
     def sandbox_access_disallowed(conn) do
-      conn
-      |> put_status(:unprocessable_entity)
-      |> put_resp_content_type("application/vnd.api+json")
-      |> json(
-           %Document{
-             errors: [
-               %Error{
-                 detail: "Information in /meta/beam was not enough to grant access to the sandbox",
-                 source: %Source{
-                   pointer: "/meta/beam"
-                 },
-                 status: "422",
-                 title: "Sandbox Access Disallowed"
-               }
-             ]
-           }
-         )
+      render_json conn,
+                  %Document{
+                    errors: [
+                      %Error{
+                        detail: "Information in /meta/beam was not enough to grant access to the sandbox",
+                        source: %Source{
+                          pointer: "/meta/beam"
+                        },
+                        status: "422",
+                        title: "Sandbox Access Disallowed"
+                      }
+                    ]
+                  },
+                  :unprocessable_entity
     end
 
     @doc """
@@ -218,23 +197,20 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     """
     @spec sandbox_token_missing(Conn.t) :: Conn.t
     def sandbox_token_missing(conn) do
-      conn
-      |> put_status(:unprocessable_entity)
-      |> put_resp_content_type("application/vnd.api+json")
-      |> json(
-           %Document{
-             errors: [
-               Error.missing(
-                 %Error{
-                   source: %Source{
-                     pointer: "/meta"
-                   }
-                 },
-                 "beam"
-               )
-             ]
-           }
-         )
+      render_json conn,
+                  %Document{
+                    errors: [
+                      Error.missing(
+                        %Error{
+                          source: %Source{
+                            pointer: "/meta"
+                          }
+                        },
+                        "beam"
+                      )
+                    ]
+                  },
+                  :unprocessable_entity
     end
   end
 end
