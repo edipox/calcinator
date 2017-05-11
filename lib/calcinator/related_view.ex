@@ -36,7 +36,7 @@ defmodule Calcinator.RelatedView do
       ) do
     "show.json-api"
     |> related_view_module.render(Map.delete(options, [:related, :source]))
-    |> put_in(["data", "links"], links(options))
+    |> put_links(options)
   end
 
   ## Private Functions
@@ -59,5 +59,17 @@ defmodule Calcinator.RelatedView do
     %{
       self: "#{base_url}/#{relationship}",
     }
+  end
+
+  defp put_links(rendered, options) do
+    case rendered["data"] do
+      # has_many relationship has relationship in top-level "links" since it is the link for collection of resources
+      # has_one with nil data has no object for data, so "links" must go to top-level
+      data when is_list(data) or is_nil(data) ->
+        put_in rendered["links"], links(options)
+      # has_one without nil has an object, so "links" can be added
+      data when is_map(data) ->
+        put_in rendered["data"]["links"], links(options)
+    end
   end
 end

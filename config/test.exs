@@ -11,3 +11,6 @@ config :calcinator,
 # Print only warnings and errors during test
 config :logger,
        level: :warn
+
+config :phoenix, :format_encoders,
+  "json-api": Poison

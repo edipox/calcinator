@@ -77,8 +77,14 @@ defmodule Calcinator do
   def authorized(%__MODULE__{}, nil), do: nil
 
   # Filters `struct` or list of `struct`s to only those that can be shown
-  @spec authorized(t, resource :: struct) :: struct
+  @spec authorized(t, unfiltered :: struct) :: struct
   def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered = %_{}) do
+    authorization_module.filter_associations_can(unfiltered, subject, :show)
+  end
+
+  @spec authorized(t, unfiltered :: [struct]) :: [struct]
+  def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered)
+      when is_list(unfiltered) do
     authorization_module.filter_associations_can(unfiltered, subject, :show)
   end
 
@@ -101,8 +107,11 @@ defmodule Calcinator do
     |> status_changeset()
   end
 
-  @spec get(module, params, id_key :: String.t, Resources.query_options) ::
-        {:error, {:not_found, parameter} | :timeout | term} | {:ok, Ecto.Schema.t}
+  @spec get(module, params, id_key :: String.t, Resources.query_options) :: {:ok, Ecto.Schema.t} |
+                                                                            {:error, {:not_found, parameter}} |
+                                                                            {:error, :ownership} |
+                                                                            {:error, :timeout} |
+                                                                            {:error, reason :: term}
   def get(resources_module, params, id_key, query_options) when is_map(query_options) do
     with {:error, :not_found} <- params |> Map.fetch!(id_key) |> resources_module.get(query_options) do
       {:error, {:not_found, id_key}}
@@ -138,6 +147,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:ok, rendereded}` - rendered view of created resource
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :sandbox_access_disallowed}` - Sandbox token was required and present, but did not have the correct
       information to grant access.
@@ -149,17 +159,16 @@ defmodule Calcinator do
       `can?(subject, :create, %Ecto.Changeset{})` returns `false`
     * `{:error, Alembic.Document.t}` - if `params` is not a valid JSONAPI document
     * `{:error, Ecto.Changeset.t}` - if validations errors inserting `Ecto.Changeset.t`
-    * `{:ok, rendereded}` - rendered view of created resource
 
   """
-  @spec create(t, params) :: {:error, :ownership} |
+  @spec create(t, params) :: {:ok, rendered} |
+                             {:error, :ownership} |
                              {:error, :sandbox_access_disallowed} |
                              {:error, :sandbox_token_missing} |
                              {:error, :timeout} |
                              {:error, :unauthorized} |
                              {:error, Document.t} |
-                             {:error, Ecto.Changeset.t} |
-                             {:ok, rendered}
+                             {:error, Ecto.Changeset.t}
   def create(state = %__MODULE__{
                        ecto_schema_module: ecto_schema_module,
                        subject: subject,
@@ -192,6 +201,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `:ok` - resource was successfully deleted
     * `{:error, {:not_found, "id"}}` - The "id" did not correspond to resource in the backing store
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :sandbox_access_disallowed}` - Sandbox token was required and present, but did not have the correct
@@ -201,8 +211,9 @@ defmodule Calcinator do
     * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
       `Calcinator.Resources.get/2` or `Calcinator.Resources.delete/1`.
     * `{:error, :unauthorized}` - The `state` `subject` is not authorized to delete the resource
+    * `{:error, Alembic.Document.t}` - JSONAPI error document with `params` errors
     * `{:error, Ecto.Changeset.t}` - the deletion failed with the errors in `Ecto.Changeset.t`
-    * `:ok` - resource was successfully deleted
+    * `{:error, reason}` - a backing store-specific error
 
   """
   @spec delete(t, params) :: :ok |
@@ -212,12 +223,16 @@ defmodule Calcinator do
                              {:error, :sandbox_token_missing} |
                              {:error, :timeout} |
                              {:error, :unauthorized} |
-                             {:error, Ecto.Changeset.t}
+                             {:error, Document.t} |
+                             {:error, Ecto.Changeset.t} |
+                             {:error, reason :: term}
   def delete(state = %__MODULE__{}, params) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, target} <- get(state, params),
          :ok <- can(state, :delete, target),
-         {:ok, _deleted} <- delete_ecto_schema(state, target) do
+         # generate a changeset, so `resources_module` can add constraints
+         {:ok, changeset} <- changeset(state, target, %{}),
+         {:ok, _deleted} <- delete_changeset(state, changeset) do
       :ok
     end
   end
@@ -237,6 +252,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:ok, rendered}` - rendered view of related resource
     * `{:error, {:not_found, id_key}}` - The value of the `id_key` key in `params` did not correspond to a resource in
       the backing store.
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
@@ -247,16 +263,19 @@ defmodule Calcinator do
     * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
       `Calcinator.Resources.get/2`.
     * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
-    * `{:ok, rendered}` - rendered view of related resource
+    * `{:error, Alembic.Document.t}` - JSONAPI error document with `params` errors
+    * `{:error, reason}` - a backing store-specific error
 
   """
-  @spec get_related_resource(t, params, map) :: {:error, {:not_found, parameter}} |
+  @spec get_related_resource(t, params, map) :: {:ok, rendered} |
+                                                {:error, {:not_found, parameter}} |
                                                 {:error, :ownership} |
                                                 {:error, :sandbox_access_disallowed} |
                                                 {:error, :sandbox_token_missing} |
                                                 {:error, :timeout} |
                                                 {:error, :unauthorized} |
-                                                {:ok, rendered}
+                                                {:error, Document.t} |
+                                                {:error, reason :: term}
   def get_related_resource(
         state = %__MODULE__{},
         params,
@@ -281,6 +300,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:ok, rendered}` - the rendered resources with (optional) pagination in the `"meta"`.
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :sandbox_access_disallowed}` - Sandbox token was required and present, but did not have the correct
       information to grant access.
@@ -290,16 +310,16 @@ defmodule Calcinator do
     * `{:error, :unauthorized}` - if `state` `authorization_module` `can?(subject, :index, ecto_schema_module)` returns
       `false`
     * `{:error, Alembic.Document.t}` - if `params` are not valid JSONAPI.
-    * `{:ok, rendered}` - the rendered resources with (optional) pagination in the `"meta"`.
 
   """
-  @spec index(t, params, %{required(:base_uri) => URI.t}) :: {:error, :ownership} |
+  @spec index(t, params, %{required(:base_uri) => URI.t}) :: {:ok, rendered} |
+                                                             {:error, :ownership} |
                                                              {:error, :sandbox_access_disallowed} |
                                                              {:error, :sandbox_token_missing} |
                                                              {:error, :timeout} |
                                                              {:error, :unauthorized} |
-                                                             {:error, Document.t} |
-                                                             {:ok, rendered}
+                                                             {:error, Document.t}
+
   def index(state = %__MODULE__{
                       ecto_schema_module: ecto_schema_module,
                       subject: subject,
@@ -335,6 +355,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:ok, rendered}` - rendered resource
     * `{:error, {:not_found, "id"}}` - The "id" did not correspond to resource in the backing store
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :sandbox_access_disallowed}` - Sandbox token was required and present, but did not have the correct
@@ -345,17 +366,18 @@ defmodule Calcinator do
       `Calcinator.Resources.get/2`.
     * `{:error, :unauthorized}` - `state` `authorization_module` `can?(subject, :show, got)` returns `false`
     * `{:error, Alembic.Document.t}` - `params` is not valid JSONAPI
-    * `{:ok, rendered}` - rendered resource
+    * `{:error, reason}` - a backing store-specific error
 
   """
-  @spec show(t, params) :: {:error, {:not_found, parameter}} |
+  @spec show(t, params) :: {:ok, rendered} |
+                           {:error, {:not_found, parameter}} |
                            {:error, :ownership} |
                            {:error, :sandbox_access_disallowed} |
                            {:error, :sandbox_token_missing} |
                            {:error, :timeout} |
                            {:error, :unauthorized} |
                            {:error, Document.t} |
-                           {:ok, rendered}
+                           {:error, reason :: term}
   def show(state = %__MODULE__{subject: subject, view_module: view_module}, params = %{"id" => _}) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, shown} <- get(state, params),
@@ -379,6 +401,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:ok, rendered}` - rendered view of relationship
     * `{:error, {:not_found, id_key}}` - The value of the `id_key` key in `params` did not correspond to a resource in
       the backing store.
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
@@ -389,16 +412,19 @@ defmodule Calcinator do
     * `{:error, :timeout}` - if the backing store for `state` `resources_module` times out when calling
       `Calcinator.Resources.get/2`.
     * `{:error, :unauthorized}` - if the either the source or related resource cannot be shown
-    * `{:ok, rendered}` - rendered view of relationship
+    * `{:error, Alembic.Document.t}` - JSONAPI error document with `params` errors
+    * `{:error, reason}` - a backing store-specific error
 
   """
-  @spec show_relationship(t, params, map) :: {:error, {:not_found, parameter}} |
+  @spec show_relationship(t, params, map) :: {:ok, rendered} |
+                                             {:error, {:not_found, parameter}} |
                                              {:error, :ownership} |
                                              {:error, :sandbox_access_disallowed} |
                                              {:error, :sandbox_token_missing} |
                                              {:error, :timeout} |
                                              {:error, :unauthorized} |
-                                             {:ok, rendered}
+                                             {:error, Document.t} |
+                                             {:error, reason :: term}
   def show_relationship(
         state = %__MODULE__{},
         params,
@@ -422,6 +448,7 @@ defmodule Calcinator do
 
   ## Returns
 
+    * `{:ok, rendered}` - the rendered updated resource
     * `{:error, :bad_gateway}` - backing store as internal error that can't be represented in any other format.
       Try again later or call support.
     * `{:error, {:not_found, "id"}}` - get failed or update failed because the resource was deleted between the get and
@@ -436,10 +463,11 @@ defmodule Calcinator do
     * `{:error, :unauthorized}` - the resource either can't be shown or can't be updated
     * `{:error, Alembic.Document.t}` - the `params` are not valid JSONAPI
     * `{:error, Ecto.Changeset.t}` - validations error when updating
-    * `{:ok, rendered}` - the rendered updated resource
+    * `{:error, reason}` - a backing store-specific error
 
   """
-  @spec update(t, params) :: {:error, :bad_gateway} |
+  @spec update(t, params) :: {:ok, rendered} |
+                             {:error, :bad_gateway} |
                              {:error, {:not_found, parameter}} |
                              {:error, :ownership} |
                              {:error, :sandbox_access_disallowed} |
@@ -447,7 +475,7 @@ defmodule Calcinator do
                              {:error, :unauthorized} |
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t} |
-                             {:ok, rendered}
+                             {:error, reason :: term}
   def update(state = %__MODULE__{subject: subject, view_module: view_module}, params) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, updatable} <- get(state, params),
@@ -534,8 +562,10 @@ defmodule Calcinator do
   end
 
   @spec create_changeset(t, Ecto.Changeset.t, params) :: {:ok, struct} |
+                                                         {:error, :ownership} |
                                                          {:error, :sandbox_access_disallowed} |
                                                          {:error, :sandbox_token_missing} |
+                                                         {:error, :timeout} |
                                                          {:error, Document.t} |
                                                          {:error, Ecto.Changeset.t}
   defp create_changeset(state = %__MODULE__{resources_module: resources_module}, changeset = %Ecto.Changeset{}, params)
@@ -546,8 +576,13 @@ defmodule Calcinator do
     end
   end
 
-  @spec delete_ecto_schema(t, Ecto.Schema.t) :: {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-  defp delete_ecto_schema(%__MODULE__{resources_module: resources_module}, schema), do: resources_module.delete(schema)
+  @spec delete_changeset(t, Ecto.Changeset.t) :: {:ok, Ecto.Schema.t} |
+                                                 {:error, :ownership} |
+                                                 {:error, :timeout} |
+                                                 {:error, Ecto.Changeset.t}
+  defp delete_changeset(%__MODULE__{resources_module: resources_module}, changeset) do
+    resources_module.delete(changeset)
+  end
 
   @spec document(params, FromJson.action) :: {:ok, Document.t}  | {:error, Document.t}
   defp document(raw_params, action) do
@@ -565,7 +600,12 @@ defmodule Calcinator do
     )
   end
 
-  @spec get(t, params) :: {:error, {:not_found, parameter}} | {:error, Document.t} | {:ok, Ecto.Schema.t}
+  @spec get(t, params) :: {:ok, Ecto.Schema.t} |
+                          {:error, {:not_found, parameter}} |
+                          {:error, :ownership} |
+                          {:error, :timeout} |
+                          {:error, Document.t} |
+                          {:error, reason :: term}
   defp get(state = %__MODULE__{resources_module: resources_module}, params) do
     with {:ok, query_options} <- params_to_query_options(state, params) do
       get(resources_module, params, "id", query_options)
@@ -573,7 +613,7 @@ defmodule Calcinator do
   end
 
   @spec get_maybe_authorized_related(t, Ecto.Schema.t, atom) ::
-        {:error, :unauthorized} | {:ok, nil} | {:ok, Ecto.Schema.t} | no_return
+          {:ok, nil} | {:ok, Ecto.Schema.t} | {:error, :unauthorized}
   defp get_maybe_authorized_related(state, source, association) do
     case get_related(source, association) do
       nil ->
@@ -601,7 +641,12 @@ defmodule Calcinator do
                    %{
                      required(:association) => association,
                      required(:id_key) => String.t,
-                   }) :: {:error, {:not_found, parameter} | :timeout | term} | {:ok, Ecto.Schema.t}
+                   }) :: {:ok, Ecto.Schema.t} |
+                         {:error, {:not_found, parameter}} |
+                         {:error, :ownership} |
+                         {:error, :timeout} |
+                         {:error, Document.t} |
+                         {:error, term}
   defp get_source(%{resources_module: resources_module},
                   params,
                   %{association: association, id_key: id_key}) do
@@ -641,11 +686,15 @@ defmodule Calcinator do
     end
   end
 
-  @spec related_property(t, params, map) :: {:error, {:not_found, parameter}} |
+  @spec related_property(t, params, map) :: {:ok, rendered} |
+                                            {:error, {:not_found, parameter}} |
+                                            {:error, :ownership} |
                                             {:error, :sandbox_access_disallowed} |
                                             {:error, :sandbox_token_missing} |
+                                            {:error, :timeout} |
                                             {:error, :unauthorized} |
-                                            {:ok, rendered}
+                                            {:error, Document.t} |
+                                            {:error, term}
   defp related_property(
         state = %__MODULE__{subject: subject, view_module: view_module},
         params,

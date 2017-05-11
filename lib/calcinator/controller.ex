@@ -112,7 +112,6 @@ if Code.ensure_loaded?(Phoenix.Controller) do
 
     """
 
-    alias Alembic.Document
     alias Plug.Conn
 
     import Calcinator.{Authorization, Controller.Error}
@@ -192,32 +191,20 @@ if Code.ensure_loaded?(Phoenix.Controller) do
 
     @spec create(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def create(conn = %Conn{}, params, calcinator = %Calcinator{}) do
-      case Calcinator.create(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
-        {:ok, rendered} ->
-          conn
-          |> put_status(:created)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:created, Poison.encode!(rendered))
-        {:error, :unauthorized} ->
-          forbidden(conn)
-        {:error, changeset = %Ecto.Changeset{}} ->
-          render_changeset_error(conn, changeset)
-        {:error, document = %Document{}} ->
-          render_json(conn, document, :unprocessable_entity)
-      end
+      put_rendered_or_error(
+        conn,
+        Calcinator.create(%Calcinator{calcinator | subject: get_subject(conn)}, params),
+        :created
+      )
     end
 
     @spec delete(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def delete(conn, params = %{"id" => _}, calcinator = %Calcinator{}) do
       case Calcinator.delete(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
         :ok ->
-          conn
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:no_content, "")
-        {:error, {:not_found, parameter}} ->
-          not_found(conn, parameter)
-        {:error, :unauthorized} ->
-          forbidden(conn)
+          deleted(conn)
+        error ->
+          put_calcinator_error(conn, error)
       end
     end
 
@@ -227,6 +214,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     assigns.
 
         resources "/posts", PostController do
+           # Route will be `/posts/:author_id/author`
            get "/author",
                PostController,
                :get_related_resource,
@@ -236,8 +224,8 @@ if Code.ensure_loaded?(Phoenix.Controller) do
                    view_module: AuthorView
                  },
                  source: %{
-                   association: :credential_source,
-                   id_key: "credential_id"
+                   association: :author,
+                   id_key: "post_id"
                  }
                }
         end
@@ -254,58 +242,34 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           params,
           calcinator = %Calcinator{}
         ) do
-      case Calcinator.get_related_resource(
-             %Calcinator{calcinator | subject: get_subject(conn)},
-             params,
-             %{
-               related: related,
-               source: source
-             }
-           ) do
-        {:ok, rendered} ->
-          conn
-          |> put_status(:ok)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:ok, Poison.encode!(rendered))
-        {:error, {:not_found, parameter}} ->
-          not_found(conn, parameter)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-      end
+      put_rendered_or_error(
+         conn,
+         Calcinator.get_related_resource(
+           %Calcinator{calcinator | subject: get_subject(conn)},
+           params,
+           %{related: related, source: source}
+         )
+      )
     end
 
     @spec index(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def index(conn, params, calcinator = %Calcinator{}) do
-      case Calcinator.index(%Calcinator{calcinator | subject: get_subject(conn)},
-                            params,
-                            %{base_uri: base_uri(conn)}) do
-        {:ok, rendered} ->
-          conn
-          |> put_status(:ok)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:ok, Poison.encode!(rendered))
-        {:error, :unauthorized} ->
-          forbidden(conn)
-        {:error, document = %Document{}} ->
-           render_json(conn, document, :unprocessable_entity)
-      end
+      put_rendered_or_error(
+        conn,
+        Calcinator.index(
+          %Calcinator{calcinator | subject: get_subject(conn)},
+          params,
+          %{base_uri: base_uri(conn)}
+        )
+      )
     end
 
     @spec show(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def show(conn, params = %{"id" => _}, calcinator = %Calcinator{}) do
-       case Calcinator.show(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
-         {:ok, rendered} ->
-           conn
-           |> put_status(:ok)
-           |> put_resp_content_type("application/vnd.api+json")
-           |> send_resp(:ok, Poison.encode!(rendered))
-         {:error, {:not_found, parameter}} ->
-           not_found(conn, parameter)
-         {:error, :unauthorized} ->
-           forbidden(conn)
-         {:error, document = %Document{}} ->
-           render_json(conn, document, :unprocessable_entity)
-       end
+      put_rendered_or_error(
+        conn,
+        Calcinator.show(%Calcinator{calcinator | subject: get_subject(conn)}, params)
+      )
     end
 
     @doc """
@@ -314,18 +278,25 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     assigns.
 
         resources "/posts", PostController do
+          # Route will be `/posts/:post_id/relationships/author`
           get "/relationships/author"",
               PostController,
               :show_relationship,
               as: :relationships_author,
               assigns: %{
-                association: :author,
+                related: %{
+                  view_module: AuthorView
+                }
                 source: %{
-                  id_key: "author_id"
+                  association: :author,
+                  id_key: "post_id"
                 }
               }
         end
 
+    For relationships, the related resource is not rendered through it's view, but the `related[:view_module]` is still
+    needed in the `assigns` for the `view_module.type()` of the associated resource since relatinships are composed of
+    the `"type"` and `"id"` of the related resource(s).
     """
     @spec show_relationship(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def show_relationship(
@@ -338,47 +309,31 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           params,
           calcinator = %Calcinator{}
         ) do
-      case Calcinator.show_relationship(
-             %Calcinator{calcinator | subject: get_subject(conn)},
-             params,
-             %{related: related, source: source}
-           ) do
-        {:ok, rendered} ->
-          conn
-          |> put_status(:ok)
-          |> put_resp_content_type("application/vnd.api+json")
-          |> send_resp(:ok, Poison.encode!(rendered))
-        {:error, {:not_found, parameter}} ->
-          not_found(conn, parameter)
-        {:error, :unauthorized} ->
-          forbidden(conn)
-      end
+      put_rendered_or_error(
+        conn,
+        Calcinator.show_relationship(
+          %Calcinator{calcinator | subject: get_subject(conn)},
+          params,
+          %{related: related, source: source}
+        )
+      )
     end
 
     @spec update(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def update(conn, params, calcinator = %Calcinator{}) do
-       case Calcinator.update(%Calcinator{calcinator | subject: get_subject(conn)}, params) do
-         {:ok, rendered} ->
-           conn
-           |> put_status(:ok)
-           |> put_resp_content_type("application/vnd.api+json")
-           |> send_resp(:ok, Poison.encode!(rendered))
-         {:error, :bad_gateway} ->
-           bad_gateway(conn)
-         {:error, {:not_found, parameter}} ->
-           not_found(conn, parameter)
-         {:error, :unauthorized} ->
-           forbidden(conn)
-         {:error, changeset = %Ecto.Changeset{}} ->
-           render_changeset_error(conn, changeset)
-         {:error, document = %Document{}} ->
-           render_json(conn, document, :unprocessable_entity)
-       end
+      put_rendered_or_error(
+        conn,
+        Calcinator.update(%Calcinator{calcinator | subject: get_subject(conn)}, params)
+      )
     end
 
     ## Private Functions
 
     defp base_uri(%Conn{request_path: path}), do: %URI{path: path}
+
+    defp put_rendered_or_error(conn, rendered_or_error, status \\ :ok)
+    defp put_rendered_or_error(conn, {:ok, rendered}, status), do: render_json(conn, rendered, status)
+    defp put_rendered_or_error(conn, error, _), do: put_calcinator_error(conn, error)
 
     defp quoted_action(quoted_name, quoted_configuration) do
       quote do

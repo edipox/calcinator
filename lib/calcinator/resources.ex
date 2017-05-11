@@ -53,21 +53,25 @@ defmodule Calcinator.Resources do
   @callback changeset(params) :: Ecto.Changeset.t
 
   @doc """
-  Changeset for updating `struct` with `params`
+  * Changeset for updating `resource` with `params`.
+  * Changeset for deleting `resource` (`params` will be an empty map)
   """
   @callback changeset(resource :: Ecto.Schema.t, params) :: Ecto.Changeset.t
 
   @doc """
-  Deletes a single `struct`
+  Deletes a single struct in a `changeset`
 
   ## Returns
 
     * `{:ok, struct}` - the delete succeeded and the returned struct is the state before delete
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:error, :timeout}` - timeout occured while deleting `struct` from backing store.
-    * `{:error, Ecto.Changeset.t}` - errors while deleting the `struct`.  `Ecto.Changeset.t` `errors` contains errors.
+    * `{:error, Ecto.Changeset.t}` - errors while deleting the `changeset`.  `Ecto.Changeset.t` `errors` contains
+      errors.  These will normally be constraint errors or only those validations that can occur in `prepare_changes`
+      callbacks that require `Ecto.Changeset.t` `action` and or `repo` to be set.
   """
-  @callback delete(struct) :: {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
+  @callback delete(changeset :: Ecto.Changeset.t) ::
+              {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
 
   @doc """
   Gets a single `struct`

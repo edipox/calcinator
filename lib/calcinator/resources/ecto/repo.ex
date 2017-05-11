@@ -128,7 +128,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
       def changeset(data, params), do: EctoRepoResources.changeset(__MODULE__, data, params)
 
-      def delete(data), do: EctoRepoResources.delete(__MODULE__, data)
+      def delete(changeset), do: EctoRepoResources.delete(__MODULE__, changeset)
 
       @spec get(Resources.id, Resources.query_options) ::
             {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
@@ -203,13 +203,14 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   @doc """
-  Deletes `data` from `module`'s `repo/0`
+  Deletes `changeset` from `module`'s `repo/0`
   """
-  @spec delete(module, Ecto.Schema.t) :: {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
-  def delete(module, data) do
+  @spec delete(module, changeset :: Ecto.Changeset.t) ::
+        {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
+  def delete(module, changeset) do
     repo = module.repo()
 
-    wrap_ownership_error(repo, :delete, [data])
+    wrap_ownership_error(repo, :delete, [changeset])
   end
 
   @doc """
