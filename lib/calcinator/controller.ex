@@ -369,13 +369,19 @@ if Code.ensure_loaded?(Phoenix.Controller) do
               :show_relationship,
               as: :relationships_author,
               assigns: %{
-                association: :author,
+                related: %{
+                  view_module: AuthorView
+                }
                 source: %{
-                  id_key: "author_id"
+                  association: :author,
+                  id_key: "post_id"
                 }
               }
         end
 
+    For relationships, the related resource is not rendered through it's view, but the `related[:view_module]` is still
+    needed in the `assigns` for the `view_module.type()` of the associated resource since relatinships are composed of
+    the `"type"` and `"id"` of the related resource(s).
     """
     @spec show_relationship(Conn.t, Calcinator.params, Calcinator.t) :: Conn.t
     def show_relationship(
