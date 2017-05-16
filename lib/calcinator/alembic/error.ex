@@ -112,7 +112,7 @@ defmodule Calcinator.Alembic.Error do
   @doc """
   Puts 422 Unrpcessable Entity JSONAPI error document with error with title `"Child missing".
   """
-  @spec sandbox_token_missing :: Document.t
+  @spec sandbox_token_missing :: Error.t
   def sandbox_token_missing do
     Error.missing(
       %Error{
