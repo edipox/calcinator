@@ -187,7 +187,7 @@ defmodule Calcinator.ControllerTest do
       assert %{"errors" => errors} = json_response(conn, 422)
       assert length(errors) == 1
       assert %{
-               "detail" => "Name can't be blank",
+               "detail" => "name can't be blank",
                "source" => %{
                  "pointer" => "/data/attributes/name"
                },
@@ -360,10 +360,9 @@ defmodule Calcinator.ControllerTest do
       assert %{"errors" => errors} = json_response(conn, 422)
       assert length(errors) == 1
       assert %{
-               "detail" => "Posts are still associated with this entry",
+               "detail" => "posts are still associated with this entry",
                "source" => %{
-                 # This pointer not being under relationships is a known JaSerializer bug
-                 "pointer" => "/data/attributes/posts"
+                 "pointer" => "/data/relationships/posts"
                },
                "title" => "are still associated with this entry"
              } in errors
@@ -1324,7 +1323,7 @@ defmodule Calcinator.ControllerTest do
       assert %{"errors" => errors} = json_response(conn, 422)
       assert length(errors) == 1
       assert %{
-               "detail" => "Name can't be blank",
+               "detail" => "name can't be blank",
                "source" => %{
                  "pointer" => "/data/attributes/name"
                },

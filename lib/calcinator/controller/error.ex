@@ -5,13 +5,14 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     have same format for errors.
     """
 
-    alias Calcinator.{Alembic.Document, ChangesetView}
+    alias Calcinator.Alembic.Document
+    alias JaSerializer.Formatter.Utils
     alias Plug.Conn
 
     require Logger
 
     import Conn, only: [halt: 1, put_resp_content_type: 2, put_status: 2, send_resp: 3]
-    import Phoenix.Controller, only: [json: 2, render: 4]
+    import Phoenix.Controller, only: [json: 2]
 
     @doc """
     Retort returned a 500 JSONAPI error inside a 422 JSONRPC error.
@@ -108,14 +109,14 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     end
 
     @doc """
-    Renders `changeset` as an error object using the `Calcinator.ChangesetView`.
+    Renders `changeset` as an error object using the `Alembic.Document.from_ecto_changeset/1`.
     """
     @spec render_changeset_error(Conn.t, Ecto.Changeset.t) :: Conn.t
     def render_changeset_error(conn, changeset) do
       conn
       |> put_status(:unprocessable_entity)
       |> put_resp_content_type()
-      |> render(ChangesetView, "error-object.json", changeset)
+      |> json(Alembic.Document.from_ecto_changeset(changeset, %{format_key: &Utils.format_key/1}))
       |> halt()
     end
 
