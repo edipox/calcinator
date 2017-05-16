@@ -75,6 +75,16 @@ defmodule Calcinator.Meta.Beam do
   @spec put(map, repo | token) :: map
   def put(meta, repo_or_token), do: Map.put(meta, @key, encode(repo_or_token))
 
+  @doc """
+  Puts BEAM metadata into `meta` if its not already present
+  """
+  def put_new_lazy(meta, repo_or_token_generator) do
+    Map.put_new_lazy meta, @key, fn ->
+      repo_or_token_generator.()
+      |> encode()
+    end
+  end
+
   ## Private Functions
 
   @spec version1_token(repo) :: version1_token
