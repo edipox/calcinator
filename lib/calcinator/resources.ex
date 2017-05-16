@@ -73,7 +73,7 @@ defmodule Calcinator.Resources do
       errors.  These will normally be constraint errors or only those validations that can occur in `prepare_changes`
       callbacks that require `Ecto.Changeset.t` `action` and or `repo` to be set.
   """
-  @callback delete(changeset :: Ecto.Changeset.t) ::
+  @callback delete(changeset :: Ecto.Changeset.t, query_options) ::
               {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
 
   @doc """

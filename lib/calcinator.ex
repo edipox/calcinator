@@ -228,11 +228,12 @@ defmodule Calcinator do
                              {:error, reason :: term}
   def delete(state = %__MODULE__{}, params) do
     with :ok <- allow_sandbox_access(state, params),
-         {:ok, target} <- get(state, params),
+         {:ok, query_options} <- params_to_query_options(state, params),
+         {:ok, target} <- get(state, params, query_options),
          :ok <- can(state, :delete, target),
          # generate a changeset, so `resources_module` can add constraints
          {:ok, changeset} <- changeset(state, target, %{}),
-         {:ok, _deleted} <- delete_changeset(state, changeset) do
+         {:ok, _deleted} <- delete_changeset(state, changeset, query_options) do
       :ok
     end
   end
@@ -576,12 +577,12 @@ defmodule Calcinator do
     end
   end
 
-  @spec delete_changeset(t, Ecto.Changeset.t) :: {:ok, Ecto.Schema.t} |
-                                                 {:error, :ownership} |
-                                                 {:error, :timeout} |
-                                                 {:error, Ecto.Changeset.t}
-  defp delete_changeset(%__MODULE__{resources_module: resources_module}, changeset) do
-    resources_module.delete(changeset)
+  @spec delete_changeset(t, Ecto.Changeset.t, Resources.query_options) :: {:ok, Ecto.Schema.t} |
+                                                                          {:error, :ownership} |
+                                                                          {:error, :timeout} |
+                                                                          {:error, Ecto.Changeset.t}
+  defp delete_changeset(%__MODULE__{resources_module: resources_module}, changeset, query_options) do
+    resources_module.delete(changeset, query_options)
   end
 
   @spec document(params, FromJson.action) :: {:ok, Document.t}  | {:error, Document.t}
@@ -606,10 +607,20 @@ defmodule Calcinator do
                           {:error, :timeout} |
                           {:error, Document.t} |
                           {:error, reason :: term}
-  defp get(state = %__MODULE__{resources_module: resources_module}, params) do
+  defp get(state, params) do
     with {:ok, query_options} <- params_to_query_options(state, params) do
-      get(resources_module, params, "id", query_options)
+      get(state, params, query_options)
     end
+  end
+
+  @spec get(t, params, Resources.query_options) :: {:ok, Ecto.Schema.t} |
+                                                   {:error, {:not_found, parameter}} |
+                                                   {:error, :ownership} |
+                                                   {:error, :timeout} |
+                                                   {:error, Document.t} |
+                                                   {:error, reason :: term}
+  defp get(%__MODULE__{resources_module: resources_module}, params, query_options) do
+    get(resources_module, params, "id", query_options)
   end
 
   @spec get_maybe_authorized_related(t, Ecto.Schema.t, atom) ::
