@@ -120,6 +120,7 @@ defmodule Calcinator.Mixfile do
       "CONTRIBUTING.md",
       "LICENSE.md",
       "README.md",
+      "UPGRADING.md"
     ]
   end
 
