@@ -75,6 +75,7 @@
   * Pass `:meta` through `Calcinator.Retort.query_options`, which allows pass through of meta like from `Calcinator.Meta.Beam`, which is necessary for indirect callbacks through RPC calls for `retort`.
   * Move `Calcinator.Meta.Beam` key to module attribute to prevent typos.
   * `Calcinator.Meta.beam.put_new_laz` allows beam information to only be set in `meta` if its not already there to allow for loops between `Calcinator` servers.
+* [#23](https://github.com/C-S-D/calcinator/pull/23) - Update to `phoenix` `1.2.4` - [@KronicDeth](https://github.com/KronicDeth)
 
 ### Bug Fixes
 * [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
