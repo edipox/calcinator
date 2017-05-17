@@ -5,6 +5,7 @@ defmodule Calcinator.Meta.Beam do
 
   # CONSTANTS
 
+  @key "beam"
   @version :v1
 
   # Types
@@ -49,7 +50,7 @@ defmodule Calcinator.Meta.Beam do
 
   @spec get(map) :: map
   def get(meta) do
-    case Map.fetch(meta, :beam) do
+    case Map.fetch(meta, @key) do
       {:ok, beam} -> decode(beam)
       :error -> %{}
     end
@@ -72,7 +73,17 @@ defmodule Calcinator.Meta.Beam do
   Puts BEAM metadata into `meta`
   """
   @spec put(map, repo | token) :: map
-  def put(meta, repo_or_token), do: Map.put(meta, :beam, encode(repo_or_token))
+  def put(meta, repo_or_token), do: Map.put(meta, @key, encode(repo_or_token))
+
+  @doc """
+  Puts BEAM metadata into `meta` if its not already present
+  """
+  def put_new_lazy(meta, repo_or_token_generator) do
+    Map.put_new_lazy meta, @key, fn ->
+      repo_or_token_generator.()
+      |> encode()
+    end
+  end
 
   ## Private Functions
 

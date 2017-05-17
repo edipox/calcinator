@@ -23,12 +23,15 @@ defmodule Calcinator.Resources do
   @typedoc """
     * `:associations` - associations to load in the `struct`
     * `:filters` - filters on the result
+    * `:meta` - meta data that is traded back and forth between clients and servers that don't fit into JSONAPI, such as
+      `Calcinator.Meta.Beam`.
     * `:page` - the page used for pagination.  `nil` implies no pagination, not default pagination.
     * `:sorts` - the directions to sort fields on the primary resource or its associations
   """
   @type query_options :: %{
     optional(:associations) => atom | [atom],
     optional(:filters) => %{String.t => String.t},
+    optional(:meta) => %{String.t => Alembic.json},
     optional(:page) => Page.t | nil,
     optional(:sorts) => Sorts.t
   }
@@ -70,7 +73,7 @@ defmodule Calcinator.Resources do
       errors.  These will normally be constraint errors or only those validations that can occur in `prepare_changes`
       callbacks that require `Ecto.Changeset.t` `action` and or `repo` to be set.
   """
-  @callback delete(changeset :: Ecto.Changeset.t) ::
+  @callback delete(changeset :: Ecto.Changeset.t, query_options) ::
               {:ok, struct} | {:error, :ownership} | {:error, :timeout} | {:error, Ecto.Changeset.t}
 
   @doc """

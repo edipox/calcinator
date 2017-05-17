@@ -14,10 +14,10 @@ defmodule Calcinator.Resources.Ecto.Repo.TestAuthors do
 
   ## Calcinator.Resources.Ecto.Repo callbacks
 
-  def delete(data) do
+  def delete(data, query_options) do
     case override(:delete) do
       nil ->
-        super(data)
+        super(data, query_options)
       override ->
         override
     end

@@ -1,4 +1,4 @@
-%{"alembic": {:hex, :alembic, "3.2.0", "537c3bc4952478a523942a00bfdb19369a58d6052d7c58ad7384f891395dd04f", [:mix], [{:ecto, "~> 2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:poison, "~> 1.5 or ~> 2.0 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
+%{"alembic": {:hex, :alembic, "3.3.0", "67531ab87a28b3c49ee35000020a4b990061f90e89bf9f784cf5f08185cce302", [:mix], [{:ecto, "~> 2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:poison, "~> 1.5 or ~> 2.0 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "certifi": {:hex, :certifi, "1.0.0", "1c787a85b1855ba354f0b8920392c19aa1d06b0ee1362f9141279620a5be2039", [:rebar3], [], "hexpm"},
   "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm"},
