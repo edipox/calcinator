@@ -70,6 +70,11 @@
   * Deduplicate `related_property` responses in `Calcinator.Controller`
   * Extract all the error-tuple handling in `Calcinator.Controller` to `Calcinator.Controller.Error.put_calcinator_error` as most clauses were duplicated in the various actions.  This would technically allow some unexpected errors (like `{:error, {:not_found, parameter}}` for create) to be handled, but it is unlikely to cause problems since it will lead to
   `conn` response instead of a `CaseClauseError` as would be the case if some of the clauses were missing as was the case before this PR.
+* [#22](https://github.com/C-S-D/calcinator/pull/22) - [@KronicDeth](https://github.com/KronicDeth)
+  * Make the `Alembic.Document.t` and `Alembic.Error.t` that `Calcinator.Controller.Error` uses internally available in `Calcinator.Alembic.Document` and `Calcinator.Alembic.Error`, respectively, so they can be reused in overrides and `retort`.
+  * Pass `:meta` through `Calcinator.Retort.query_options`, which allows pass through of meta like from `Calcinator.Meta.Beam`, which is necessary for indirect callbacks through RPC calls for `retort`.
+  * Move `Calcinator.Meta.Beam` key to module attribute to prevent typos.
+  * `Calcinator.Meta.beam.put_new_laz` allows beam information to only be set in `meta` if its not already there to allow for loops between `Calcinator` servers.
 
 ### Bug Fixes
 * [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
@@ -90,7 +95,7 @@
   * Fix `source` `assigns` for `get_related_resource` example: example still used pre-open-sourcing `association` and `id_key`.
   * Fix show_relationship example that was just wrong. The same `assigns` as `get_related_resource` should be used.  Since at first I couldn't figure out why showing a relationship would need a view module and I wrote the code, I added a note explaining its for the `view_module.type/0` callback since relationships are resource identifiers with `id` and `type`.
   * `Calcinator.RelationshipView.data/1` assumed that `[:related][:resource]` was `nil` or a `map`, which didn't handle the `list` for has_many relationships.
-
+* [#22](https://github.com/C-S-D/calcinator/pull/22) - Fix `Calcinator.Alembic.Error.sandbox_token_missing/0` type, which should have returned an `Alembic.Error.t` instead of an `Alembic.Document.t`. - [@KronicDeth](https://github.com/KronicDeth)
 
 ### Incompatible Changes
 * [#19](https://github.com/C-S-D/calcinator/pull/19) - [@KronicDeth](https://github.com/KronicDeth)
@@ -100,6 +105,9 @@
   * `Calcinator.delete` deletes a changeset instead of a resource struct
     * `Calcinator.Resources.delete/1` must expect an `Ecto.Changeset.t`instead of a resource `struct`
     * `use Calcinator.Resources.Ecto.Repo` generates `delete/1` that expects an `Ecto.Changeset.t` and calls `Calcinator.Resources.Ecto.Repo.delete/2`, which now expects a changeset instead of resource struct as the second argument.
+* [#22](https://github.com/C-S-D/calcinator/pull/22) - [@KronicDeth](https://github.com/KronicDeth)
+  * `:meta` is now a required key in `Calcinator.Resources.query_options`.
+  * `Calcinator.Resources.delete/2` must now accept both the `Ecto.Changeset.t` with any constraints and the `Calcinator.Resources.query_options`, so that the new `meta` key can be used to continue propagating the `Calcinator.Meta.Beam` from the original caller in a chain of calls.
 
 ## v2.4.0
 
