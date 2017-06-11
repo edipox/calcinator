@@ -148,18 +148,18 @@ defmodule Calcinator.Resources.Ecto.Repo do
       def update(data, params, query_options), do: EctoRepoResources.update(__MODULE__, data, params, query_options)
 
       defoverridable [
-                       allow_sandbox_access: 1,
-                       changeset: 1,
-                       changeset: 2,
-                       delete: 2,
-                       full_associations: 1,
-                       get: 2,
-                       insert: 2,
-                       list: 1,
-                       sandboxed?: 0,
-                       update: 2,
-                       update: 3
-                     ]
+        allow_sandbox_access: 1,
+        changeset: 1,
+        changeset: 2,
+        delete: 2,
+        full_associations: 1,
+        get: 2,
+        insert: 2,
+        list: 1,
+        sandboxed?: 0,
+        update: 2,
+        update: 3
+      ]
     end
   end
 
