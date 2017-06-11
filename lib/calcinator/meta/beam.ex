@@ -32,9 +32,9 @@ defmodule Calcinator.Meta.Beam do
     |> Base.url_decode64!
     |> :erlang.binary_to_term
     |> case do
-      {@version, map} when is_map(map) -> map
-      _ -> %{}
-    end
+         {@version, map} when is_map(map) -> map
+         _ -> %{}
+       end
   end
 
   @doc """
