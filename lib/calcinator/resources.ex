@@ -213,15 +213,18 @@ defmodule Calcinator.Resources do
   def attribute_to_field(attribute, ecto_schema_module) when is_binary(attribute) and is_atom(ecto_schema_module) do
     field_string = String.replace(attribute, "-", "_")
 
-    for(potential_field <- fields(ecto_schema_module),
-        potential_field_string = to_string(potential_field),
-        potential_field_string == field_string, do: potential_field)
+    for(
+      potential_field <- fields(ecto_schema_module),
+      potential_field_string = to_string(potential_field),
+      potential_field_string == field_string,
+      do: potential_field
+    )
     |> case do
-      [field] ->
-        {:ok, field}
-      [] ->
-        {:error, attribute}
-    end
+         [field] ->
+           {:ok, field}
+         [] ->
+           {:error, attribute}
+       end
   end
 
   @doc """
