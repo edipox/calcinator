@@ -369,11 +369,11 @@ defmodule Calcinator.Resources.Sort do
     attribute
     |> attribute_to_field(ecto_schema_module)
     |> case do
-      {:ok, field} ->
-        {:ok, field}
-      {:error, ^attribute} ->
-        attribute_error_result(sort)
-    end
+         {:ok, field} ->
+           {:ok, field}
+         {:error, ^attribute} ->
+           attribute_error_result(sort)
+       end
   end
 
   defp field(
