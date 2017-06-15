@@ -29,12 +29,12 @@ defmodule Calcinator.Resources do
     * `:sorts` - the directions to sort fields on the primary resource or its associations
   """
   @type query_options :: %{
-    optional(:associations) => atom | [atom],
-    optional(:filters) => %{String.t => String.t},
-    optional(:meta) => %{String.t => Alembic.json},
-    optional(:page) => Page.t | nil,
-    optional(:sorts) => Sorts.t
-  }
+                           optional(:associations) => atom | [atom],
+                           optional(:filters) => %{String.t => String.t},
+                           optional(:meta) => %{String.t => Alembic.json},
+                           optional(:page) => Page.t | nil,
+                           optional(:sorts) => Sorts.t
+                         }
 
   @type sandbox_access_token :: %{required(:owner) => term, optional(atom) => any}
 
