@@ -276,7 +276,7 @@ defmodule Calcinator.Resources.Sort do
 
   """
   @spec from_alembic_fetch_sort(Alembic.Fetch.Sort.t, from_alembic_fetch_sort_options) ::
-        {:ok, t} | {:error, Document.t}
+          {:ok, t} | {:error, Document.t}
   def from_alembic_fetch_sort(
         sort = %Alembic.Fetch.Sort{direction: direction, relationship: relationship},
         %{
