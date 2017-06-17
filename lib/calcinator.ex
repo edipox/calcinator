@@ -539,7 +539,7 @@ defmodule Calcinator do
     |> resources_module.allow_sandbox_access()
   end
 
-  defp allow_sandbox_access(%__MODULE__{}, params,  true) when is_map(params), do: {:error, :sandbox_token_missing}
+  defp allow_sandbox_access(%__MODULE__{}, params, true) when is_map(params), do: {:error, :sandbox_token_missing}
   defp allow_sandbox_access(%__MODULE__{}, params, false) when is_map(params), do: :ok
 
   @spec authorized(t, [struct], Resources.pagination) :: {[struct], Resources.pagination}
@@ -593,7 +593,7 @@ defmodule Calcinator do
     resources_module.delete(changeset, query_options)
   end
 
-  @spec document(params, FromJson.action) :: {:ok, Document.t}  | {:error, Document.t}
+  @spec document(params, FromJson.action) :: {:ok, Document.t} | {:error, Document.t}
   defp document(raw_params, action) do
     Document.from_json(
       raw_params,
