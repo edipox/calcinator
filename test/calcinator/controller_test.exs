@@ -1339,16 +1339,16 @@ defmodule Calcinator.ControllerTest do
         Calcinator.Controller.update(
           conn,
           %{
-          "id" => id,
-          "data" => %{
-            "type" => "test-authors",
-            "id" => to_string(id),
-            "attributes" => %{
-              "name" => "Eve"
-            }
+            "id" => id,
+            "data" => %{
+              "type" => "test-authors",
+              "id" => to_string(id),
+              "attributes" => %{
+                "name" => "Eve"
+              }
+            },
+            "meta" => meta
           },
-          "meta" => meta
-        },
           %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
         )
       end
