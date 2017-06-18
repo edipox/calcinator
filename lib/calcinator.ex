@@ -755,10 +755,10 @@ defmodule Calcinator do
 
   defp status_changeset(changeset) do
     status = if changeset.valid? do
-               :ok
-             else
-               :error
-             end
+      :ok
+      else
+        :error
+    end
 
     {status, changeset}
   end
