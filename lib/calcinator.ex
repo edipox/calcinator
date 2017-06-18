@@ -544,8 +544,8 @@ defmodule Calcinator do
 
   @spec authorized(t, [struct], Resources.pagination) :: {[struct], Resources.pagination}
   defp authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered, pagination)
-      when is_list(unfiltered) and
-          (is_nil(pagination) or is_map(pagination)) do
+       when is_list(unfiltered) and
+            (is_nil(pagination) or is_map(pagination)) do
     {shallow_filtered, filtered_pagination} = case authorization_module.filter_can(unfiltered, subject, :show) do
       ^unfiltered ->
         {unfiltered, pagination}
@@ -578,7 +578,7 @@ defmodule Calcinator do
                                                          {:error, Document.t} |
                                                          {:error, Ecto.Changeset.t}
   defp create_changeset(state = %__MODULE__{resources_module: resources_module}, changeset = %Ecto.Changeset{}, params)
-      when not is_nil(resources_module) and is_atom(resources_module) do
+       when not is_nil(resources_module) and is_atom(resources_module) do
     with {:ok, query_options} <- params_to_query_options(state, params),
          :ok <- allow_sandbox_access(state, params) do
       resources_module.insert(changeset, query_options)
