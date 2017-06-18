@@ -925,9 +925,9 @@ defmodule Calcinator.ControllerTest do
              } in data
 
       assert links == %{
-                        "related" => "/api/v1/test-authors/#{author_id}/posts",
-                        "self" => "/api/v1/test-authors/#{author_id}/relationships/posts"
-                      }
+               "related" => "/api/v1/test-authors/#{author_id}/posts",
+               "self" => "/api/v1/test-authors/#{author_id}/relationships/posts"
+             }
     end
 
     test "{:error, {:not_found, _}}", %{conn: conn} do
