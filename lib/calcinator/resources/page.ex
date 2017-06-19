@@ -1,6 +1,6 @@
 defmodule Calcinator.Resources.Page do
   @moduledoc """
-  Page in `Calcinator.Resources.query_options`
+  DEPRECATED: use `Alembic.Pagination.Page` instead.
   """
 
   alias Alembic.{Document, Error, FromJson, Source}
@@ -52,190 +52,34 @@ defmodule Calcinator.Resources.Page do
 
   # Functions
 
-  @doc """
-  Parses `t` out of `params`
+  @doc false
+  def from_params(params) do
+    IO.warn "`Calcinator.Resources.Page.from_params/1` is deprecated; " <>
+            "use `Alembic.Pagination.Page.t` instead of `Calcinator.Resources.Page.t` and " <>
+            "call `Alembic.Pagination.Page.from_params/1` instead."
 
-  ## No pagination
+    deprecated_from_params(params)
+  end
 
-  If there is no `"page"` key, then there is no pagination.
+  @doc false
+  def to_params(maybe_page) do
+    IO.warn "`Calcinator.Resources.Page.to_params/1` is deprecated; " <>
+            "use `Alembic.Pagination.Page.t` instead of `Calcinator.Resources.Page.t` and " <>
+            "call `Alembic.Pagination.Page.to_params/1` instead."
 
-      iex> Calcinator.Resources.Page.from_params(%{})
-      {:ok, nil}
+    deprecated_to_params(maybe_page)
+  end
 
-  ## Pagination
+  @doc false
+  def positive_integer_from_json(child, error_template) do
+    with {:ok, integer} <- integer_from_json(child, error_template) do
+      integer_to_positive_integer(integer, error_template)
+    end
+  end
 
-  If there is a "page" key with `"number"` and `"size"` children, then there is pagination.
+  ## Private Functions
 
-      iex> Calcinator.Resources.Page.from_params(
-      ...>   %{
-      ...>     "page" => %{
-      ...>       "number" => 1,
-      ...>       "size" => 2
-      ...>     }
-      ...>   }
-      ...> )
-      {:ok, %Calcinator.Resources.Page{number: 1, size: 2}}
-
-  In addition to be decoded JSON, the params can also be the raw `%{String.t => String.t}` and the quoted integers will
-  be decoded.
-
-      iex> Calcinator.Resources.Page.from_params(
-      ...>   %{
-      ...>     "page" => %{
-      ...>       "number" => "1",
-      ...>       "size" => "2"
-      ...>     }
-      ...>   }
-      ...> )
-      {:ok, %Calcinator.Resources.Page{number: 1, size: 2}}
-
-  ## Errors
-
-  A page number can't be given as the `"page"` parameter alone because no default page size is assumed.
-
-      iex> Calcinator.Resources.Page.from_params(%{"page" => 1})
-      {
-        :error,
-        %Alembic.Document{
-          errors: [
-            %Alembic.Error{
-              detail: "`/page` type is not object",
-              meta: %{
-                "type" => "object"
-              },
-              source: %Alembic.Source{
-                pointer: "/page"
-              },
-              status: "422",
-              title: "Type is wrong"
-            }
-          ]
-        }
-      }
-
-  ### Required parameters
-
-  Likewise, the `"page"` map can't have only a `"number"` parameter because no default page size is assumed.
-
-      iex> Calcinator.Resources.Page.from_params(
-      ...>   %{
-      ...>     "page" => %{
-      ...>       "number" => 1
-      ...>     }
-      ...>   }
-      ...> )
-      {
-        :error,
-        %Alembic.Document{
-          errors: [
-            %Alembic.Error{
-              detail: "`/page/size` is missing",
-              meta: %{
-                "child" => "size"
-              },
-              source: %Alembic.Source{
-                pointer: "/page"
-              },
-              status: "422",
-              title: "Child missing"
-            }
-          ]
-        }
-      }
-
-  The page number is not assumed to be 1 when not given.
-
-      iex> Calcinator.Resources.Page.from_params(
-      ...>   %{
-      ...>     "page" => %{
-      ...>       "size" => 10
-      ...>     }
-      ...>   }
-      ...> )
-      {
-        :error,
-        %Alembic.Document{
-          errors: [
-            %Alembic.Error{
-              detail: "`/page/number` is missing",
-              meta: %{
-                "child" => "number"
-              },
-              source: %Alembic.Source{
-                pointer: "/page"
-              },
-              status: "422",
-              title: "Child missing"
-            }
-          ]
-        }
-      }
-
-  ### Number format
-
-  `"page"` `"number"` must be a positive integer.  It is 1-based.  The first page is `"1"`
-
-      iex> Calcinator.Resources.Page.from_params(
-      ...>   %{
-      ...>     "page" => %{
-      ...>       "number" => 0,
-      ...>       "size" => 10
-      ...>     }
-      ...>   }
-      ...> )
-      {
-        :error,
-        %Alembic.Document{
-          errors: [
-            %Alembic.Error{
-              detail: "`/page/number` type is not positive integer",
-              meta: %{
-                "type" => "positive integer"
-              },
-              source: %Alembic.Source{
-                pointer: "/page/number"
-              },
-              status: "422",
-              title: "Type is wrong"
-            }
-          ]
-        }
-      }
-
-  ### Size format
-
-  `"page"` `"size"` must be a positive integer.
-
-      iex> Calcinator.Resources.Page.from_params(
-      ...>   %{
-      ...>     "page" => %{
-      ...>       "number" => 1,
-      ...>       "size" => 0
-      ...>     }
-      ...>   }
-      ...> )
-      {
-        :error,
-        %Alembic.Document{
-          errors: [
-            %Alembic.Error{
-              detail: "`/page/size` type is not positive integer",
-              meta: %{
-                "type" => "positive integer"
-              },
-              source: %Alembic.Source{
-                pointer: "/page/size"
-              },
-              status: "422",
-              title: "Type is wrong"
-            }
-          ]
-        }
-      }
-
-  """
-
-  def from_params(%{"page" => page}) when is_map(page) do
+  defp deprecated_from_params(%{"page" => page}) when is_map(page) do
     parent = %{
       error_template: @error_template,
       json: page
@@ -247,15 +91,15 @@ defmodule Calcinator.Resources.Page do
     |> FromJson.reduce({:ok, %__MODULE__{}})
   end
 
-  def from_params(%{"page" => page}) when not is_map(page) do
+  defp deprecated_from_params(%{"page" => page}) when not is_map(page) do
     {:error, %Document{errors: [Error.type(@error_template, "object")]}}
   end
 
-  def from_params(params) when is_map(params), do: {:ok, nil}
+  defp deprecated_from_params(params) when is_map(params), do: {:ok, nil}
 
-  def to_params(nil), do: %{}
+  defp deprecated_to_params(nil), do: %{}
 
-  def to_params(%__MODULE__{number: number, size: size})
+  defp deprecated_to_params(%__MODULE__{number: number, size: size})
       when is_integer(number) and number > 0 and
            is_integer(size) and size > 0 do
     %{
@@ -265,14 +109,6 @@ defmodule Calcinator.Resources.Page do
       }
     }
   end
-
-  def positive_integer_from_json(child, error_template) do
-    with {:ok, integer} <- integer_from_json(child, error_template) do
-      integer_to_positive_integer(integer, error_template)
-    end
-  end
-
-  ## Private Functions
 
   defp integer_from_json(
          quoted_integer,

@@ -3,8 +3,7 @@ defmodule Calcinator.Resources do
   A module that exposes Ecto schema structs
   """
 
-  alias Alembic.{Document, Error, Source}
-  alias Resources.Page
+  alias Alembic.{Document, Error, Pagination.Page, Source}
 
   # Types
 
