@@ -47,7 +47,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
 
-  alias Alembic.Document
+  alias Alembic.{Document, Pagination, Pagination.Page}
   alias Ecto.{Adapters.SQL.Sandbox, Query}
 
   require Ecto.Query
@@ -55,7 +55,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   import Calcinator.Resources, only: [unknown_filter: 1]
   import Ecto.Changeset, only: [cast: 3]
-  import Ecto.Query, only: [distinct: 2]
+  import Ecto.Query, only: [distinct: 2, limit: 2, offset: 2]
 
   # Types
 
@@ -65,6 +65,12 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @type ecto_schema_module :: module
 
   # Callbacks
+
+  @doc """
+  The default `Alembic.Pagination.Page.t` `size` for paginating `Calcinator.Resources.list/1`.  If `nil`, then
+  pagination is off by default.
+  """
+  @callback default_page_size() :: pos_integer | nil
 
   @doc """
   The `Ecto.Schema` module stored in `repo/0`.
@@ -102,7 +108,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   """
   @callback repo() :: module
 
-  @optional_callbacks filter: 3
+  @optional_callbacks default_page_size: 0, filter: 3
 
   # Macros
 
@@ -117,9 +123,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
       # Functions
 
-      def full_associations(query_options = %{}), do: EctoRepoResources.full_associations(query_options)
-
-      ## Resources callbacks
+      ## Calcinator.Resources callbacks
 
       @spec allow_sandbox_access(Resources.sandbox_access_token) :: :ok | {:error, :sandbox_access_disallowed}
       def allow_sandbox_access(token), do: EctoRepoResources.allow_sandbox_access(token)
@@ -147,19 +151,25 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
       def update(data, params, query_options), do: EctoRepoResources.update(__MODULE__, data, params, query_options)
 
+      ## Calcinator.Resources.Ecto.Repo callbacks
+
+      def default_page_size(), do: EctoRepoResources.default_page_size(__MODULE__)
+
+      def full_associations(query_options = %{}), do: EctoRepoResources.full_associations(query_options)
+
       defoverridable [
-        allow_sandbox_access: 1,
-        changeset: 1,
-        changeset: 2,
-        delete: 2,
-        full_associations: 1,
-        get: 2,
-        insert: 2,
-        list: 1,
-        sandboxed?: 0,
-        update: 2,
-        update: 3
-      ]
+                       allow_sandbox_access: 1,
+                       changeset: 1,
+                       changeset: 2,
+                       default_page_size: 0,delete: 2,
+                       full_associations: 1,
+                       get: 2,
+                       insert: 2,
+                       list: 1,
+                       sandboxed?: 0,
+                       update: 2,
+                       update: 3
+                     ]
     end
   end
 
@@ -200,6 +210,24 @@ defmodule Calcinator.Resources.Ecto.Repo do
     data
     |> cast(params, ecto_schema_module.optional_fields() ++ ecto_schema_module.required_fields())
     |> ecto_schema_module.changeset()
+  end
+
+  @doc """
+  Gets the default page size in order
+
+  1. `Application.get_env(:calcinator, module)[:default_page_size]`
+  2. `Application.get_env(:calcinator, Calcinator.Resources.Ecto.Repo)[:default_page_size]`
+  3. `nil` - pagination disabled
+
+  """
+  @spec default_page_size(module) :: pos_integer | nil
+  def default_page_size(module) do
+    with :error <- module_default_page_size(module),
+         :error <- default_page_size() do
+      nil
+    else
+      {:ok, page_size} -> page_size
+    end
   end
 
   @doc """
@@ -278,25 +306,26 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   ## Returns
 
-    * `{:error, Alembic.Document.t}` - JSONAPI error listing the unknown filters in `opts`
+    * `{:error, Alembic.Document.t}`
+        - JSONAPI error listing the unknown filters in `opts`
+        - Pagination
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
     * `{:ok, [struct], nil}` - `[struct]` is the list of all `module` `ecto_schema_module/0` in `module` `repo/0`.
       There is no (current) support for pagination: pagination is the `nil` in the 3rd element of the tuple.
 
   """
   @spec list(module, Resources.query_options) ::
-          {:ok, [Ecto.Schema.t], nil} | {:error, :ownership} | {:error, Document.t}
+          {:ok, [Ecto.Schema.t], Pagination.t | nil} | {:error, :ownership} | {:error, Document.t}
   def list(module, query_options) when is_map(query_options) do
     repo = module.repo()
-    {:ok, query} = preload(module, module.ecto_schema_module(), query_options)
+    {:ok, preloaded_query} = preload(module, module.ecto_schema_module(), query_options)
 
-    with {:ok, query} <- filter(module, query, query_options) do
-      case wrap_ownership_error(repo, :all, [distinct(query, true)]) do
-        {:error, :ownership} ->
-          {:error, :ownership}
-        all ->
-          {:ok, all, nil}
-      end
+    with {:ok, filtered_query} <- filter(module, preloaded_query, query_options),
+         distinct_query = distinct(filtered_query, true),
+         pagination_query_options = query_options_put_new_default_page(module, query_options),
+         {:ok, resources, nil} <- list_page(repo, distinct_query, pagination_query_options),
+         {:ok, pagination} <- pagination(repo, distinct_query, pagination_query_options) do
+      {:ok, resources, pagination}
     end
   end
 
@@ -380,10 +409,64 @@ defmodule Calcinator.Resources.Ecto.Repo do
     end
   end
 
+  defp default_page_size, do: module_default_page_size(__MODULE__)
+
   defp filter(module, query, query_options) when is_map(query_options) do
     filters = Map.get(query_options, :filters, %{})
     apply_filters(module, query, filters)
   end
+
+  @spec list_all(module, Ecto.Query.t) :: {:ok, [Ecto.Schema.t], nil} | {:error, :ownership}
+  defp list_all(repo, query) do
+    case wrap_ownership_error(repo, :all, [query]) do
+      error = {:error, :ownership} ->
+        error
+      all ->
+        {:ok, all, nil}
+    end
+  end
+
+  @spec list_page(module, Ecto.Query.t, Calcinator.Resources.query_options) :: {:ok, [Ecto.Schema.t], nil} |
+                                                                               {:error, :ownership}
+  defp list_page(repo, distinct_query, query_options) do
+    page_query = page_query(distinct_query, query_options)
+    list_all(repo, page_query)
+  end
+
+  defp module_default_page_size(module) do
+    :calcinator
+    |> Application.get_env(module)
+    |> Kernel.||([])
+    |> Keyword.fetch(:default_page_size)
+  end
+
+  # opt-in to pagination
+  defp page_query(distinct_query, %{page: %Page{number: number, size: size}}) do
+    offset = size * (number - 1)
+
+    distinct_query
+    |> offset(^offset)
+    |> limit(^size)
+  end
+
+  # opt-out of pagination
+  defp page_query(distinct_query, %{page: nil}), do: distinct_query
+
+  @spec pagination(module, Ecto.Query.t, Calcinator.Resources.query_options) ::
+          {:ok, Pagination.t | nil} |
+          {:error, :ownership} |
+          {:error, Document.t}
+
+  # opt-in to pagination
+
+  defp pagination(repo, distinct_query, %{page: page = %Page{}}) do
+    with {:ok, total_size} <- total_size(repo, distinct_query) do
+      Page.to_pagination(page, %{total_size: total_size})
+    end
+  end
+
+  # opt-out of pagination
+  defp pagination(_, _, %{page: nil}), do: {:ok, nil}
 
   defp preload(module, data_or_queryable, query_options) when is_map(query_options) do
     ecto_schema_module = module.ecto_schema_module()
@@ -404,6 +487,33 @@ defmodule Calcinator.Resources.Ecto.Repo do
         {:error, :ownership}
       preloaded ->
         {:ok, preloaded}
+    end
+  end
+
+  defp query_options_put_new_default_page(resources_module, query_options) do
+    Map.put_new_lazy query_options, :page, fn ->
+      resources_module
+      |> function_exported?(:default_page_size, 0)
+      |> if do
+           resources_module.default_page_size()
+         else
+           default_page_size(resources_module)
+         end
+      |> case do
+           nil ->
+             nil
+           page_size ->
+             %Page{number: 1, size: page_size}
+         end
+    end
+  end
+
+  defp total_size(repo, distinct_query) do
+    case wrap_ownership_error(repo, :aggregate, [distinct_query, :count, :id]) do
+      error = {:error, :ownership} ->
+        error
+      total_records ->
+        {:ok, total_records}
     end
   end
 

@@ -4,6 +4,7 @@ defmodule Calcinator.Resources do
   """
 
   alias Alembic.{Document, Error, Pagination.Page, Source}
+  alias Calcinator.Resources.Sorts
 
   # Types
 

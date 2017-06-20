@@ -699,7 +699,20 @@ defmodule Calcinator do
 
   defp params_to_meta_query_option(params), do: {:ok, Map.get(params, "meta", %{})}
 
-  defp params_to_page_query_option(params), do: Page.from_params(params)
+  defp params_to_page_query_options(params) do
+    with {:ok, page} <- Page.from_params(params) do
+      query_options = case page do
+        nil ->
+          %{}
+        :all ->
+          %{page: nil}
+        %Page{} ->
+          %{page: page}
+      end
+
+      {:ok, query_options}
+    end
+  end
 
   @spec params_to_query_options(t, params) :: {:ok, Resources.query_options} | {:error, Document.t}
   defp params_to_query_options(state = %__MODULE__{}, params) when is_map(params) do
@@ -708,9 +721,14 @@ defmodule Calcinator do
     with {:ok, associations} <- alembic_fetch_to_associations_query_option(state, fetch),
          {:ok, filters} <- params_to_filters_query_option(params),
          {:ok, meta} <- params_to_meta_query_option(params),
-         {:ok, page} <- params_to_page_query_option(params),
+         {:ok, page_query_options} <- params_to_page_query_options(params),
          {:ok, sorts} <- alembic_fetch_to_sorts_query_option(state, fetch) do
-      {:ok, %{associations: associations, filters: filters, meta: meta, page: page, sorts: sorts}}
+      full_query_options = Map.merge(
+        %{associations: associations, filters: filters, meta: meta, sorts: sorts},
+        page_query_options
+      )
+
+      {:ok, full_query_options}
     end
   end
 
