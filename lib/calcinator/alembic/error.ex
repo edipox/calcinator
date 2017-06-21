@@ -95,7 +95,22 @@ defmodule Calcinator.Alembic.Error do
   end
 
   @doc """
-  Puts 422 Unprocessable Entity JSONAPI error with title `"Sandbox Access Disallowed".
+  422 Unprocessable Entity JSONAPI error with title `"Pagination cannot be disabled"` for when `%{page: nil}` is passed
+  in `Calcinator.Resources.query_options`, but pagination is forced.
+  """
+  @spec pagination_cannot_be_disabled :: Error.t
+  def pagination_cannot_be_disabled do
+    %Error{
+      source: %Source{
+        pointer: "/page"
+      },
+      status: "422",
+      title: "Pagination cannot be disabled"
+    }
+  end
+
+  @doc """
+  Puts 422 Unprocessable Entity JSONAPI error with title `"Sandbox Access Disallowed"`.
   """
   @spec sandbox_access_disallowed :: Error.t
   def sandbox_access_disallowed do

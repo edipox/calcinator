@@ -598,22 +598,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     end
   end
 
-  defp pagination_cannot_be_disabled do
-    {
-      :error,
-      %Document{
-        errors: [
-          %Error{
-            source: %Source{
-              pointer: "/page"
-            },
-            status: "422",
-            title: "Pagination cannot be disabled"
-          }
-        ]
-      }
-    }
-  end
+  defp pagination_cannot_be_disabled, do: {:error, Calcinator.Alembic.Document.pagination_cannot_be_disabled()}
 
   defp validate_query_options_page_maximum(query_options, nil), do: {:ok, query_options}
   defp validate_query_options_page_maximum(%{page: nil}, _), do: pagination_cannot_be_disabled()
