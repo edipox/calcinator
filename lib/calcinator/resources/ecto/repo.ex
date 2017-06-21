@@ -47,7 +47,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
 
-  alias Alembic.{Document, Pagination, Pagination.Page}
+  alias Alembic.{Document, Error, Pagination, Pagination.Page, Source}
   alias Ecto.{Adapters.SQL.Sandbox, Query}
 
   require Ecto.Query
@@ -64,13 +64,42 @@ defmodule Calcinator.Resources.Ecto.Repo do
   """
   @type ecto_schema_module :: module
 
+  @typedoc """
+  The minimum, default, and maximum page sizes.
+
+  If the `:minimum` and/or `:maximum` key are/is present, then pagination is forced and cannot be disabled with
+  `%{page: nil}` in the `Calcinator.Resources.query_optons` passed to `list/1`.
+
+  If either the `:minimum` or `:maximum` keys are given, then the `:default` is unnecessary as it will use the greater
+  of the two.  You may still want to specify all 3 keys to something like `%{minimum: 1, default: 10, maximum: 200}`,
+  where the `:maximum` is far greater than the `:default`.
+
+  | `:minimum` | `:default` | `:maximum` | Default key | Can disable pagination? |
+  |------------|------------|------------|-------------|-------------------------|
+  | ✓          | ✓          | ✓          | `:default`  |                         |
+  | ✓          | ✓          |            | `:default`  |                         |
+  | ✓          |            | ✓          | `:maximum`  |                         |
+  | ✓          |            |            | `:minimum`  |                         |
+  |            | ✓          | ✓          | `:default`  |                         |
+  |            | ✓          |            | `:default`  | ✓                       |
+  |            |            | ✓          | `:maximum`  |                         |
+  |            |            |            | N/A         | ✓                       |
+
+  """
+  @type page_size :: %{
+                       optional(:minimum) => pos_integer,
+                       optional(:default) => pos_integer,
+                       optional(:maximum) => pos_integer
+                     }
+
   # Callbacks
 
   @doc """
-  The default `Alembic.Pagination.Page.t` `size` for paginating `Calcinator.Resources.list/1`.  If `nil`, then
-  pagination is off by default.
+  The minimum, default, and/or maximum `Alembic.Pagination.Page.t` `size` for paginating `Calcinator.Resources.list/1`.
+
+  See `page_size` for what the combinations of sets do.
   """
-  @callback default_page_size() :: pos_integer | nil
+  @callback page_size() :: page_size
 
   @doc """
   The `Ecto.Schema` module stored in `repo/0`.
@@ -108,7 +137,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   """
   @callback repo() :: module
 
-  @optional_callbacks default_page_size: 0, filter: 3
+  @optional_callbacks filter: 3, page_size: 0
 
   # Macros
 
@@ -153,19 +182,20 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
       ## Calcinator.Resources.Ecto.Repo callbacks
 
-      def default_page_size(), do: EctoRepoResources.default_page_size(__MODULE__)
-
       def full_associations(query_options = %{}), do: EctoRepoResources.full_associations(query_options)
+
+      def page_size(), do: EctoRepoResources.page_size(__MODULE__)
 
       defoverridable [
                        allow_sandbox_access: 1,
                        changeset: 1,
                        changeset: 2,
-                       default_page_size: 0,delete: 2,
+                       delete: 2,
                        full_associations: 1,
                        get: 2,
                        insert: 2,
                        list: 1,
+                       page_size: 0,
                        sandboxed?: 0,
                        update: 2,
                        update: 3
@@ -210,24 +240,6 @@ defmodule Calcinator.Resources.Ecto.Repo do
     data
     |> cast(params, ecto_schema_module.optional_fields() ++ ecto_schema_module.required_fields())
     |> ecto_schema_module.changeset()
-  end
-
-  @doc """
-  Gets the default page size in order
-
-  1. `Application.get_env(:calcinator, module)[:default_page_size]`
-  2. `Application.get_env(:calcinator, Calcinator.Resources.Ecto.Repo)[:default_page_size]`
-  3. `nil` - pagination disabled
-
-  """
-  @spec default_page_size(module) :: pos_integer | nil
-  def default_page_size(module) do
-    with :error <- module_default_page_size(module),
-         :error <- default_page_size() do
-      nil
-    else
-      {:ok, page_size} -> page_size
-    end
   end
 
   @doc """
@@ -317,15 +329,35 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @spec list(module, Resources.query_options) ::
           {:ok, [Ecto.Schema.t], Pagination.t | nil} | {:error, :ownership} | {:error, Document.t}
   def list(module, query_options) when is_map(query_options) do
-    repo = module.repo()
-    {:ok, preloaded_query} = preload(module, module.ecto_schema_module(), query_options)
+    page_size = just_page_size(module)
+    pagination_query_options = query_options_put_new_default_page(query_options, %{page_size: page_size})
 
-    with {:ok, filtered_query} <- filter(module, preloaded_query, query_options),
+    with {:ok, valid_query_options} <- validate_query_options(pagination_query_options, %{page_size: page_size}),
+         {:ok, preloaded_query} = preload(module, module.ecto_schema_module(), valid_query_options),
+         {:ok, filtered_query} <- filter(module, preloaded_query, valid_query_options),
+         repo = module.repo(),
          distinct_query = distinct(filtered_query, true),
-         pagination_query_options = query_options_put_new_default_page(module, query_options),
-         {:ok, resources, nil} <- list_page(repo, distinct_query, pagination_query_options),
-         {:ok, pagination} <- pagination(repo, distinct_query, pagination_query_options) do
+         {:ok, resources, nil} <- list_page(repo, distinct_query, valid_query_options),
+         {:ok, pagination} <- pagination(repo, distinct_query, valid_query_options) do
       {:ok, resources, pagination}
+    end
+  end
+
+  @doc """
+  Gets the page size in order
+
+  1. `Application.get_env(:calcinator, module)[:page_size]`
+  2. `Application.get_env(:calcinator, Calcinator.Resources.Ecto.Repo)[:page_size]`
+  3. `%{}` - pagination disabled
+
+  """
+  @spec page_size(module) :: page_size
+  def page_size(module) do
+    with :error <- module_page_size(module),
+         :error <- page_size() do
+      %{}
+    else
+      {:ok, page_size} -> page_size
     end
   end
 
@@ -409,11 +441,21 @@ defmodule Calcinator.Resources.Ecto.Repo do
     end
   end
 
-  defp default_page_size, do: module_default_page_size(__MODULE__)
-
   defp filter(module, query, query_options) when is_map(query_options) do
     filters = Map.get(query_options, :filters, %{})
     apply_filters(module, query, filters)
+  end
+
+  # `just` as in `Maybe a = Just a | Nothing`
+  defp just_page_size(resources_module) do
+    resources_module
+    |> function_exported?(:page_size, 0)
+    |> if do
+         resources_module.page_size()
+       else
+         page_size(resources_module)
+       end
+    |> Enum.into(%{})
   end
 
   @spec list_all(module, Ecto.Query.t) :: {:ok, [Ecto.Schema.t], nil} | {:error, :ownership}
@@ -433,11 +475,11 @@ defmodule Calcinator.Resources.Ecto.Repo do
     list_all(repo, page_query)
   end
 
-  defp module_default_page_size(module) do
+  defp module_page_size(module) do
     :calcinator
     |> Application.get_env(module)
     |> Kernel.||([])
-    |> Keyword.fetch(:default_page_size)
+    |> Keyword.fetch(:page_size)
   end
 
   # opt-in to pagination
@@ -451,6 +493,8 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   # opt-out of pagination
   defp page_query(distinct_query, %{page: nil}), do: distinct_query
+
+  defp page_size, do: module_page_size(__MODULE__)
 
   @spec pagination(module, Ecto.Query.t, Calcinator.Resources.query_options) ::
           {:ok, Pagination.t | nil} |
@@ -490,21 +534,18 @@ defmodule Calcinator.Resources.Ecto.Repo do
     end
   end
 
-  defp query_options_put_new_default_page(resources_module, query_options) do
+  defp query_options_put_new_default_page(query_options, %{page_size: page_size}) do
     Map.put_new_lazy query_options, :page, fn ->
-      resources_module
-      |> function_exported?(:default_page_size, 0)
-      |> if do
-           resources_module.default_page_size()
-         else
-           default_page_size(resources_module)
-         end
-      |> case do
-           nil ->
-             nil
-           page_size ->
-             %Page{number: 1, size: page_size}
-         end
+      case page_size do
+        %{default: default} ->
+          %Page{number: 1, size: default}
+        %{maximum: maximum} ->
+          %Page{number: 1, size: maximum}
+        %{minimum: minimum} ->
+          %Page{number: 1, size: minimum}
+        _ ->
+          nil
+      end
     end
   end
 
@@ -544,6 +585,89 @@ defmodule Calcinator.Resources.Ecto.Repo do
     case wrap_ownership_error(repo, :preload, [unloaded_updated, preloads]) do
       {:error, :ownership} -> {:error, :ownership}
       reloaded_updated -> {:ok, reloaded_updated}
+    end
+  end
+
+  defp validate_query_options(query_options, %{page_size: page_size}) do
+    validate_query_options_page(query_options, %{page_size: page_size})
+  end
+
+  defp validate_query_options_page(query_options, %{page_size: page_size}) do
+    with {:ok, query_options} <- validate_query_options_page_minimum(query_options, Map.get(page_size, :minimum)) do
+      validate_query_options_page_maximum(query_options, Map.get(page_size, :maximum))
+    end
+  end
+
+  defp pagination_cannot_be_disabled do
+    {
+      :error,
+      %Document{
+        errors: [
+          %Error{
+            source: %Source{
+              pointer: "/page"
+            },
+            status: "422",
+            title: "Pagination cannot be disabled"
+          }
+        ]
+      }
+    }
+  end
+
+  defp validate_query_options_page_maximum(query_options, nil), do: {:ok, query_options}
+  defp validate_query_options_page_maximum(%{page: nil}, _), do: pagination_cannot_be_disabled()
+  defp validate_query_options_page_maximum(query_options = %{page: %Page{size: size}}, maximum) do
+    if size <= maximum do
+      {:ok, query_options}
+    else
+      {
+        :error,
+        %Document{
+          errors: [
+            %Error{
+              detail: "Page size (#{size}) must be less than or equal to maximum (#{maximum})",
+              meta: %{
+                "maximum" => maximum,
+                "size" => size
+              },
+              source: %Source{
+                pointer: "/page/size"
+              },
+              status: "422",
+              title: "Page size must be less than or equal to maximum"
+            }
+          ]
+        }
+      }
+    end
+  end
+
+  defp validate_query_options_page_minimum(query_options, nil), do: {:ok, query_options}
+  defp validate_query_options_page_minimum(%{page: nil}, _), do: pagination_cannot_be_disabled()
+  defp validate_query_options_page_minimum(query_options = %{page: %Page{size: size}}, minimum) do
+    if size >= minimum do
+      {:ok, query_options}
+    else
+      {
+        :error,
+        %Document{
+          errors: [
+            %Error{
+              detail: "Page size (#{size}) must be greater than or equal to minimum (#{minimum})",
+              meta: %{
+                "minimum" => minimum,
+                "size" => size
+              },
+              source: %Source{
+                pointer: "/page/size"
+              },
+              status: "422",
+              title: "Page size must be greater than or equal to minimum"
+            }
+          ]
+        }
+      }
     end
   end
 
