@@ -616,6 +616,108 @@ defmodule Calcinator.ControllerTest do
       end
     end
 
+    test "{:error, {:page_size_must_be_less_than_or_equal_to_maximum, %{maximum: maximum, size: size}}}",
+         %{conn: conn} do
+      maximum = 1
+      size = 2
+
+      Application.put_env(:calcinator, TestAuthors, page_size: [maximum: maximum])
+
+      meta = checkout_meta()
+
+      conn = Calcinator.Controller.index(
+        conn,
+        %{
+          "meta" => meta,
+          "page" => %{
+            "number" => 1,
+            "size" => size
+          }
+        },
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+      )
+
+      assert %{"errors" => errors} = json_response(conn, :unprocessable_entity)
+      assert is_list(errors)
+      assert length(errors) == 1
+      assert %{
+               "detail" => "Page size (#{size}) must be less than or equal to maximum (#{maximum})",
+               "meta" => %{
+                 "maximum" => maximum,
+                 "size" => size
+               },
+               "source" => %{
+                 "pointer" => "/page/size"
+               },
+               "status" => "422",
+               "title" => "Page size must be less than or equal to maximum"
+             } in errors
+    end
+
+    test "{:error, {:page_size_must_be_greater_than_or_equal_to_minimum, %{minimum: minimum, size: size}}}",
+         %{conn: conn} do
+      minimum = 2
+      size = 1
+
+      Application.put_env(:calcinator, TestAuthors, page_size: [minimum: minimum])
+
+      meta = checkout_meta()
+
+      conn = Calcinator.Controller.index(
+        conn,
+        %{
+          "meta" => meta,
+          "page" => %{
+            "number" => 1,
+            "size" => size
+          }
+        },
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+      )
+
+      assert %{"errors" => errors} = json_response(conn, :unprocessable_entity)
+      assert is_list(errors)
+      assert length(errors) == 1
+      assert %{
+               "detail" => "Page size (#{size}) must be greater than or equal to minimum (#{minimum})",
+               "meta" => %{
+                 "minimum" => minimum,
+                 "size" => size
+               },
+               "source" => %{
+                 "pointer" => "/page/size"
+               },
+               "status" => "422",
+               "title" => "Page size must be greater than or equal to minimum"
+             } in errors
+    end
+
+    test "{:error, :pagination_cannot_be_disabled}", %{conn: conn} do
+      Application.put_env(:calcinator, TestAuthors, page_size: [minimum: 1])
+
+      meta = checkout_meta()
+
+      conn = Calcinator.Controller.index(
+        conn,
+        %{
+          "meta" => meta,
+          "page" => nil
+        },
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+      )
+
+      assert %{"errors" => errors} = json_response(conn, :unprocessable_entity)
+      assert is_list(errors)
+      assert length(errors) == 1
+      assert %{
+               "source" => %{
+                 "pointer" => "/page"
+               },
+               "status" => "422",
+               "title" => "Pagination cannot be disabled"
+             } in errors
+    end
+
     test "{:error, :sandbox_access_disallowed}", %{conn: conn} do
       meta = checkout_meta()
       count = 2

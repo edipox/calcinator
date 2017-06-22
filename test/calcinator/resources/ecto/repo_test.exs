@@ -462,64 +462,21 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   ## Private Functions
 
   defp assert_force_pagination_error do
-    assert {
-             :error,
-             %Document{
-               errors: [
-                 %Error{
-                   source: %Source{
-                     pointer: "/page"
-                   },
-                   status: "422",
-                   title: "Pagination cannot be disabled"
-                 }
-               ]
-             }
-           } = TestPosts.list(%{page: nil})
+    assert {:error, :pagination_cannot_be_disabled} = TestPosts.list(%{page: nil})
   end
 
   defp assert_maximum_size_error() do
-    assert {
-             :error,
-             %Document{
-               errors: [
-                 %Error{
-                   detail: "Page size (6) must be less than or equal to maximum (5)",
-                   meta: %{
-                     "maximum" => 5,
-                     "size" => 6
-                   },
-                   source: %Source{
-                     pointer: "/page/size"
-                   },
-                   status: "422",
-                   title: "Page size must be less than or equal to maximum"
-                 }
-               ],
-             }
-           } = TestPosts.list(%{page: %Page{number: 1, size: 6}})
+    size = 6
+
+    assert {:error, {:page_size_must_be_less_than_or_equal_to_maximum, %{maximum: 5, size: ^size}}} =
+             TestPosts.list(%{page: %Page{number: 1, size: size}})
   end
 
   defp assert_minimum_size_error() do
-    assert {
-             :error,
-             %Document{
-               errors: [
-                 %Error{
-                   detail: "Page size (1) must be greater than or equal to minimum (2)",
-                   meta: %{
-                     "minimum" => 2,
-                     "size" => 1
-                   },
-                   source: %Source{
-                     pointer: "/page/size"
-                   },
-                   status: "422",
-                   title: "Page size must be greater than or equal to minimum"
-                 }
-               ]
-             }
-           } = TestPosts.list(%{page: %Page{number: 1, size: 1}})
+    size = 1
+
+    assert {:error, {:page_size_must_be_greater_than_or_equal_to_minimum, %{minimum: 2, size: ^size}}} =
+             TestPosts.list(%{page: %Page{number: 1, size: size}})
   end
 
   defp assert_pagination_disabled do

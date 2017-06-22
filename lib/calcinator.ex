@@ -309,6 +309,12 @@ defmodule Calcinator do
 
     * `{:ok, rendered}` - the rendered resources with (optional) pagination in the `"meta"`.
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
+    * `{:error, {:page_size_must_be_less_than_or_equal_to_maximum, %{maximum: maximum, size: size}}}` - The
+      `params["page"]["size"]` (`size`) is greater than the `maximum`.
+    * `{:error, {:page_size_must_be_greater_than_or_equal_to_minimum, %{minimum: minimum, size: size}}}` - The
+      `params["page"]["size"]` (`size`) is less than the `minimum`.
+    * `{:error, :pagination_cannot_be_disabled}` - If `params["page"]` is `nil` (to disable default pagination), but
+      the backing store does not allow disabling pagination.
     * `{:error, :sandbox_access_disallowed}` - Sandbox token was required and present, but did not have the correct
       information to grant access.
     * `{:error, :sandbox_token_missing}` - Sandbox token was required (because `state` `resources_module`
@@ -319,14 +325,23 @@ defmodule Calcinator do
     * `{:error, Alembic.Document.t}` - if `params` are not valid JSONAPI.
 
   """
-  @spec index(t, params, %{required(:base_uri) => URI.t}) :: {:ok, rendered} |
-                                                             {:error, :ownership} |
-                                                             {:error, :sandbox_access_disallowed} |
-                                                             {:error, :sandbox_token_missing} |
-                                                             {:error, :timeout} |
-                                                             {:error, :unauthorized} |
-                                                             {:error, Document.t}
-
+  @spec index(
+          t,
+          params,
+          %{required(:base_uri) => URI.t}
+        ) :: {:ok, rendered} |
+             {:error, :ownership} |
+             {:error, {:page_size_must_be_less_than_or_equal_to_maximum, %{maximum: pos_integer, size: pos_integer}}} |
+             {
+               :error,
+               {:page_size_must_be_greater_than_or_equal_to_minimum, %{minimum: pos_integer, size: pos_integer}}
+             } |
+             {:error, :pagination_cannot_be_disabled} |
+             {:error, :sandbox_access_disallowed} |
+             {:error, :sandbox_token_missing} |
+             {:error, :timeout} |
+             {:error, :unauthorized} |
+             {:error, Document.t}
   def index(
         state = %__MODULE__{
           ecto_schema_module: ecto_schema_module,

@@ -598,7 +598,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     end
   end
 
-  defp pagination_cannot_be_disabled, do: {:error, Calcinator.Alembic.Document.pagination_cannot_be_disabled()}
+  defp pagination_cannot_be_disabled, do: {:error, :pagination_cannot_be_disabled}
 
   defp validate_query_options_page_maximum(query_options, nil), do: {:ok, query_options}
   defp validate_query_options_page_maximum(%{page: nil}, _), do: pagination_cannot_be_disabled()
@@ -606,10 +606,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     if size <= maximum do
       {:ok, query_options}
     else
-      {
-        :error,
-        Calcinator.Alembic.Document.page_size_must_be_less_than_or_equal_to_maximum(%{maximum: maximum, size: size})
-      }
+      {:error, {:page_size_must_be_less_than_or_equal_to_maximum, %{maximum: maximum, size: size}}}
     end
   end
 
@@ -619,10 +616,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     if size >= minimum do
       {:ok, query_options}
     else
-      {
-        :error,
-        Calcinator.Alembic.Document.page_size_must_be_greater_than_or_equal_to_minimum(%{minimum: minimum, size: size})
-      }
+      {:error, {:page_size_must_be_greater_than_or_equal_to_minimum, %{minimum: minimum, size: size}}}
     end
   end
 

@@ -129,6 +129,12 @@ defmodule Calcinator.Resources do
     * `{:ok, [resource], nil}` - all resources matching query
     * `{:ok, [resource], pagination}` - page of resources matching query
     * `{:error, :ownership}` - connection to backing store was not owned by the calling process
+    * `{:error, {:page_size_must_be_less_than_or_equal_to_maximum, %{maximum: maximum, size: size}}}` - The
+      `params["page"]["size"]` (`size`) is greater than the `maximum`.
+    * `{:error, {:page_size_must_be_greater_than_or_equal_to_minimum, %{minimum: minimum, size: size}}}` - The
+      `params["page"]["size"]` (`size`) is less than the `minimum`.
+    * `{:error, :pagination_cannot_be_disabled}` - If `params["page"]` is `nil` (to disable default pagination), but
+      the backing store does not allow disabling pagination.
     * `{:error, :timeout}` - timeout occured while getting resources from backing store.
     * `{:error, reason}` - an error occurred with the backing store for `reason` that is backing store specific.
 
