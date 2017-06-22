@@ -95,6 +95,50 @@ defmodule Calcinator.Alembic.Error do
   end
 
   @doc """
+  422 Unprocessable Entity JSONAPI error with title `"Page size must be less than or equal to maximum"` for when `size`
+  in `query_options` `:page` `%Page{size: size}` is greater than the maximum allowed size, such in
+  `Calcinator.Resources.Ecto.Repo` if the `size` is greater than
+  `Calcinator.Resources.Ecto.Repo.page_size(module)[:maximum]`
+  """
+  @spec page_size_must_be_less_than_or_equal_to_maximum(
+          %{
+            required(:maximum) => pos_integer,
+            required(:size) => pos_integer
+          }
+        ) :: Error.t
+  def page_size_must_be_less_than_or_equal_to_maximum(%{maximum: maximum, size: size}) do
+    page_size %{
+      extreme: %{
+        name: :maximum, value: maximum
+      },
+      relation: "less than or equal",
+      size: size
+    }
+  end
+
+  @doc """
+  422 Unprocessable Entity JSONAPI error with title `"Page size must be greater than or equal to minimum"` for when
+  `size` in `query_options` `:page` `%Page{size: size}` is less than the minimum allowed size, such in
+  `Calcinator.Resources.Ecto.Repo` if the `size` is less than
+  `Calcinator.Resources.Ecto.Repo.page_size(module)[:maximum]`
+  """
+  @spec page_size_must_be_greater_than_or_equal_to_minimum(
+          %{
+            required(:minimum) => pos_integer,
+            required(:size) => pos_integer
+          }
+        ) :: Error.t
+  def page_size_must_be_greater_than_or_equal_to_minimum(%{minimum: minimum, size: size}) do
+    page_size %{
+      extreme: %{
+        name: :minimum, value: minimum
+      },
+      relation: "greater than or equal",
+      size: size
+    }
+  end
+
+  @doc """
   422 Unprocessable Entity JSONAPI error with title `"Pagination cannot be disabled"` for when `%{page: nil}` is passed
   in `Calcinator.Resources.query_options`, but pagination is forced.
   """
@@ -144,4 +188,29 @@ defmodule Calcinator.Alembic.Error do
   """
   @spec to_document(Error.t) :: Document.t
   def to_document(error), do: %Document{errors: [error]}
+
+  ## Private Functions
+
+  defp page_size(
+         %{
+           extreme: %{
+             name: extreme_name, value: extreme_value
+           },
+           relation: relation,
+           size: size
+         }
+       ) do
+    %Error{
+      detail: "Page size (#{size}) must be #{relation} to #{extreme_name} (#{extreme_value})",
+      meta: %{
+        to_string(extreme_name) => extreme_value,
+        "size" => size
+      },
+      source: %Source{
+        pointer: "/page/size"
+      },
+      status: "422",
+      title: "Page size must be #{relation} to #{extreme_name}"
+    }
+  end
 end

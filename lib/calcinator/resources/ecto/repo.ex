@@ -47,7 +47,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
 
-  alias Alembic.{Document, Error, Pagination, Pagination.Page, Source}
+  alias Alembic.{Document, Pagination, Pagination.Page}
   alias Ecto.{Adapters.SQL.Sandbox, Query}
 
   require Ecto.Query
@@ -608,22 +608,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     else
       {
         :error,
-        %Document{
-          errors: [
-            %Error{
-              detail: "Page size (#{size}) must be less than or equal to maximum (#{maximum})",
-              meta: %{
-                "maximum" => maximum,
-                "size" => size
-              },
-              source: %Source{
-                pointer: "/page/size"
-              },
-              status: "422",
-              title: "Page size must be less than or equal to maximum"
-            }
-          ]
-        }
+        Calcinator.Alembic.Document.page_size_must_be_less_than_or_equal_to_maximum(%{maximum: maximum, size: size})
       }
     end
   end
@@ -636,22 +621,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
     else
       {
         :error,
-        %Document{
-          errors: [
-            %Error{
-              detail: "Page size (#{size}) must be greater than or equal to minimum (#{minimum})",
-              meta: %{
-                "minimum" => minimum,
-                "size" => size
-              },
-              source: %Source{
-                pointer: "/page/size"
-              },
-              status: "422",
-              title: "Page size must be greater than or equal to minimum"
-            }
-          ]
-        }
+        Calcinator.Alembic.Document.page_size_must_be_greater_than_or_equal_to_minimum(%{minimum: minimum, size: size})
       }
     end
   end

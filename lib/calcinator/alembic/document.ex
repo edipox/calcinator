@@ -71,6 +71,43 @@ defmodule Calcinator.Alembic.Document do
     |> Error.to_document()
   end
 
+
+  @doc """
+  422 Unprocessable Entity JSONAPI error document with title `"Page size must be less than or equal to maximum"` for
+  when `size` in `query_options` `:page` `%Page{size: size}` is greater than the maximum allowed size, such in
+  `Calcinator.Resources.Ecto.Repo` if the `size` is greater than
+  `Calcinator.Resources.Ecto.Repo.page_size(module)[:maximum]`
+  """
+  @spec page_size_must_be_less_than_or_equal_to_maximum(
+          %{
+            required(:maximum) => pos_integer,
+            required(:size) => pos_integer
+          }
+        ) :: Document.t
+  def page_size_must_be_less_than_or_equal_to_maximum(%{maximum: maximum, size: size}) do
+    %{maximum: maximum, size: size}
+    |> Error.page_size_must_be_less_than_or_equal_to_maximum()
+    |> Error.to_document()
+  end
+
+  @doc """
+  422 Unprocessable Entity JSONAPI error document with title `"Page size must be greater than or equal to minimum"` for
+  when `size` in `query_options` `:page` `%Page{size: size}` is less than the minimum allowed size, such in
+  `Calcinator.Resources.Ecto.Repo` if the `size` is less than
+  `Calcinator.Resources.Ecto.Repo.page_size(module)[:maximum]`
+  """
+  @spec page_size_must_be_greater_than_or_equal_to_minimum(
+          %{
+            required(:minimum) => pos_integer,
+            required(:size) => pos_integer
+          }
+        ) :: Document.t
+  def page_size_must_be_greater_than_or_equal_to_minimum(%{minimum: minimum, size: size}) do
+    %{minimum: minimum, size: size}
+    |> Error.page_size_must_be_greater_than_or_equal_to_minimum()
+    |> Error.to_document()
+  end
+
   @doc """
   422 Unprocessable Entity JSONAPI error with title `"Pagination cannot be disabled"` for when `%{page: nil}` is passed
   in `Calcinator.Resources.query_options`, but pagination is forced.
