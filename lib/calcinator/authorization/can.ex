@@ -68,7 +68,7 @@ defmodule Calcinator.Authorization.Can do
   association path of `[association_model | association_ascent]`.
   """
   @spec filter_can([struct], Authorization.association_ascent, Authorization.subject, Authorization.action, t) ::
-        [struct]
+          [struct]
   def filter_can(association_models, association_ascent, subject, action, callback_module)
       when is_list(association_models) and is_list(association_ascent) do
     Enum.filter(association_models, &callback_module.can?(subject, action, [&1 | association_ascent]))
@@ -79,7 +79,7 @@ defmodule Calcinator.Authorization.Can do
   #  `nil` out association if the `subject` can't do `action` on the association's model.  Otherwise, recursively
   #  `filter_associations_can` on the association model's associations.
   @spec filter_association_can(nil, Authorization.association_ascent, Authorization.subject, Authorization.action, t) ::
-        nil
+          nil
   @spec filter_association_can(struct, Authorization.association_ascent, Authorization.subject, Authorization.action, t)
         :: struct | nil
   @spec filter_association_can(

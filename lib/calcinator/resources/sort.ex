@@ -276,7 +276,7 @@ defmodule Calcinator.Resources.Sort do
 
   """
   @spec from_alembic_fetch_sort(Alembic.Fetch.Sort.t, from_alembic_fetch_sort_options) ::
-        {:ok, t} | {:error, Document.t}
+          {:ok, t} | {:error, Document.t}
   def from_alembic_fetch_sort(
         sort = %Alembic.Fetch.Sort{direction: direction, relationship: relationship},
         %{
@@ -369,11 +369,11 @@ defmodule Calcinator.Resources.Sort do
     attribute
     |> attribute_to_field(ecto_schema_module)
     |> case do
-      {:ok, field} ->
-        {:ok, field}
-      {:error, ^attribute} ->
-        attribute_error_result(sort)
-    end
+         {:ok, field} ->
+           {:ok, field}
+         {:error, ^attribute} ->
+           attribute_error_result(sort)
+       end
   end
 
   defp field(
@@ -383,10 +383,10 @@ defmodule Calcinator.Resources.Sort do
            sort: sort
          }
        ) when is_atom(association) do
-     # Does not produce a JSON error because association being wrong is a programmer error that associatons_by_include
-     # has a bad associciations
-     %{related: related_ecto_schema_module} = ecto_schema_module.__schema__(:association, association)
-     field(%{association: nil, ecto_schema_module: related_ecto_schema_module, sort: sort})
+    # Does not produce a JSON error because association being wrong is a programmer error that associatons_by_include
+    # has a bad associciations
+    %{related: related_ecto_schema_module} = ecto_schema_module.__schema__(:association, association)
+    field(%{association: nil, ecto_schema_module: related_ecto_schema_module, sort: sort})
   end
 
   defp field(

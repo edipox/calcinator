@@ -243,12 +243,12 @@ if Code.ensure_loaded?(Phoenix.Controller) do
           calcinator = %Calcinator{}
         ) do
       put_rendered_or_error(
-         conn,
-         Calcinator.get_related_resource(
-           %Calcinator{calcinator | subject: get_subject(conn)},
-           params,
-           %{related: related, source: source}
-         )
+        conn,
+        Calcinator.get_related_resource(
+          %Calcinator{calcinator | subject: get_subject(conn)},
+          params,
+          %{related: related, source: source}
+        )
       )
     end
 

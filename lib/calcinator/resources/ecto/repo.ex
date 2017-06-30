@@ -131,7 +131,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
       def delete(changeset, query_options), do: EctoRepoResources.delete(__MODULE__, changeset, query_options)
 
       @spec get(Resources.id, Resources.query_options) ::
-            {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
+              {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
       def get(id, opts), do: EctoRepoResources.get(__MODULE__, id, opts)
 
       def insert(changeset_or_params, query_options) do
@@ -148,18 +148,18 @@ defmodule Calcinator.Resources.Ecto.Repo do
       def update(data, params, query_options), do: EctoRepoResources.update(__MODULE__, data, params, query_options)
 
       defoverridable [
-                       allow_sandbox_access: 1,
-                       changeset: 1,
-                       changeset: 2,
-                       delete: 2,
-                       full_associations: 1,
-                       get: 2,
-                       insert: 2,
-                       list: 1,
-                       sandboxed?: 0,
-                       update: 2,
-                       update: 3
-                     ]
+        allow_sandbox_access: 1,
+        changeset: 1,
+        changeset: 2,
+        delete: 2,
+        full_associations: 1,
+        get: 2,
+        insert: 2,
+        list: 1,
+        sandboxed?: 0,
+        update: 2,
+        update: 3
+      ]
     end
   end
 
@@ -206,7 +206,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
   Deletes `changeset` from `module`'s `repo/0`
   """
   @spec delete(module, changeset :: Ecto.Changeset.t, Resources.query_options) ::
-        {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
+          {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
   def delete(module, changeset, _query_options) do
     repo = module.repo()
 
@@ -230,7 +230,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
   @spec get(module, Resources.id, Resources.query_options) ::
-        {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
+          {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
   def get(module, id, query_options) when is_map(query_options) do
     ecto_schema_module = module.ecto_schema_module()
     repo = module.repo()
@@ -258,7 +258,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
   @spec insert(module, Ecto.Changeset.t | map, Resources.query_options) ::
-        {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
+          {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
 
   def insert(module, changeset = %Ecto.Changeset{}, query_options) when is_map(query_options) do
     repo = module.repo()
@@ -285,7 +285,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
   @spec list(module, Resources.query_options) ::
-        {:ok, [Ecto.Schema.t], nil} | {:error, :ownership} | {:error, Document.t}
+          {:ok, [Ecto.Schema.t], nil} | {:error, :ownership} | {:error, Document.t}
   def list(module, query_options) when is_map(query_options) do
     repo = module.repo()
     {:ok, query} = preload(module, module.ecto_schema_module(), query_options)
@@ -318,7 +318,7 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
   @spec update(module, Ecto.Changeset.t, Resources.query_options) ::
-        {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
+          {:ok, Ecto.Schema.t} | {:error, :ownership} | {:error, Ecto.Changeset.t}
   def update(module, changeset, query_options) when is_map(query_options) do
     repo = module.repo()
 

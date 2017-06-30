@@ -113,7 +113,9 @@ defmodule Calcinator do
                                                                             {:error, :timeout} |
                                                                             {:error, reason :: term}
   def get(resources_module, params, id_key, query_options) when is_map(query_options) do
-    with {:error, :not_found} <- params |> Map.fetch!(id_key) |> resources_module.get(query_options) do
+    with {:error, :not_found} <- params
+                                 |> Map.fetch!(id_key)
+                                 |> resources_module.get(query_options) do
       {:error, {:not_found, id_key}}
     end
   end
@@ -123,9 +125,11 @@ defmodule Calcinator do
                                                          {:error, Ecto.Changeset.t} |
                                                          {:error, :bad_gateway} |
                                                          {:error, :not_found}
-  def update_changeset(state = %__MODULE__{resources_module: resources_module},
-                       changeset = %Ecto.Changeset{},
-                       params) do
+  def update_changeset(
+        state = %__MODULE__{resources_module: resources_module},
+        changeset = %Ecto.Changeset{},
+        params
+      ) do
     with {:ok, query_options} <- params_to_query_options(state, params) do
       resources_module.update(changeset, query_options)
     end
@@ -169,12 +173,14 @@ defmodule Calcinator do
                              {:error, :unauthorized} |
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t}
-  def create(state = %__MODULE__{
-                       ecto_schema_module: ecto_schema_module,
-                       subject: subject,
-                       view_module: view_module
-                     },
-             params)
+  def create(
+        state = %__MODULE__{
+          ecto_schema_module: ecto_schema_module,
+          subject: subject,
+          view_module: view_module
+        },
+        params
+      )
       when not is_nil(ecto_schema_module) and is_atom(ecto_schema_module) and
            not is_nil(view_module) and is_atom(view_module) and
            is_map(params) do
@@ -321,13 +327,15 @@ defmodule Calcinator do
                                                              {:error, :unauthorized} |
                                                              {:error, Document.t}
 
-  def index(state = %__MODULE__{
-                      ecto_schema_module: ecto_schema_module,
-                      subject: subject,
-                      view_module: view_module,
-                    },
-            params,
-            %{base_uri: base_uri}) do
+  def index(
+        state = %__MODULE__{
+          ecto_schema_module: ecto_schema_module,
+          subject: subject,
+          view_module: view_module,
+        },
+        params,
+        %{base_uri: base_uri}
+      ) do
     with :ok <- can(state, :index, ecto_schema_module),
          :ok <- allow_sandbox_access(state, params),
          {:ok, list, pagination} <- list(state, params) do
@@ -520,26 +528,26 @@ defmodule Calcinator do
           :ok | {:error, :sandbox_access_disallowed} | {:error, :sandbox_token_missing}
 
   defp allow_sandbox_access(
-        %__MODULE__{resources_module: resources_module},
-        %{
-          "meta" => %{
-            "beam" => encoded_beam_meta
-          }
-        },
-        true
-      ) when is_binary(encoded_beam_meta) do
+         %__MODULE__{resources_module: resources_module},
+         %{
+           "meta" => %{
+             "beam" => encoded_beam_meta
+           }
+         },
+         true
+       ) when is_binary(encoded_beam_meta) do
     encoded_beam_meta
     |> Meta.Beam.decode
     |> resources_module.allow_sandbox_access()
   end
 
-  defp allow_sandbox_access(%__MODULE__{}, params,  true) when is_map(params), do: {:error, :sandbox_token_missing}
+  defp allow_sandbox_access(%__MODULE__{}, params, true) when is_map(params), do: {:error, :sandbox_token_missing}
   defp allow_sandbox_access(%__MODULE__{}, params, false) when is_map(params), do: :ok
 
   @spec authorized(t, [struct], Resources.pagination) :: {[struct], Resources.pagination}
   defp authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered, pagination)
-      when is_list(unfiltered) and
-          (is_nil(pagination) or is_map(pagination)) do
+       when is_list(unfiltered) and
+            (is_nil(pagination) or is_map(pagination)) do
     {shallow_filtered, filtered_pagination} = case authorization_module.filter_can(unfiltered, subject, :show) do
       ^unfiltered ->
         {unfiltered, pagination}
@@ -553,8 +561,10 @@ defmodule Calcinator do
   end
 
   @spec changeset(t, insertable_params) :: {:ok, Ecto.Changeset.t} | {:error, Ecto.Changeset.t}
-  defp changeset(%__MODULE__{resources_module: resources_module},
-                 insertable_params)
+  defp changeset(
+         %__MODULE__{resources_module: resources_module},
+         insertable_params
+       )
        when not is_nil(resources_module) and is_atom(resources_module) and
             is_map(insertable_params) do
     insertable_params
@@ -570,7 +580,7 @@ defmodule Calcinator do
                                                          {:error, Document.t} |
                                                          {:error, Ecto.Changeset.t}
   defp create_changeset(state = %__MODULE__{resources_module: resources_module}, changeset = %Ecto.Changeset{}, params)
-      when not is_nil(resources_module) and is_atom(resources_module) do
+       when not is_nil(resources_module) and is_atom(resources_module) do
     with {:ok, query_options} <- params_to_query_options(state, params),
          :ok <- allow_sandbox_access(state, params) do
       resources_module.insert(changeset, query_options)
@@ -585,7 +595,7 @@ defmodule Calcinator do
     resources_module.delete(changeset, query_options)
   end
 
-  @spec document(params, FromJson.action) :: {:ok, Document.t}  | {:error, Document.t}
+  @spec document(params, FromJson.action) :: {:ok, Document.t} | {:error, Document.t}
   defp document(raw_params, action) do
     Document.from_json(
       raw_params,
@@ -647,20 +657,24 @@ defmodule Calcinator do
     end
   end
 
-  @spec get_source(t,
-                   params,
-                   %{
-                     required(:association) => association,
-                     required(:id_key) => String.t,
-                   }) :: {:ok, Ecto.Schema.t} |
-                         {:error, {:not_found, parameter}} |
-                         {:error, :ownership} |
-                         {:error, :timeout} |
-                         {:error, Document.t} |
-                         {:error, term}
-  defp get_source(%{resources_module: resources_module},
-                  params,
-                  %{association: association, id_key: id_key}) do
+  @spec get_source(
+          t,
+          params,
+          %{
+            required(:association) => association,
+            required(:id_key) => String.t,
+          }
+        ) :: {:ok, Ecto.Schema.t} |
+             {:error, {:not_found, parameter}} |
+             {:error, :ownership} |
+             {:error, :timeout} |
+             {:error, Document.t} |
+             {:error, term}
+  defp get_source(
+         %{resources_module: resources_module},
+         params,
+         %{association: association, id_key: id_key}
+       ) do
     get(resources_module, params, id_key, %{associations: [association]})
   end
 
@@ -710,15 +724,15 @@ defmodule Calcinator do
                                             {:error, Document.t} |
                                             {:error, term}
   defp related_property(
-        state = %__MODULE__{subject: subject, view_module: view_module},
-        params,
-        %{
-          related: related_option,
-          source: source_option = %{
-            association: association
-          }
-        }
-      ) do
+         state = %__MODULE__{subject: subject, view_module: view_module},
+         params,
+         %{
+           related: related_option,
+           source: source_option = %{
+             association: association
+           }
+         }
+       ) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, source} <- get_source(state, params, source_option),
          :ok <- can(state, :show, source),
@@ -743,10 +757,10 @@ defmodule Calcinator do
 
   defp status_changeset(changeset) do
     status = if changeset.valid? do
-               :ok
-             else
-               :error
-             end
+      :ok
+    else
+      :error
+    end
 
     {status, changeset}
   end
