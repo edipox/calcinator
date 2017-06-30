@@ -50,7 +50,11 @@ defmodule Calcinator.RelatedView do
              view_module: view_module
            }
          }
-       ), do: resource |> view_module.id(conn) |> to_string
+       ) do
+    resource
+    |> view_module.id(conn)
+    |> to_string()
+  end
 
   defp links(options = %{source: %{association: association}}) do
     base_url = base_url(options)

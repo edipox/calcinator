@@ -281,7 +281,8 @@ defmodule Calcinator.Resources do
 
     # ecto_schema_module.__schema__(:fields) does not include virtual fields, so
     # deduce real and virtual fields from struct keys
-    keys = ecto_schema_module.__struct__ |> Map.keys
+    keys = ecto_schema_module.__struct__
+           |> Map.keys
     keys -- [:__meta__, :__struct__ | associations]
   end
 end

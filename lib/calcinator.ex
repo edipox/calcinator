@@ -113,7 +113,9 @@ defmodule Calcinator do
                                                                             {:error, :timeout} |
                                                                             {:error, reason :: term}
   def get(resources_module, params, id_key, query_options) when is_map(query_options) do
-    with {:error, :not_found} <- params |> Map.fetch!(id_key) |> resources_module.get(query_options) do
+    with {:error, :not_found} <- params
+                                 |> Map.fetch!(id_key)
+                                 |> resources_module.get(query_options) do
       {:error, {:not_found, id_key}}
     end
   end
