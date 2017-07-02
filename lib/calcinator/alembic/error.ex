@@ -109,7 +109,8 @@ defmodule Calcinator.Alembic.Error do
   def page_size_must_be_less_than_or_equal_to_maximum(%{maximum: maximum, size: size}) do
     page_size %{
       extreme: %{
-        name: :maximum, value: maximum
+        name: :maximum,
+        value: maximum
       },
       relation: "less than or equal",
       size: size
@@ -131,7 +132,8 @@ defmodule Calcinator.Alembic.Error do
   def page_size_must_be_greater_than_or_equal_to_minimum(%{minimum: minimum, size: size}) do
     page_size %{
       extreme: %{
-        name: :minimum, value: minimum
+        name: :minimum,
+        value: minimum
       },
       relation: "greater than or equal",
       size: size
@@ -194,7 +196,8 @@ defmodule Calcinator.Alembic.Error do
   defp page_size(
          %{
            extreme: %{
-             name: extreme_name, value: extreme_value
+             name: extreme_name,
+             value: extreme_value
            },
            relation: relation,
            size: size

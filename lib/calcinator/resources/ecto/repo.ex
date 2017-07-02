@@ -483,7 +483,15 @@ defmodule Calcinator.Resources.Ecto.Repo do
   end
 
   # opt-in to pagination
-  defp page_query(distinct_query, %{page: %Page{number: number, size: size}}) do
+  defp page_query(
+         distinct_query,
+         %{
+           page: %Page{
+             number: number,
+             size: size
+           }
+         }
+       ) do
     offset = size * (number - 1)
 
     distinct_query
@@ -602,7 +610,14 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   defp validate_query_options_page_maximum(query_options, nil), do: {:ok, query_options}
   defp validate_query_options_page_maximum(%{page: nil}, _), do: pagination_cannot_be_disabled()
-  defp validate_query_options_page_maximum(query_options = %{page: %Page{size: size}}, maximum) do
+  defp validate_query_options_page_maximum(
+         query_options = %{
+           page: %Page{
+             size: size
+           }
+         },
+         maximum
+       ) do
     if size <= maximum do
       {:ok, query_options}
     else
@@ -612,7 +627,14 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   defp validate_query_options_page_minimum(query_options, nil), do: {:ok, query_options}
   defp validate_query_options_page_minimum(%{page: nil}, _), do: pagination_cannot_be_disabled()
-  defp validate_query_options_page_minimum(query_options = %{page: %Page{size: size}}, minimum) do
+  defp validate_query_options_page_minimum(
+         query_options = %{
+           page: %Page{
+             size: size
+           }
+         },
+         minimum
+       ) do
     if size >= minimum do
       {:ok, query_options}
     else

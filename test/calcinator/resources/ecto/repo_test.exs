@@ -15,7 +15,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   describe "list/1 with minimum page size with default page size with maximum page size" do
     setup [:minimum_page_size, :default_page_size, :maximum_page_size]
 
-    test "without page query option returns page with default page size", %{page_size: %{default: default}} do
+    test "without page query option returns page with default page size",
+         %{
+           page_size: %{
+             default: default
+           }
+         } do
       assert_three_pages %{
         page_size: default,
         query_options: %{}
@@ -31,7 +36,11 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with page size query option between minimum and maximum page size uses overridden size",
-         %{page_size: %{default: default}} do
+         %{
+           page_size: %{
+             default: default
+           }
+         } do
       override = 4
 
       refute default == override
@@ -56,7 +65,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   describe "list/1 with minimum page size with default page size without maximum page size" do
     setup [:minimum_page_size, :default_page_size]
 
-    test "without page query option returns page with default page size", %{page_size: %{default: default}} do
+    test "without page query option returns page with default page size",
+         %{
+           page_size: %{
+             default: default
+           }
+         } do
       assert_three_pages %{
         page_size: default,
         query_options: %{}
@@ -72,7 +86,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with page size greater than minimum page size uses overridden size",
-         %{page_size: %{minimum: minimum, default: default}} do
+         %{
+           page_size: %{
+             minimum: minimum,
+             default: default
+           }
+         } do
       override = 4
 
       assert minimum < override
@@ -94,7 +113,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   describe "list/1 with minimmum page size without default page size with maximum page size" do
     setup [:minimum_page_size, :maximum_page_size]
 
-    test "without page query option returns page with maximum page size", %{page_size: %{maximum: maximum}} do
+    test "without page query option returns page with maximum page size",
+         %{
+           page_size: %{
+             maximum: maximum
+           }
+         } do
       assert_three_pages %{
         page_size: maximum,
         query_options: %{}
@@ -110,7 +134,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with page size query option between minimum and maximum page size uses overridden size",
-         %{page_size: %{minimum: minimum, maximum: maximum}} do
+         %{
+           page_size: %{
+             minimum: minimum,
+             maximum: maximum
+           }
+         } do
       override = 4
 
       assert minimum < override
@@ -136,7 +165,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   describe "list/1 with minimum page size without default page size without maximum page size" do
     setup :minimum_page_size
 
-    test "without page query option returns page with minimum page size", %{page_size: %{minimum: minimum}} do
+    test "without page query option returns page with minimum page size",
+         %{
+           page_size: %{
+             minimum: minimum
+           }
+         } do
       assert_three_pages %{
         page_size: minimum,
         query_options: %{}
@@ -152,7 +186,11 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with page size query option between minimum and maximum page size uses overridden size",
-         %{page_size: %{minimum: minimum}} do
+         %{
+           page_size: %{
+             minimum: minimum
+           }
+         } do
       override = 4
 
       assert minimum < override
@@ -173,7 +211,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   describe "list/1 without minimum page size with default page size with maximum page size" do
     setup [:default_page_size, :maximum_page_size]
 
-    test "without page query option returns page with default page size", %{page_size: %{default: default}} do
+    test "without page query option returns page with default page size",
+         %{
+           page_size: %{
+             default: default
+           }
+         } do
       assert_three_pages %{
         page_size: default,
         query_options: %{}
@@ -185,7 +228,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with page size query option less than maximum page size uses overridden size",
-         %{page_size: %{default: default, maximum: maximum}} do
+         %{
+           page_size: %{
+             default: default,
+             maximum: maximum
+           }
+         } do
       override = 4
 
       refute default == override
@@ -211,7 +259,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   describe "list/1 without minimum page size with default page size without maximum page size" do
     setup :default_page_size
 
-    test "without page query option returns page with default page size", %{page_size: %{default: default}} do
+    test "without page query option returns page with default page size",
+         %{
+           page_size: %{
+             default: default
+           }
+         } do
       assert_three_pages %{
         page_size: default,
         query_options: %{}
@@ -223,7 +276,11 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with page size query option not equal to default uses overridden size",
-         %{page_size: %{default: default}} do
+         %{
+           page_size: %{
+             default: default
+           }
+         } do
       override = 4
 
       refute default == override
@@ -239,7 +296,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
       }
     end
 
-    test "valid filter filters the list", %{page_size: %{default: default}} do
+    test "valid filter filters the list",
+         %{
+           page_size: %{
+             default: default
+           }
+         } do
       unfiltered_page_count = 6
       posts = Factory.insert_list(default * unfiltered_page_count, :test_post)
 
@@ -252,7 +314,11 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
         id
       end
 
-      query_options = %{filters: %{"id" => id_filter_value}}
+      query_options = %{
+        filters: %{
+          "id" => id_filter_value
+        }
+      }
 
       assert {
                :ok,
@@ -318,7 +384,12 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
   describe "list/1 without minimum page size without default page size with maximum page size" do
     setup :maximum_page_size
 
-    test "without page query option returns page with maximum page size", %{page_size: %{maximum: maximum}} do
+    test "without page query option returns page with maximum page size",
+         %{
+           page_size: %{
+             maximum: maximum
+           }
+         } do
       assert_three_pages %{
         page_size: maximum,
         query_options: %{}
@@ -330,7 +401,11 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with page size query option less than maximum page size uses overridden size",
-         %{page_size: %{maximum: maximum}} do
+         %{
+           page_size: %{
+             maximum: maximum
+           }
+         } do
       override = 4
 
       assert override < maximum
@@ -378,7 +453,13 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     test "valid filter filters the list" do
       [first_author, second_author, third_author] = Factory.insert_list(3, :test_author)
 
-      assert {:ok, list_authors, nil} = TestAuthors.list(%{filters: %{"id" => "#{first_author.id},#{third_author.id}"}})
+      assert {:ok, list_authors, nil} = TestAuthors.list(
+               %{
+                 filters: %{
+                   "id" => "#{first_author.id},#{third_author.id}"
+                 }
+               }
+             )
 
       assert length(list_authors) == 2
 
@@ -452,7 +533,14 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with no filter/3 callback, returns error(s)" do
-      assert {:error, %Document{errors: errors}} = TestComments.list(%{filters: %{"spam" => "true", "text" => "spam"}})
+      assert {:error, %Document{errors: errors}} = TestComments.list(
+               %{
+                 filters: %{
+                   "spam" => "true",
+                   "text" => "spam"
+                 }
+               }
+             )
       assert length(errors) == 2
     end
   end
@@ -469,14 +557,28 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     size = 6
 
     assert {:error, {:page_size_must_be_less_than_or_equal_to_maximum, %{maximum: 5, size: ^size}}} =
-             TestPosts.list(%{page: %Page{number: 1, size: size}})
+             TestPosts.list(
+               %{
+                 page: %Page{
+                   number: 1,
+                   size: size
+                 }
+               }
+             )
   end
 
   defp assert_minimum_size_error() do
     size = 1
 
     assert {:error, {:page_size_must_be_greater_than_or_equal_to_minimum, %{minimum: 2, size: ^size}}} =
-             TestPosts.list(%{page: %Page{number: 1, size: size}})
+             TestPosts.list(
+               %{
+                 page: %Page{
+                   number: 1,
+                   size: size
+                 }
+               }
+             )
   end
 
   defp assert_pagination_disabled do

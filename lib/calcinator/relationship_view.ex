@@ -22,7 +22,13 @@ defmodule Calcinator.RelationshipView do
 
   ## Private Functions
 
-  defp data(%{related: %{resource: nil}}), do: nil
+  defp data(
+         %{
+           related: %{
+             resource: nil
+           }
+         }
+       ), do: nil
 
   defp data(
          %{
@@ -48,7 +54,13 @@ defmodule Calcinator.RelationshipView do
     resource_identifier(related, %{conn: conn, view_module: view_module})
   end
 
-  defp links(options = %{source: %{association: association}}) do
+  defp links(
+         options = %{
+           source: %{
+             association: association
+           }
+         }
+       ) do
     base_url = base_url(options)
     relationship = relationship(association)
 

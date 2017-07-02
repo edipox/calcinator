@@ -67,14 +67,32 @@ defmodule Calcinator.JaSerializer.PhoenixView do
            |> Keyword.merge(params_to_render_opts(params))
            |> Keyword.merge(pagination_to_render_opts(pagination, options))
     # Only `:conn` option is passed to `attributes/2` callback, so have to fake `%Plug.Conn{}`
-    phoenix_view_module.render("show.json-api", conn: %Conn{assigns: %{subject: subject}}, data: data, opts: opts)
+    phoenix_view_module.render(
+      "show.json-api",
+      conn: %Conn{
+        assigns: %{
+          subject: subject
+        }
+      },
+      data: data,
+      opts: opts
+    )
   end
 
   def show(phoenix_view_module, data = %_{}, options) do
     params = Map.get(options, :params, %{})
     subject = Map.get(options, :subject, nil)
     opts = params_to_render_opts(params)
-    phoenix_view_module.render("show.json-api", conn: %Conn{assigns: %{subject: subject}}, data: data, opts: opts)
+    phoenix_view_module.render(
+      "show.json-api",
+      conn: %Conn{
+        assigns: %{
+          subject: subject
+        }
+      },
+      data: data,
+      opts: opts
+    )
   end
 
   def show_relationship(phoenix_view_module, data, options = %{related: related, source: source}) do
@@ -116,7 +134,11 @@ defmodule Calcinator.JaSerializer.PhoenixView do
   end
 
   defp pagination_to_render_opts_meta(%Pagination{total_size: record_count}) do
-    [meta: %{"record-count" => record_count}]
+    [
+      meta: %{
+        "record-count" => record_count
+      }
+    ]
   end
 
   defp pagination_to_render_opts_page(pagination, %{base_uri: base_uri}) do

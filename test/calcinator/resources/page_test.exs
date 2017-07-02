@@ -244,7 +244,12 @@ defmodule Calcinator.Resources.PageTest do
 
     test "with Calcinator.Resources.Page.t" do
       deprecated = fn ->
-        assert Page.to_params(%Page{number: 2, size: 5}) == %{"page" => %{"number" => 2, "size" => 5}}
+        assert Page.to_params(%Page{number: 2, size: 5}) == %{
+                 "page" => %{
+                   "number" => 2,
+                   "size" => 5
+                 }
+               }
       end
 
       assert String.contains?(

@@ -9,7 +9,13 @@ defmodule Calcinator.RelatedView do
 
   # Functions
 
-  def base_url(options = %{source: %{view_module: view_module}}) do
+  def base_url(
+        options = %{
+          source: %{
+            view_module: view_module
+          }
+        }
+      ) do
     Regex.replace(~r/:\w+/, view_module.__location, &id_key_for_id(&1, options))
   end
 
@@ -56,7 +62,13 @@ defmodule Calcinator.RelatedView do
     |> to_string()
   end
 
-  defp links(options = %{source: %{association: association}}) do
+  defp links(
+         options = %{
+           source: %{
+             association: association
+           }
+         }
+       ) do
     base_url = base_url(options)
     relationship = relationship(association)
 

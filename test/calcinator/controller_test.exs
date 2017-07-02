@@ -427,7 +427,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:ok, rendered} for has_many", %{conn: conn} do
       meta = checkout_meta()
-      post = %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      post = %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -527,7 +531,11 @@ defmodule Calcinator.ControllerTest do
       Application.put_env(:calcinator, TestAuthors, [get: {:error, :timeout}])
 
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -574,7 +582,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:error, reason}", %{conn: conn} do
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -621,7 +633,13 @@ defmodule Calcinator.ControllerTest do
       maximum = 1
       size = 2
 
-      Application.put_env(:calcinator, TestAuthors, page_size: [maximum: maximum])
+      Application.put_env(
+        :calcinator,
+        TestAuthors,
+        page_size: [
+          maximum: maximum
+        ]
+      )
 
       meta = checkout_meta()
 
@@ -659,7 +677,13 @@ defmodule Calcinator.ControllerTest do
       minimum = 2
       size = 1
 
-      Application.put_env(:calcinator, TestAuthors, page_size: [minimum: minimum])
+      Application.put_env(
+        :calcinator,
+        TestAuthors,
+        page_size: [
+          minimum: minimum
+        ]
+      )
 
       meta = checkout_meta()
 
@@ -693,7 +717,13 @@ defmodule Calcinator.ControllerTest do
     end
 
     test "{:error, :pagination_cannot_be_disabled}", %{conn: conn} do
-      Application.put_env(:calcinator, TestAuthors, page_size: [minimum: 1])
+      Application.put_env(
+        :calcinator,
+        TestAuthors,
+        page_size: [
+          minimum: 1
+        ]
+      )
 
       meta = checkout_meta()
 
@@ -1001,7 +1031,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:ok, rendered} for has_many", %{conn: conn} do
       meta = checkout_meta()
-      post = %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      post = %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -1098,7 +1132,11 @@ defmodule Calcinator.ControllerTest do
       Application.put_env(:calcinator, TestAuthors, [get: {:error, :timeout}])
 
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -1145,7 +1183,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:error, reason}", %{conn: conn} do
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
