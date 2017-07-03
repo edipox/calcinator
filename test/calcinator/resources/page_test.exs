@@ -36,7 +36,7 @@ defmodule Calcinator.Resources.PageTest do
                      "size" => 2
                    }
                  }
-               )  == {:ok, %Page{number: 1, size: 2}}
+               ) == {:ok, %Page{number: 1, size: 2}}
       end
 
       assert String.contains?(
