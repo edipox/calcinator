@@ -133,7 +133,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     end
 
     @doc """
-    Puts 422 Unprocessable Entity JSONAPI error in `conn` with title `"Sandbox Access Disallowed".
+    Puts 422 Unprocessable Entity JSONAPI error in `conn` with title `"Sandbox Access Disallowed"`.
     """
     @spec sandbox_access_disallowed(Conn.t) :: Conn.t
     def sandbox_access_disallowed(conn) do
@@ -141,7 +141,7 @@ if Code.ensure_loaded?(Phoenix.Controller) do
     end
 
     @doc """
-    Puts 422 Unrpcessable Entity JSONAPI error in `conn` with title `"Child missing".
+    Puts 422 Unrpcessable Entity JSONAPI error in `conn` with title `"Child missing"`.
     """
     @spec sandbox_token_missing(Conn.t) :: Conn.t
     def sandbox_token_missing(conn) do
