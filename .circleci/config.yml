@@ -1,0 +1,226 @@
+# Variables
+
+job_defaults: &job_defaults
+  working_directory: ~/calcinator
+  docker:
+    - image: circleci/elixir:1.4.5
+      environment:
+        MIX_ENV: test
+
+# Run steps needed for all jobs, so that `mix` will know dependencies are up-to-date
+
+mix_local_hex: &mix_local_hex
+  run:
+    name: "mix local.hex"
+    command: mix local.hex --force
+
+mix_local_rebar: &mix_local_rebar
+  run:
+    name: "mix local.rebar"
+    command: mix local.rebar --force
+
+
+# Run steps to generate cache keys
+
+# Open bug/feature request
+# (https://discuss.circleci.com/t/cannot-use-circle-yml-environment-variables-in-cache-keys/10994/3) that
+# environment variables from Dockerfiles aren't usable as keys although they'll be in the environment, so convert
+# environment variables to a file that can be `checksum`ed
+
+elixir_version_lock: &elixir_version_lock
+  run:
+    name: "ELIXIR_VERSION.lock"
+    command: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+
+otp_version_lock: &otp_version_lock
+  run:
+    name: "OTP_VERSION.lock"
+    command: echo "${OTP_VERSION}" > OTP_VERSION.lock
+
+# Body
+
+version: 2
+jobs:
+  build:
+    <<: *job_defaults
+    steps:
+      - checkout
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      # `mix deps.get` with caching
+
+      - restore_cache:
+          keys:
+            - deps-{{ checksum "mix.lock" }}
+            # if `mix deps.get` changes `mix.lock`, then this one should still apply
+            - deps-{{ checksum "mix.exs" }}
+            # any previous branches deps
+            - deps
+
+      - run:
+          name: "mix deps.get"
+          command: mix deps.get --only test
+
+      # in case `mix.exs` has changed because of a requirement change
+      - save_cache:
+          key: deps
+          paths:
+            - deps
+      # in case `mix.lock` is updated by `mix deps.get`
+      - save_cache:
+          key: deps-{{ checksum "mix.exs" }}
+          paths:
+            - deps
+      - save_cache:
+          key: deps-{{ checksum "mix.lock" }}
+          paths:
+            - deps
+
+      - *otp_version_lock
+      - *elixir_version_lock
+
+      # `mix compile` with caching
+
+      - restore_cache:
+          # prefer dialyze version of cache since it includes both `_build` AND `/home/circleci/.mix`
+          keys:
+            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+            - compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run:
+          command: mix compile
+
+      - save_cache: &compile_save_cache_mix_lock
+          key: compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          paths:
+            # compiled deps and compiled project
+            - _build
+      - save_cache: &compile_save_cache_mix_exs
+          <<: *compile_save_cache_mix_lock
+          key: compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - save_cache:
+          <<: *compile_save_cache_mix_exs
+          key: compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+      # `mix compile` picking up need for recompile is NOT guaranteed when the Erlang or Elixir version changes, so
+      # don't have a general `mix-compile-{{ checksum "OTP_VERSION.lock" }}` or `mix-compile` key
+
+      - persist_to_workspace:
+         root: /home/circleci/calcinator
+         paths:
+           - _build
+           - config
+           - deps
+           - lib
+           - priv
+           - test
+           - CHANGELOG.md
+           - CODE_OF_CONDUCT.md
+           - CONTRIBUTING.md
+           - coveralls.json
+           - LICENSE.md
+           - mix.exs
+           - mix.lock
+           - README.md
+           - UPGRADING.md
+           - OTP_VERSION.lock
+           - ELIXIR_VERSION.lock
+  dialyze:
+    <<: *job_defaults
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      # `mix dialyze --no-analyse` with caching
+
+      # no `restore_cache` because it is the same as `mix compile` because they both use `_build` and
+      # `/home/circleci/.mix`
+      - restore_cache:
+          keys:
+            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run: mix dialyze --no-analyse
+
+      - save_cache: &dialyze_save_cache_mix_lock
+          key: dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          paths:
+            # deps PLT (but also compiled deps and compiled project, so mix compile should prefer this cache)
+            - _build
+            - /home/circleci/.mix
+      - save_cache: &dialyze_save_cache_mix_exs
+          <<: *dialyze_save_cache_mix_lock
+          key: dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - save_cache:
+          <<: *dialyze_save_cache_mix_exs
+          key: dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run: mix dialyze
+  docs:
+    <<: *job_defaults
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      - run:
+          name: mix docs
+          command: |
+            mix docs 2>&1 | tee mix-docs.txt
+            if grep "Closing unclosed backquotes" mix-docs.txt; then exit 1; fi
+  inch:
+    <<: *job_defaults
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      - run: mix inch.report
+  test:
+    <<: *job_defaults
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      - run:
+          name: "mix test"
+          command: mix coveralls.circle
+
+      - store_test_results:
+          path: _build/test/lib/calcinator
+      # so test results show up as downloadable artifacts
+      - store_artifacts:
+          path: _build/test/lib/calcinator
+          destination: Elixir
+workflows:
+  version: 2
+  all:
+    jobs:
+      - build
+      - dialyze:
+          requires:
+            - build
+      - docs:
+          requires:
+            - build
+      - inch:
+          requires:
+            - build
+      - test:
+          requires:
+            - build
