@@ -77,6 +77,15 @@ defmodule Calcinator.Mixfile do
       {:credo, "0.7.4", only: :test},
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
+      {
+        :earmark,
+        "~> 1.0",
+        # Commit with @KronicDeth's pragdave/earmark#144 PR that fixes unclosed backquote stickiness
+        commit: "103af39dd22d4199100f5d5dce6b3afd5959e03e",
+        github: "pragdave/earmark",
+        only: [:dev, :test],
+        override: true
+      },
       # Code coverage
       {:excoveralls, "~> 0.6.3", only: :test},
       {:ex_doc, "~> 0.15.1", only: [:dev, :test]},

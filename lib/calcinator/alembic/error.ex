@@ -95,7 +95,7 @@ defmodule Calcinator.Alembic.Error do
   end
 
   @doc """
-  Puts 422 Unprocessable Entity JSONAPI error with title `"Sandbox Access Disallowed".
+  Puts 422 Unprocessable Entity JSONAPI error with title `"Sandbox Access Disallowed"`.
   """
   @spec sandbox_access_disallowed :: Error.t
   def sandbox_access_disallowed do
@@ -110,7 +110,7 @@ defmodule Calcinator.Alembic.Error do
   end
 
   @doc """
-  Puts 422 Unrpcessable Entity JSONAPI error document with error with title `"Child missing".
+  Puts 422 Unrpcessable Entity JSONAPI error document with error with title `"Child missing"`.
   """
   @spec sandbox_token_missing :: Error.t
   def sandbox_token_missing do
