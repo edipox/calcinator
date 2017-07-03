@@ -190,6 +190,11 @@ jobs:
       - run: mix inch.report
   test:
     <<: *job_defaults
+    docker:
+      - image: circleci/elixir:1.4.5
+        environment:
+          MIX_ENV: test
+      - image: postgres:9.6.3-alpine
     steps:
       - *mix_local_hex
       - *mix_local_rebar

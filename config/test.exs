@@ -3,7 +3,10 @@ use Mix.Config
 config :calcinator, Calcinator.Resources.Ecto.Repo.Repo,
        adapter: Ecto.Adapters.Postgres,
        database: "calcinator_test",
-       pool: Ecto.Adapters.SQL.Sandbox
+       hostname: "localhost",
+       password: "postgres",
+       pool: Ecto.Adapters.SQL.Sandbox,
+       username: "postgres"
 
 config :calcinator,
        ecto_repos: [Calcinator.Resources.Ecto.Repo.Repo]
