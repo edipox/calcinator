@@ -427,7 +427,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:ok, rendered} for has_many", %{conn: conn} do
       meta = checkout_meta()
-      post = %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      post = %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -527,7 +531,11 @@ defmodule Calcinator.ControllerTest do
       Application.put_env(:calcinator, TestAuthors, [get: {:error, :timeout}])
 
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -574,7 +582,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:error, reason}", %{conn: conn} do
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -899,7 +911,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:ok, rendered} for has_many", %{conn: conn} do
       meta = checkout_meta()
-      post = %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      post = %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -996,7 +1012,11 @@ defmodule Calcinator.ControllerTest do
       Application.put_env(:calcinator, TestAuthors, [get: {:error, :timeout}])
 
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
@@ -1043,7 +1063,11 @@ defmodule Calcinator.ControllerTest do
 
     test "{:error, reason}", %{conn: conn} do
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{id: author_id}} = Factory.insert(:test_post)
+      %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
 
       # done by route.ex definition of route
       conn = Conn.assign(conn, :related, %{view_module: TestPostView})
