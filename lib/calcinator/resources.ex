@@ -30,8 +30,12 @@ defmodule Calcinator.Resources do
   """
   @type query_options :: %{
                            optional(:associations) => atom | [atom],
-                           optional(:filters) => %{String.t => String.t},
-                           optional(:meta) => %{String.t => Alembic.json},
+                           optional(:filters) => %{
+                             String.t => String.t
+                           },
+                           optional(:meta) => %{
+                             String.t => Alembic.json
+                           },
                            optional(:page) => Page.t | nil,
                            optional(:sorts) => Sorts.t
                          }

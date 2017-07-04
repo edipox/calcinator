@@ -15,7 +15,13 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     test "valid filter filters the list" do
       [first_author, second_author, third_author] = Factory.insert_list(3, :test_author)
 
-      assert {:ok, list_authors, nil} = TestAuthors.list(%{filters: %{"id" => "#{first_author.id},#{third_author.id}"}})
+      assert {:ok, list_authors, nil} = TestAuthors.list(
+               %{
+                 filters: %{
+                   "id" => "#{first_author.id},#{third_author.id}"
+                 }
+               }
+             )
 
       assert length(list_authors) == 2
 
@@ -89,7 +95,14 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "with no filter/3 callback, returns error(s)" do
-      assert {:error, %Document{errors: errors}} = TestComments.list(%{filters: %{"spam" => "true", "text" => "spam"}})
+      assert {:error, %Document{errors: errors}} = TestComments.list(
+               %{
+                 filters: %{
+                   "spam" => "true",
+                   "text" => "spam"
+                 }
+               }
+             )
       assert length(errors) == 2
     end
   end
