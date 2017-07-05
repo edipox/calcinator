@@ -1,6 +1,7 @@
 use Mix.Config
 
-config :calcinator, Calcinator.Resources.Ecto.Repo.Repo,
+config :calcinator,
+       Calcinator.Resources.Ecto.Repo.Repo,
        adapter: Ecto.Adapters.Postgres,
        database: "calcinator_test",
        hostname: "localhost",
