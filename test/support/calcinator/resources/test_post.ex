@@ -5,12 +5,41 @@ defmodule Calcinator.Resources.TestPost do
 
   use Ecto.Schema
 
+  import Ecto.Changeset, only: [cast: 3, validate_required: 2]
+
+  alias Calcinator.Resources.{TestAuthor, TestComment, TestTag}
+
   schema "posts" do
     field :body, :string
 
     timestamps()
 
-    belongs_to :author, Calcinator.Resources.TestAuthor
-    has_many :comments, Calcinator.Resources.TestComment
+    belongs_to :author, TestAuthor
+    has_many :comments, TestComment
+    many_to_many :tags,
+                 TestTag,
+                 join_keys: [
+                   post_id: :id,
+                   tag_id: :id
+                 ],
+                 join_through: "posts_tags",
+                 on_replace: :delete
   end
+
+  # Functions
+
+  def changeset(changeset) do
+    changeset
+    |> validate_required(required_fields())
+  end
+
+  def changeset(data, params) do
+    data
+    |> cast(params, optional_fields() ++ required_fields())
+    |> changeset()
+  end
+
+  def optional_fields, do: []
+
+  def required_fields, do: ~w(author_id body)a
 end

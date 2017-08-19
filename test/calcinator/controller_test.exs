@@ -1,6 +1,6 @@
 defmodule Calcinator.ControllerTest do
   alias Calcinator.{Authorization.Cant, Meta.Beam, TestAuthorView, TestPostView}
-  alias Calcinator.Resources.{TestAuthor, TestPost}
+  alias Calcinator.Resources.{TestAuthor, TestPost, TestTag}
   alias Calcinator.Resources.Ecto.Repo.{Factory, TestAuthors, TestPosts}
   alias Calcinator.Resources.Ecto.Repo.Repo
   alias Plug.Conn
@@ -29,28 +29,75 @@ defmodule Calcinator.ControllerTest do
 
   describe "create/3" do
     test "{:ok, renderer}", %{conn: conn} do
+      meta = checkout_meta()
+
+      test_author = %TestAuthor{id: author_id} = Factory.insert(:test_author)
+      first_test_tag = %TestTag{id: first_tag_id} = Factory.insert(:test_tag)
+      second_test_tag = %TestTag{id: second_tag_id} = Factory.insert(:test_tag)
+      body = "First Post!"
+
       conn = Calcinator.Controller.create(
         conn,
         %{
+          "meta" => meta,
           "data" => %{
-            "type" => "test-authors",
+            "type" => "test-posts",
             "attributes" => %{
-              "name" => "Alice"
+              "body" => body
+            },
+            "relationships" => %{
+              "author" => %{
+                "data" => %{
+                  "type" => "test-authors",
+                  "id" => to_string(author_id)
+                }
+              },
+              # Tests `many_to_many` support for create
+              "tags" => %{
+                "data" => [
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(first_tag_id)
+                  },
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(second_tag_id)
+                  }
+                ]
+              }
             }
           },
-          "meta" => checkout_meta()
+          "include" => "author,tags"
         },
-        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+        %Calcinator{
+          associations_by_include: %{
+            "author" => :author,
+            "tags" => :tags
+          },
+          ecto_schema_module: TestPost,
+          resources_module: TestPosts,
+          view_module: TestPostView
+        }
       )
 
       assert %{
                "data" => %{
-                 "type" => "test-authors",
+                 "type" => "test-posts",
                  "attributes" => %{
-                   "name" => "Alice"
+                   "body" => ^body
                  }
-               }
+               },
+               "included" => included
              } = json_response(conn, :created)
+
+      included_by_id_by_type = resource_by_id_by_type(included)
+
+      assert included_by_id_by_type["test-authors"][to_string(author_id)] == test_author_resource(test_author)
+
+      test_tags_by_id = included_by_id_by_type["test-tags"]
+
+      assert test_tags_by_id[to_string(first_tag_id)] == test_tag_resource(first_test_tag)
+      assert test_tags_by_id[to_string(second_tag_id)] == test_tag_resource(second_test_tag)
     end
 
     test "{:error, :sandbox_access_disallowed}", %{conn: conn} do
@@ -192,6 +239,65 @@ defmodule Calcinator.ControllerTest do
                  "pointer" => "/data/attributes/name"
                },
                "title" => "can't be blank"
+             } in errors
+    end
+
+    test "{:error, Ecto.Changeset.t} when many_to_many ID does not exist", %{conn: conn} do
+      meta = checkout_meta()
+
+      %TestAuthor{id: author_id} = Factory.insert(:test_author)
+      body = "First Post!"
+
+      conn = Calcinator.Controller.create(
+        conn,
+        %{
+          "meta" => meta,
+          "data" => %{
+            "type" => "test-posts",
+            "attributes" => %{
+              "body" => body
+            },
+            "relationships" => %{
+              "author" => %{
+                "data" => %{
+                  "type" => "test-authors",
+                  "id" => to_string(author_id)
+                }
+              },
+              # Tests `many_to_many` support for create
+              "tags" => %{
+                "data" => [
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(-1)
+                  }
+                ]
+              }
+            }
+          },
+          "include" => "author,tags"
+        },
+        %Calcinator{
+          associations_by_include: %{
+            "author" => :author,
+            "tags" => :tags
+          },
+          ecto_schema_module: TestPost,
+          resources_module: TestPosts,
+          view_module: TestPostView
+        }
+      )
+
+      assert %{"errors" => errors} = json_response(conn, 422)
+
+      assert is_list(errors)
+      assert length(errors) == 1
+      assert %{
+               "detail" => "tags has element at index 0 whose id (-1) does not exist",
+               "source" => %{
+                 "pointer" => "/data/relationships/tags"
+               },
+               "title" => "has element at index 0 whose id (-1) does not exist"
              } in errors
     end
   end
@@ -459,6 +565,9 @@ defmodule Calcinator.ControllerTest do
                },
                "links" => %{
                  "self" => "/api/v1/test-posts/#{post.id}"
+               },
+               "relationships" => %{
+                 "tags" => %{}
                }
              } in data
 
@@ -1089,26 +1198,65 @@ defmodule Calcinator.ControllerTest do
   describe "update/3" do
     test "{:ok, rendered}", %{conn: conn} do
       meta = checkout_meta()
-      test_author = %TestAuthor{id: id} = Factory.insert(:test_author, name: "Alice")
+      test_tag = Factory.insert(:test_tag)
+      %TestPost{id: id} = Factory.insert(:test_post, tags: [test_tag])
+      updated_body = "Updated Body"
+      updated_test_tag = Factory.insert(:test_tag)
 
       conn = Calcinator.Controller.update(
         conn,
         %{
-          "id" => id,
+          "id" => to_string(id),
           "data" => %{
-            "type" => "test-authors",
+            "type" => "test-posts",
             "id" => to_string(id),
             "attributes" => %{
-              "name" => "Eve"
+              "body" => updated_body
+            },
+            # Test `many_to_many` update does replacement
+            "relationships" => %{
+              "tags" => %{
+                "data" => [
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(updated_test_tag.id)
+                  }
+                ]
+              }
             }
           },
+          "include" => "author,tags",
           "meta" => meta
         },
-        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+        %Calcinator{
+          associations_by_include: %{
+            "author" => :author,
+            "tags" => :tags
+          },
+          ecto_schema_module: TestPost,
+          resources_module: TestPosts,
+          view_module: TestPostView
+        }
       )
 
-      assert %{"data" => data} = json_response(conn, :ok)
-      assert data == test_author_resource(%{test_author | name: "Eve"})
+      assert %{
+               "data" => %{
+                 "type" => "test-posts",
+                 "attributes" => %{
+                   "body" => ^updated_body
+                 }
+               },
+               "included" => included
+             } = json_response(conn, :ok)
+      assert is_list(included)
+
+      included_by_id_by_type = resource_by_id_by_type(included)
+
+      test_tag_by_id = included_by_id_by_type["test-tags"]
+
+      assert is_map(test_tag_by_id)
+      assert map_size(test_tag_by_id) == 1
+      assert test_tag_by_id[to_string(updated_test_tag.id)] == test_tag_resource(updated_test_tag)
     end
 
     # has happened when the `carrot_rpc` servers in Ruby crash with a 500 Internal Server error
@@ -1355,6 +1503,61 @@ defmodule Calcinator.ControllerTest do
              } in errors
     end
 
+    test "{:error, Ecto.Changeset.t} when many_to_many ID does not exist", %{conn: conn} do
+      meta = checkout_meta()
+      test_tag = Factory.insert(:test_tag)
+      %TestPost{id: id} = Factory.insert(:test_post, tags: [test_tag])
+      updated_body = "Updated Body"
+
+      conn = Calcinator.Controller.update(
+        conn,
+        %{
+          "id" => to_string(id),
+          "data" => %{
+            "type" => "test-posts",
+            "id" => to_string(id),
+            "attributes" => %{
+              "body" => updated_body
+            },
+            # Test `many_to_many` update does replacement
+            "relationships" => %{
+              "tags" => %{
+                "data" => [
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(-1)
+                  }
+                ]
+              }
+            }
+          },
+          "include" => "author,tags",
+          "meta" => meta
+        },
+        %Calcinator{
+          associations_by_include: %{
+            "author" => :author,
+            "tags" => :tags
+          },
+          ecto_schema_module: TestPost,
+          resources_module: TestPosts,
+          view_module: TestPostView
+        }
+      )
+
+      assert %{"errors" => errors} = json_response(conn, 422)
+
+      assert is_list(errors)
+      assert length(errors) == 1
+      assert %{
+               "detail" => "tags has element at index 0 whose id (-1) does not exist",
+               "source" => %{
+                 "pointer" => "/data/relationships/tags"
+               },
+               "title" => "has element at index 0 whose id (-1) does not exist"
+             } in errors
+    end
+
     test "{:error, reason}", %{conn: conn} do
       meta = checkout_meta()
       %TestAuthor{id: id} = Factory.insert(:test_author)
@@ -1482,15 +1685,43 @@ defmodule Calcinator.ControllerTest do
        )
   end
 
-  defp test_author_resource(test_author = %TestAuthor{id: id}) do
+  def resource_by_id_by_type(included) do
+    Enum.reduce(
+      included,
+      %{},
+      fn resource = %{"id" => id, "type" => type}, resource_by_id_by_type ->
+        resource_by_id_by_type
+        |> Map.put_new(type, %{})
+        |> put_in([type, id], resource)
+      end
+    )
+  end
+
+  defp test_author_resource(%TestAuthor{id: id, name: name}) do
     %{
       "type" => "test-authors",
       "id" => to_string(id),
       "attributes" => %{
-        "name" => test_author.name
+        "name" => name
       },
       "links" => %{
         "self" => "/api/v1/test-authors/#{id}"
+      },
+      "relationships" => %{
+        "posts" => %{}
+      }
+    }
+  end
+
+  defp test_tag_resource(%TestTag{id: id, name: name}) do
+    %{
+      "type" => "test-tags",
+      "id" => to_string(id),
+      "attributes" => %{
+        "name" => name
+      },
+      "links" => %{
+        "self" => "/api/v1/test-tags/#{id}"
       },
       "relationships" => %{
         "posts" => %{}

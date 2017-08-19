@@ -1,5 +1,11 @@
 # Upgrading
 
+## v4.0.0
+
+### `Calcinator.Resources.changeset/1,2` return types
+
+In order to support preloading of associations as required by `Ecto.Changeset.put_assoc/3` for `many_to_many` association support, `Calcinator.Resources.changeset/1,2` may now access the backing store, which means an `{:error, :ownership}` can occur.  Instead of having the type of the callbacks be `Ecto.Changeset.t | {:error, reason}`, it is better to use a proper Either type and use `{:ok, Ecto.Changeset.t} | {:error, reason}`, so any callback that returned `Ecto.Changeset.t` before must now return `{:ok, Ecto.Changeset.t}`.
+
 ## v3.0.0
 
 ### `Calcinator.Resources.allow_sandbox_access/1` return types

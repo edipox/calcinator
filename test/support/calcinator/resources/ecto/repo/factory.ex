@@ -3,7 +3,7 @@ defmodule Calcinator.Resources.Ecto.Repo.Factory do
   Factories for test schemas.
   """
 
-  alias Calcinator.Resources.{Ecto.Repo.Repo, TestAuthor, TestPost}
+  alias Calcinator.Resources.{Ecto.Repo.Repo, TestAuthor, TestPost, TestTag}
 
   use ExMachina.Ecto, repo: Repo
 
@@ -19,6 +19,12 @@ defmodule Calcinator.Resources.Ecto.Repo.Factory do
     %TestPost{
       author: build(:test_author),
       body: Faker.Lorem.sentence()
+    }
+  end
+
+  def test_tag_factory do
+    %TestTag{
+      name: sequence(:test_post_name, &"tag#{&1}")
     }
   end
 end
