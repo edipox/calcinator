@@ -3,50 +3,72 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v3.0.0](#v300)
+  - [v4.0.0](#v400)
     - [Enhancements](#enhancements)
-    - [Bug Fixes](#bug-fixes)
     - [Incompatible Changes](#incompatible-changes)
-  - [v2.4.0](#v240)
+  - [v3.0.0](#v300)
     - [Enhancements](#enhancements-1)
+    - [Bug Fixes](#bug-fixes)
+    - [Incompatible Changes](#incompatible-changes-1)
+  - [v2.4.0](#v240)
+    - [Enhancements](#enhancements-2)
   - [v2.3.1](#v231)
     - [Bug Fixes](#bug-fixes-1)
   - [v2.3.0](#v230)
-    - [Enhancements](#enhancements-2)
-  - [v2.2.0](#v220)
     - [Enhancements](#enhancements-3)
-  - [v2.1.0](#v210)
+  - [v2.2.0](#v220)
     - [Enhancements](#enhancements-4)
+  - [v2.1.0](#v210)
+    - [Enhancements](#enhancements-5)
     - [Bug Fixes](#bug-fixes-2)
   - [v2.0.0](#v200)
-    - [Enhancements](#enhancements-5)
-    - [Bug Fixes](#bug-fixes-3)
-    - [Incompatible Changes](#incompatible-changes-1)
-  - [v1.7.0](#v170)
     - [Enhancements](#enhancements-6)
+    - [Bug Fixes](#bug-fixes-3)
+    - [Incompatible Changes](#incompatible-changes-2)
+  - [v1.7.0](#v170)
+    - [Enhancements](#enhancements-7)
     - [Bug Fixes](#bug-fixes-4)
   - [v1.6.0](#v160)
-    - [Enhancements](#enhancements-7)
+    - [Enhancements](#enhancements-8)
   - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-5)
   - [v1.5.0](#v150)
-    - [Enhancements](#enhancements-8)
+    - [Enhancements](#enhancements-9)
     - [Bug Fixes](#bug-fixes-6)
   - [v1.4.0](#v140)
-    - [Enhancements](#enhancements-9)
-  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-10)
+  - [v1.3.0](#v130)
+    - [Enhancements](#enhancements-11)
     - [Bug Fixes](#bug-fixes-7)
   - [v1.2.0](#v120)
-    - [Enhancements](#enhancements-11)
+    - [Enhancements](#enhancements-12)
     - [Bug Fixes](#bug-fixes-8)
   - [v1.1.0](#v110)
-    - [Enhancements](#enhancements-12)
+    - [Enhancements](#enhancements-13)
     - [Bug Fixes](#bug-fixes-9)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v4.0.0
+
+### Enhancements
+* [#28](https://github.com/C-S-D/calcinator/pull/28) - [@KronicDeth](https://github.com/KronicDeth)
+  * `use Calcinator.Resources.Ecto.Repo`'s `changeset/2` will
+    1. (New) Preload any `many_to_many` associations that appear in `params`
+    2. Cast `params` into `data` using `optional_field/0` and `required_fields/0` of the module
+    3. (New) Puts `many_to_many` associations from `params` into changeset. If any ids don't exist, they will generate changeset errors.
+    4. Validates changeset with `module` `ecto_schema_module/0` `changeset/0`.
+
+### Bug Fixes
+* [#28](https://github.com/C-S-D/calcinator/pull/28) - [@KronicDeth](https://github.com/KronicDeth)
+  * Use `dockerize` to wait for postgres port to open
+  * Use `calcinator.ecto.wait` `mix` task to ensure port can receive queries after opening
+
+### Incompatible Changes
+* [#28](https://github.com/C-S-D/calcinator/pull/28) - [@KronicDeth](https://github.com/KronicDeth)
+  * `Calcinator.Resources.changeset/1,2` return goes from `Ecto.Changeset.t` to `{:ok, Ecto.Changeset.t} | {:error, :ownership}` as `changeset/1,2` will access database to preload, validate ids, and `put_assoc` on `many_to_many` association.  Accessing the database can lead to an ownership error, so `{:error, :ownership}` is necessary.
 
 ## v3.0.0
 
