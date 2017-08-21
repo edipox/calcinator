@@ -86,8 +86,8 @@ defmodule Calcinator.Mixfile do
         only: [:dev, :test],
         override: true
       },
-      # Code coverage
-      {:excoveralls, "~> 0.6.3", only: :test},
+      # Code coveragei
+      {:excoveralls, "~> 0.7.2", only: :test},
       {:ex_doc, "~> 0.16.3", only: [:dev, :test]},
       # documentation coverage
       {:inch_ex, "~> 0.5.1", only: [:dev, :test]},
