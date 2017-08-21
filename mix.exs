@@ -29,7 +29,7 @@ defmodule Calcinator.Mixfile do
       test_coverage: [
         tool: ExCoveralls
       ],
-      version: "3.0.0"
+      version: "4.0.0"
     ]
   end
 
@@ -42,7 +42,7 @@ defmodule Calcinator.Mixfile do
 
   defp aliases do
     [
-      "test": ["ecto.drop", "ecto.create --quiet", "ecto.migrate", "test"]
+      "test": ["calcinator.ecto.wait", "ecto.drop", "ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
 
@@ -57,7 +57,7 @@ defmodule Calcinator.Mixfile do
     [applications: applications(env)]
   end
 
-  defp applications(:test), do: [:ecto, :faker, :postgrex, :ex_machina | applications(:dev)]
+  defp applications(:test), do: [:ecto, :ex_machina, :faker, :mix, :postgrex | applications(:dev)]
   defp applications(_), do: ~w(alembic ja_serializer logger)a
 
   # Dependencies can be Hex packages:

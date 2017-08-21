@@ -47,15 +47,15 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   """
 
-  alias Alembic.Document
-  alias Ecto.{Adapters.SQL.Sandbox, Query}
-
   require Ecto.Query
   require Logger
 
   import Calcinator.Resources, only: [unknown_filter: 1]
-  import Ecto.Changeset, only: [cast: 3]
-  import Ecto.Query, only: [distinct: 2]
+  import Ecto.Changeset, only: [add_error: 3, cast: 3, get_field: 2]
+  import Ecto.Query, only: [distinct: 2, where: 3]
+
+  alias Alembic.Document
+  alias Ecto.{Adapters.SQL.Sandbox, Changeset, Query}
 
   # Types
 
@@ -186,20 +186,36 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @doc """
   `Ecto.Changeset.t` using the default `Ecto.Schema.t` for `module` with `params`
   """
-  @spec changeset(module, Resources.params) :: Ecto.Changeset.t
+  @spec changeset(module, Resources.params) :: {:ok, Ecto.Changeset.t} | {:error, :ownership}
   def changeset(module, params) when is_map(params), do: module.changeset(module.ecto_schema_module.__struct__, params)
 
   @doc """
-  1. Casts `params` into `data` using `optional_field/0` and `required_fields/0` of `module`
-  2. Validates changeset with `module` `ecto_schema_module/0` `changeset/0`
+  1. Preloads any `many_to_many` associations that appear in `params`.
+  2. Casts `params` into `data` using `optional_field/0` and `required_fields/0` of `module`.
+  3. Puts `many_to_many` associations from `params` into changeset.
+  2. Validates changeset with `module` `ecto_schema_module/0` `changeset/0`.
+
+  ## Returns
+
+  * `{:ok, Ecto.Changeset.t}` - All steps were successful
+  * `{:error, :ownership}` - Preloading the the `many_to_many` associations that appear in `params` using `module`
+      `repo/0` hit an ownership error.
   """
-  @spec changeset(module, Ecto.Schema.t, Resources.params) :: Ecto.Changeset.t
+  @spec changeset(module, Ecto.Schema.t, Resources.params) :: {:ok, Ecto.Changeset.t} | {:error, :ownership}
   def changeset(module, data, params) when is_map(params) do
     ecto_schema_module = module.ecto_schema_module()
+    present_many_to_many_associations = present_many_to_many_associations(ecto_schema_module, params)
 
-    data
-    |> cast(params, ecto_schema_module.optional_fields() ++ ecto_schema_module.required_fields())
-    |> ecto_schema_module.changeset()
+    with {:ok, preloaded_data} <- preload_associations(module, data, present_many_to_many_associations) do
+      fields = ecto_schema_module.optional_fields() ++ ecto_schema_module.required_fields()
+      cast_changeset = cast(preloaded_data, params, fields)
+
+      validated_changeset = module
+                            |> put_associations(cast_changeset, params, present_many_to_many_associations)
+                            |> ecto_schema_module.changeset()
+
+      {:ok, validated_changeset}
+    end
   end
 
   @doc """
@@ -349,6 +365,24 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
   ## Private Functions
 
+  def add_not_found(changeset, field, index, id) do
+    add_error changeset,
+              field,
+              "has element at index #{index} whose id (#{id}) does not exist"
+  end
+
+  defp associated_ids(resource_identifiers, related) when is_atom(related) do
+    associated_ids(resource_identifiers, related.__struct__())
+  end
+
+  defp associated_ids(resource_identifiers, empty_struct) do
+    Enum.map resource_identifiers, fn resource_identifier ->
+      empty_struct
+      |> cast(resource_identifier, [:id])
+      |> get_field(:id)
+    end
+  end
+
   defp allow_sandbox_access(repo, owner) do
     case Sandbox.allow(repo, owner, self()) do
       {:already, :allowed} -> :ok
@@ -385,6 +419,18 @@ defmodule Calcinator.Resources.Ecto.Repo do
     apply_filters(module, query, filters)
   end
 
+  defp found_associated_by_id(module, related, associated_ids) do
+    related
+    |> where([r], r.id in ^associated_ids)
+    |> module.repo().all()
+    |> Enum.into(
+         %{},
+         fn found_associated = %{id: id} ->
+           {id, found_associated}
+         end
+       )
+  end
+
   defp preload(module, data_or_queryable, query_options) when is_map(query_options) do
     ecto_schema_module = module.ecto_schema_module()
 
@@ -396,15 +442,87 @@ defmodule Calcinator.Resources.Ecto.Repo do
     end
   end
 
-  defp preload_data(module, data, query_options) when is_map(query_options) do
+  # Preload associations where the association name is present in `params`
+  defp preload_associations(module, data, associations) do
+    association_names = Enum.map(associations, fn %{field: field} -> field end)
+
+    preload_association_names(module, data, association_names)
+  end
+
+  defp preload_association_names(module, data, association_names) do
     repo = module.repo()
 
-    case wrap_ownership_error(repo, :preload, [data, module.full_associations(query_options)]) do
+    case wrap_ownership_error(repo, :preload, [data, association_names]) do
       {:error, :ownership} ->
         {:error, :ownership}
       preloaded ->
         {:ok, preloaded}
     end
+  end
+
+  defp preload_data(module, data, query_options) when is_map(query_options) do
+    preload_association_names(module, data, module.full_associations(query_options))
+  end
+
+  defp present_many_to_many_associations(ecto_schema_module, params) when is_map(params) do
+    param_keys = Map.keys(params)
+
+    :associations
+    |> ecto_schema_module.__schema__()
+    |> Stream.filter(fn name -> Atom.to_string(name) in param_keys end)
+    |> Stream.map(fn name -> ecto_schema_module.__schema__(:association, name) end)
+    |> Stream.filter(
+         fn
+           %Ecto.Association.ManyToMany{} -> true
+           _ -> false
+         end
+       )
+  end
+
+  defp put_association(
+         module,
+         changeset,
+         param,
+         # only ManyToMany requires loading and put_assoc to work, but want to check in case new associatons are added
+         %Ecto.Association.ManyToMany{field: field, related: related}
+       ) do
+    case param do
+      list when is_list(list) ->
+        put_many_to_many_association(module, changeset, list, field, related)
+      _ ->
+        # use `array` instead of `list` because `array` is JSONAPI type name
+        add_error(changeset, field, "must be an array of resource identifiers")
+    end
+  end
+
+  defp put_associations(module, changeset, params, associations) do
+    Enum.reduce associations, changeset, fn association = %{field: field}, acc_changeset ->
+      # caller should have used `present_many_to_many_associations` to guarantee field will be present
+      param = Map.fetch!(params, Atom.to_string(field))
+      put_association(module, acc_changeset, param, association)
+    end
+  end
+
+  defp put_many_to_many_association(module, changeset, list, field, related) do
+    associated_ids = associated_ids(list, related)
+    found_associated_by_id = found_associated_by_id(module, related, associated_ids)
+
+    {reverse_associated, not_found_changeset} =
+      associated_ids
+      |> Stream.with_index()
+      |> Enum.reduce(
+           {[], changeset},
+           fn {associated_id, index}, {acc_reverse_associated, acc_changeset} ->
+             case Map.fetch(found_associated_by_id, associated_id) do
+               :error ->
+                 {acc_reverse_associated, add_not_found(acc_changeset, field, index, associated_id)}
+               {:ok, found_associated} ->
+                 {[found_associated | acc_reverse_associated], acc_changeset}
+             end
+           end
+         )
+    ordered_associated = Enum.reverse(reverse_associated)
+    Changeset.put_assoc(not_found_changeset, field, ordered_associated)
   end
 
   # have to unload preloads that may have been updated

@@ -56,14 +56,30 @@ defmodule Calcinator.Resources do
 
   @doc """
   Changeset for creating a struct from the `params`
+
+  ## Returns
+
+  * `{:ok, Ecto.Changeset.t}` - a changeset was created with no error while trying to access the backing store
+  * `{:error, :ownership}` - connection to backing store was not owned by the calling process when associations were
+      preloaded into the data for the changeset.  `many_to_many` associations require the associations to be preloaded
+      into the `Ecto.Changeset.t` `data` before calling `Ecto.Changeset.put_assoc/3`.
+
   """
-  @callback changeset(params) :: Ecto.Changeset.t
+  @callback changeset(params) :: {:ok, Ecto.Changeset.t} | {:error, :ownership}
 
   @doc """
   * Changeset for updating `resource` with `params`.
   * Changeset for deleting `resource` (`params` will be an empty map)
+
+  ## Returns
+
+  * `{:ok, Ecto.Changeset.t}` - a changeset was created with no error while trying to access the backing store
+  * `{:error, :ownership}` - connection to backing store was not owned by the calling process when associations were
+      preloaded into the data for the changeset.  `many_to_many` associations require the associations to be preloaded
+      into the `Ecto.Changeset.t` `data` before calling `Ecto.Changeset.put_assoc/3`.
+
   """
-  @callback changeset(resource :: Ecto.Schema.t, params) :: Ecto.Changeset.t
+  @callback changeset(resource :: Ecto.Schema.t, params) :: {:ok, Ecto.Changeset.t} | {:error, :ownership}
 
   @doc """
   Deletes a single struct in a `changeset`

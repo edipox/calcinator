@@ -100,11 +100,13 @@ defmodule Calcinator do
     end
   end
 
-  @spec changeset(t, Ecto.Schema.t, insertable_params) :: {:ok, Ecto.Changeset.t} | {:error, Ecto.Changeset.t}
+  @spec changeset(t, Ecto.Schema.t, insertable_params) :: {:ok, Ecto.Changeset.t} |
+                                                          {:error, Ecto.Changeset.t} |
+                                                          {:error, :ownership}
   def changeset(%__MODULE__{resources_module: resources_module}, updatable, updatable_params) do
-    updatable
-    |> resources_module.changeset(updatable_params)
-    |> status_changeset()
+    with {:ok, changeset} <- resources_module.changeset(updatable, updatable_params) do
+      status_changeset(changeset)
+    end
   end
 
   @spec get(module, params, id_key :: String.t, Resources.query_options) :: {:ok, Ecto.Schema.t} |
@@ -560,16 +562,16 @@ defmodule Calcinator do
     {deep_filtered, filtered_pagination}
   end
 
-  @spec changeset(t, insertable_params) :: {:ok, Ecto.Changeset.t} | {:error, Ecto.Changeset.t}
+  @spec changeset(t, insertable_params) :: {:ok, Ecto.Changeset.t} | {:error, Ecto.Changeset.t} | {:error, :ownership}
   defp changeset(
          %__MODULE__{resources_module: resources_module},
          insertable_params
        )
        when not is_nil(resources_module) and is_atom(resources_module) and
             is_map(insertable_params) do
-    insertable_params
-    |> resources_module.changeset()
-    |> status_changeset()
+    with {:ok, changeset} <- resources_module.changeset(insertable_params) do
+      status_changeset(changeset)
+    end
   end
 
   @spec create_changeset(t, Ecto.Changeset.t, params) :: {:ok, struct} |

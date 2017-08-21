@@ -203,6 +203,10 @@ jobs:
           at: /home/circleci/calcinator
 
       - run:
+          name: Wait for db
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+
+      - run:
           name: "mix test"
           command: mix coveralls.circle
 

@@ -3,7 +3,7 @@ defmodule Calcinator.TestPostView do
   View for `Calcinator.TestPost`
   """
 
-  alias Calcinator.{RelatedView, RelationshipView}
+  alias Calcinator.{RelatedView, RelationshipView, TestAuthorView, TestTagView}
   alias Calcinator.Resources.TestPost
 
   use JaSerializer.PhoenixView
@@ -19,7 +19,9 @@ defmodule Calcinator.TestPostView do
   # Relationships
 
   has_one :author,
-          serializer: Calcinator.TestAuthorView
+          serializer: TestAuthorView
+  has_many :tags,
+           serializer: TestTagView
 
   # Functions
 
