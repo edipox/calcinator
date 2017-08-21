@@ -72,9 +72,9 @@ defmodule Calcinator.Mixfile do
   defp deps do
     [
       # JSONAPI document coding
-      {:alembic, "~> 3.3"},
+      {:alembic, "~> 3.4"},
       # Static Analysis
-      {:credo, "0.7.4", only: :test},
+      {:credo, "0.8.6", only: :test},
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
       {
@@ -86,9 +86,9 @@ defmodule Calcinator.Mixfile do
         only: [:dev, :test],
         override: true
       },
-      # Code coverage
-      {:excoveralls, "~> 0.6.3", only: :test},
-      {:ex_doc, "~> 0.15.1", only: [:dev, :test]},
+      # Code coveragei
+      {:excoveralls, "~> 0.7.2", only: :test},
+      {:ex_doc, "~> 0.16.3", only: [:dev, :test]},
       # documentation coverage
       {:inch_ex, "~> 0.5.1", only: [:dev, :test]},
       # Calcinator.Resources.Ecto.Repo tests

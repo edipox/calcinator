@@ -60,6 +60,15 @@
     2. Cast `params` into `data` using `optional_field/0` and `required_fields/0` of the module
     3. (New) Puts `many_to_many` associations from `params` into changeset. If any ids don't exist, they will generate changeset errors.
     4. Validates changeset with `module` `ecto_schema_module/0` `changeset/0`.
+* [#29](https://github.com/C-S-D/calcinator/pull/29) - [@KronicDeth](https://github.com/KronicDeth)
+  * Update dependencies
+    * `alembic` `3.4.0`
+    * `credo` `0.8.6`
+    * `ex_doc` `0.16.3`
+    * `excoveralls` `07.2`
+    * `phoenix` `1.3.0`
+  * Use Elixir `1.5.1` for CircleCI build
+    * Use `@impl` for callbacks
 
 ### Bug Fixes
 * [#28](https://github.com/C-S-D/calcinator/pull/28) - [@KronicDeth](https://github.com/KronicDeth)
