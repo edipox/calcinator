@@ -26,10 +26,12 @@ defmodule Calcinator.Authorization.Can do
 
       @behaviour Authorization
 
+      @impl Authorization
       def filter_associations_can(target, subject, action) do
         Can.filter_associations_can(target, subject, action, __MODULE__)
       end
 
+      @impl Authorization
       def filter_can(target, subject, action) do
         Can.filter_can(target, subject, action, __MODULE__)
       end

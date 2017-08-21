@@ -117,34 +117,47 @@ defmodule Calcinator.Resources.Ecto.Repo do
 
       # Functions
 
+      ## Calcinator.Resources.Ecto.Repo callbacks
+
+      @impl Calcinator.Resources.Ecto.Repo
       def full_associations(query_options = %{}), do: EctoRepoResources.full_associations(query_options)
 
-      ## Resources callbacks
+      ## Calcinator.Resources callbacks
 
+      @impl Calcinator.Resources
       @spec allow_sandbox_access(Resources.sandbox_access_token) :: :ok | {:error, :sandbox_access_disallowed}
       def allow_sandbox_access(token), do: EctoRepoResources.allow_sandbox_access(token)
 
+      @impl Calcinator.Resources
       def changeset(params), do: EctoRepoResources.changeset(__MODULE__, params)
 
+      @impl Calcinator.Resources
       def changeset(data, params), do: EctoRepoResources.changeset(__MODULE__, data, params)
 
+      @impl Calcinator.Resources
       def delete(changeset, query_options), do: EctoRepoResources.delete(__MODULE__, changeset, query_options)
 
+      @impl Calcinator.Resources
       @spec get(Resources.id, Resources.query_options) ::
               {:ok, Ecto.Schema.t} | {:error, :not_found} | {:error, :ownership}
       def get(id, opts), do: EctoRepoResources.get(__MODULE__, id, opts)
 
+      @impl Calcinator.Resources
       def insert(changeset_or_params, query_options) do
         EctoRepoResources.insert(__MODULE__, changeset_or_params, query_options)
       end
 
+      @impl Calcinator.Resources
       @spec list(Resources.query_options) :: {:ok, [Ecto.Schema.t], nil} | {:error, :ownership}
       def list(query_options), do: EctoRepoResources.list(__MODULE__, query_options)
 
+      @impl Calcinator.Resources
       def sandboxed?(), do: EctoRepoResources.sandboxed?(__MODULE__)
 
+      @impl Calcinator.Resources
       def update(changeset, query_options), do: EctoRepoResources.update(__MODULE__, changeset, query_options)
 
+      @impl Calcinator.Resources
       def update(data, params, query_options), do: EctoRepoResources.update(__MODULE__, data, params, query_options)
 
       defoverridable [

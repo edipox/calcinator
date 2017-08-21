@@ -33,6 +33,7 @@ defmodule Calcinator.Authorization.SubjectLess do
       }
 
   """
+  @impl Calcinator.Authorization
   def can?(nil, _, _), do: true
   def can?(subject, _, _) do
     raise ArgumentError,
@@ -92,6 +93,7 @@ defmodule Calcinator.Authorization.SubjectLess do
       }
 
   """
+  @impl Calcinator.Authorization
   def filter_associations_can(target, nil, _), do: target
   def filter_associations_can(_, subject, _) do
     raise ArgumentError,
@@ -139,6 +141,7 @@ defmodule Calcinator.Authorization.SubjectLess do
       }
 
   """
+  @impl Calcinator.Authorization
   def filter_can(targets, nil, _), do: targets
   def filter_can(_, subject, _) do
     raise ArgumentError,

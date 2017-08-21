@@ -23,14 +23,20 @@ defmodule Calcinator.JaSerializer.PhoenixView do
 
       # Functions
 
+      ## Calcinator.View callbacks
+
+      @impl Calcinator.View
       def get_related_resource(data, options) do
         PhoenixView.get_related_resource(unquote(phoenix_view_module), data, options)
       end
 
+      @impl Calcinator.View
       def index(data, options), do: PhoenixView.index(unquote(phoenix_view_module), data, options)
 
+      @impl Calcinator.View
       def show(data, options), do: PhoenixView.show(unquote(phoenix_view_module), data, options)
 
+      @impl Calcinator.View
       def show_relationship(data, options),
           do: PhoenixView.show_relationship(unquote(phoenix_view_module), data, options)
     end
