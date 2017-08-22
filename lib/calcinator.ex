@@ -189,6 +189,7 @@ defmodule Calcinator do
     with :ok <- can(state, :create, ecto_schema_module),
          {:ok, document} <- document(params, :create),
          insertable_params = insertable_params(state, document),
+         :ok <- allow_sandbox_access(state, params),
          {:ok, changeset} <- changeset(state, insertable_params),
          :ok <- can(state, :create, changeset),
          {:ok, created} <- create_changeset(state, changeset, params) do
@@ -583,8 +584,7 @@ defmodule Calcinator do
                                                          {:error, Ecto.Changeset.t}
   defp create_changeset(state = %__MODULE__{resources_module: resources_module}, changeset = %Ecto.Changeset{}, params)
        when not is_nil(resources_module) and is_atom(resources_module) do
-    with {:ok, query_options} <- params_to_query_options(state, params),
-         :ok <- allow_sandbox_access(state, params) do
+    with {:ok, query_options} <- params_to_query_options(state, params) do
       resources_module.insert(changeset, query_options)
     end
   end
