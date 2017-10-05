@@ -68,7 +68,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           assert %PryIn.Interaction.CustomMetric{
                    function: "can/3",
                    key: "calcinator_can_create",
-                   module: Calcinator,
+                   module: "Calcinator",
                  } = custom_metric
         end
       )
@@ -105,7 +105,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           assert %PryIn.Interaction.CustomMetric{
                    function: "can/3",
                    key: "calcinator_can_delete",
-                   module: Calcinator,
+                   module: "Calcinator",
                  } = custom_metric
         end
       )
@@ -161,7 +161,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           assert %PryIn.Interaction.CustomMetric{
                    function: "can/3",
                    key: "calcinator_can_show",
-                   module: Calcinator
+                   module: "Calcinator"
                  } = custom_metric
         end
       )
@@ -205,7 +205,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           assert %PryIn.Interaction.CustomMetric{
                    function: "can/3",
                    key: "calcinator_can_index",
-                   module: Calcinator,
+                   module: "Calcinator",
                  } = custom_metric
         end
       )
@@ -242,7 +242,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           assert %PryIn.Interaction.CustomMetric{
                    function: "can/3",
                    key: "calcinator_can_show",
-                   module: Calcinator,
+                   module: "Calcinator",
                  } = custom_metric
         end
       )
@@ -297,7 +297,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           assert %PryIn.Interaction.CustomMetric{
                    function: "can/3",
                    key: "calcinator_can_show",
-                   module: Calcinator
+                   module: "Calcinator"
                  } = custom_metric
         end
       )
@@ -374,7 +374,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       Enum.each(
         custom_metrics,
         fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{function: "can/3", module: Calcinator} = custom_metric
+          assert %PryIn.Interaction.CustomMetric{function: "can/3", module: "Calcinator"} = custom_metric
         end
       )
     end

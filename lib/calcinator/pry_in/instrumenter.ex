@@ -68,7 +68,7 @@ if Code.ensure_loaded?(PryIn) do
           function: function,
           key: "calcinator_can_#{action}",
           line: line,
-          module: module,
+          module: module_name(module),
           pid: inspect(self())
         ]
         InteractionStore.add_custom_metric(self(), data)
