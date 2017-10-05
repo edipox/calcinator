@@ -1,10 +1,11 @@
 defmodule Calcinator.ControllerTest do
-  alias Calcinator.{Authorization.Cant, Meta.Beam, TestAuthorView, TestPostView}
+  alias Calcinator.{Authorization.Cant, TestAuthorView, TestPostView}
   alias Calcinator.Resources.{TestAuthor, TestPost, TestTag}
   alias Calcinator.Resources.Ecto.Repo.{Factory, TestAuthors, TestPosts}
   alias Calcinator.Resources.Ecto.Repo.Repo
   alias Plug.Conn
 
+  import Calcinator.Resources.Ecto.Repo.Repo.Case
   import ExUnit.CaptureLog
   import Plug.Conn, only: [put_req_header: 3]
   import Phoenix.ConnTest, only: [build_conn: 0, json_response: 2, response: 2]
@@ -1670,19 +1671,6 @@ defmodule Calcinator.ControllerTest do
              "status" => "403",
              "title" => "Forbidden"
            } in errors
-  end
-
-  defp checkout_meta do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
-
-    %{}
-    |> Beam.put(Repo)
-    |> Enum.into(
-         %{},
-         fn {key, value} ->
-           {to_string(key), value}
-         end
-       )
   end
 
   def resource_by_id_by_type(included) do

@@ -42,6 +42,7 @@ defmodule Calcinator.Mixfile do
 
   defp aliases do
     [
+      "compile": "compile --warnings-as-errors",
       "test": ["calcinator.ecto.wait", "ecto.drop", "ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
@@ -57,7 +58,7 @@ defmodule Calcinator.Mixfile do
     [applications: applications(env)]
   end
 
-  defp applications(:test), do: [:ecto, :ex_machina, :faker, :mix, :postgrex | applications(:dev)]
+  defp applications(:test), do: [:ecto, :ex_machina, :faker, :mix, :postgrex, :pryin | applications(:dev)]
   defp applications(_), do: ~w(alembic ja_serializer logger)a
 
   # Dependencies can be Hex packages:
@@ -100,6 +101,8 @@ defmodule Calcinator.Mixfile do
       {:junit_formatter, "~> 1.0", only: :test},
       # Phoenix.Controller is used in Calcinator.Controller.Error
       {:phoenix, "~> 1.0", optional: true},
+      # Testing PryIn instrumenter
+      {:pryin, "~> 1.0", optional: true},
       # PostgreSQL DB access for Calcinator.Resources.Ecto.Repo.Repo used in tests
       {:postgrex, "~> 0.13.0", only: :test},
       # UUID for `errors` `0` `id` in `Calcinator.Controller.backing_store_error`

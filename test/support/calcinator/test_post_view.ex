@@ -33,8 +33,9 @@ defmodule Calcinator.TestPostView do
     RelationshipView.render("show_relationship.json-api", Map.put(options, :view, __MODULE__))
   end
 
-  ## JaSerializer.PhoenixView callbacks
+  ## JaSerializer.Serializer callbacks
 
+  @impl JaSerializer.Serializer
   def relationships(test_post, conn) do
     test_post
     |> super(conn)

@@ -4,6 +4,10 @@ defmodule Calcinator do
   module.
   """
 
+  require Calcinator.Instrument
+
+  import Calcinator.Instrument, only: [instrument: 3]
+
   alias Alembic.{Document, Fetch, Fetch.Includes, FromJson, ToParams, Source}
   alias Calcinator.{Authorization, Meta}
   alias Calcinator.Authorization.SubjectLess
@@ -48,14 +52,19 @@ defmodule Calcinator do
   @type rendered :: map
 
   @typedoc """
+    * `asociation_by_include` - maps JSONAPI nested includes (`%{String.t => String.t | map}` to the nested associations
+      (`atom | Keyword.t`) that are understood by `resources_module`.
     * `authorization_module` - The module that implements the `Calcinator.Authorization` behaviour.
       Defaults to `Calcinator.Authorization.Subjectless`.
+    * `resources_module` - The module that implements the `Calcinator.Resources` behaviour.
     * `subject` - the subject that is trying to do the action and needs to be authorized by `authorization_module`
-    * `target` - the target of `subject`'s action
+    * `view_module` - The module that implements the `Calcinator.View` behaviour.
   """
   @type t :: %__MODULE__{
+               associations_by_include: map,
                authorization_module: module,
                ecto_schema_module: module,
+               resources_module: module,
                subject: Authorization.subject,
                view_module: module
              }
@@ -89,14 +98,16 @@ defmodule Calcinator do
   end
 
   @spec can(t, Authorization.action, Authorizaton.target) :: :ok | {:error, :unauthorized}
-  def can(%__MODULE__{authorization_module: authorization_module, subject: subject}, action, target)
+  def can(calcinator = %__MODULE__{authorization_module: authorization_module, subject: subject}, action, target)
       when action in @actions and
            not is_nil(authorization_module) and
            (is_atom(target) or is_map(target) or is_list(target)) do
-    if authorization_module.can?(subject, action, target) do
-      :ok
-    else
-      {:error, :unauthorized}
+    instrument :calcinator_can, %{action: action, calcinator: calcinator, target: target}, fn ->
+      if authorization_module.can?(subject, action, target) do
+        :ok
+      else
+        {:error, :unauthorized}
+      end
     end
   end
 
