@@ -73,22 +73,16 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert is_list(custom_metrics)
       assert length(custom_metrics) == 2
 
+      assert_custom_metrics_filled(custom_metrics)
+
       Enum.each(
         custom_metrics,
         fn custom_metric ->
           assert %PryIn.Interaction.CustomMetric{
-                   duration: duration,
-                   file: file,
                    function: "can/3",
                    key: "calcinator_can_create",
-                   line: line,
                    module: Calcinator,
-                   pid: pid
                  } = custom_metric
-          refute is_nil(duration)
-          refute is_nil(file)
-          refute is_nil(line)
-          refute is_nil(pid)
         end
       )
     end
@@ -130,22 +124,16 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert is_list(custom_metrics)
       assert length(custom_metrics) == 1
 
+      assert_custom_metrics_filled(custom_metrics)
+
       Enum.each(
         custom_metrics,
         fn custom_metric ->
           assert %PryIn.Interaction.CustomMetric{
-                   duration: duration,
-                   file: file,
                    function: "can/3",
                    key: "calcinator_can_delete",
-                   line: line,
                    module: Calcinator,
-                   pid: pid
                  } = custom_metric
-          refute is_nil(duration)
-          refute is_nil(file)
-          refute is_nil(line)
-          refute is_nil(pid)
         end
       )
     end
@@ -202,22 +190,16 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert is_list(custom_metrics)
       assert length(custom_metrics) == 2
 
+      assert_custom_metrics_filled(custom_metrics)
+
       Enum.each(
         custom_metrics,
         fn custom_metric ->
           assert %PryIn.Interaction.CustomMetric{
-                   duration: duration,
-                   file: file,
                    function: "can/3",
                    key: "calcinator_can_show",
-                   line: line,
-                   module: Calcinator,
-                   pid: pid
+                   module: Calcinator
                  } = custom_metric
-          refute is_nil(duration)
-          refute is_nil(file)
-          refute is_nil(line)
-          refute is_nil(pid)
         end
       )
     end
@@ -262,22 +244,16 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert is_list(custom_metrics)
       assert length(custom_metrics) == 1
 
+      assert_custom_metrics_filled(custom_metrics)
+
       Enum.each(
         custom_metrics,
         fn custom_metric ->
           assert %PryIn.Interaction.CustomMetric{
-                   duration: duration,
-                   file: file,
                    function: "can/3",
                    key: "calcinator_can_index",
-                   line: line,
                    module: Calcinator,
-                   pid: pid
                  } = custom_metric
-          refute is_nil(duration)
-          refute is_nil(file)
-          refute is_nil(line)
-          refute is_nil(pid)
         end
       )
     end
@@ -319,22 +295,16 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert is_list(custom_metrics)
       assert length(custom_metrics) == 1
 
+      assert_custom_metrics_filled(custom_metrics)
+
       Enum.each(
         custom_metrics,
         fn custom_metric ->
           assert %PryIn.Interaction.CustomMetric{
-                   duration: duration,
-                   file: file,
                    function: "can/3",
                    key: "calcinator_can_show",
-                   line: line,
                    module: Calcinator,
-                   pid: pid
                  } = custom_metric
-          refute is_nil(duration)
-          refute is_nil(file)
-          refute is_nil(line)
-          refute is_nil(pid)
         end
       )
     end
@@ -391,22 +361,16 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert is_list(custom_metrics)
       assert length(custom_metrics) == 2
 
+      assert_custom_metrics_filled(custom_metrics)
+
       Enum.each(
         custom_metrics,
         fn custom_metric ->
           assert %PryIn.Interaction.CustomMetric{
-                   duration: duration,
-                   file: file,
                    function: "can/3",
                    key: "calcinator_can_show",
-                   line: line,
-                   module: Calcinator,
-                   pid: pid
+                   module: Calcinator
                  } = custom_metric
-          refute is_nil(duration)
-          refute is_nil(file)
-          refute is_nil(line)
-          refute is_nil(pid)
         end
       )
     end
@@ -488,23 +452,38 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert "calcinator_can_show" in custom_metric_keys
       assert "calcinator_can_update" in custom_metric_keys
 
+      assert_custom_metrics_filled(custom_metrics)
+
       Enum.each(
         custom_metrics,
         fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{
-                   duration: duration,
-                   file: file,
-                   function: "can/3",
-                   line: line,
-                   module: Calcinator,
-                   pid: pid
-                 } = custom_metric
-          refute is_nil(duration)
-          refute is_nil(file)
-          refute is_nil(line)
-          refute is_nil(pid)
+          assert %PryIn.Interaction.CustomMetric{function: "can/3", module: Calcinator} = custom_metric
         end
       )
     end
+  end
+
+  def assert_custom_metrics_filled(custom_metrics) do
+    Enum.each(
+      custom_metrics,
+      fn custom_metric ->
+        assert %PryIn.Interaction.CustomMetric{
+                 duration: duration,
+                 file: file,
+                 function: function,
+                 key: key,
+                 line: line,
+                 module: module,
+                 pid: pid
+               } = custom_metric
+        refute is_nil(function)
+        refute is_nil(duration)
+        refute is_nil(file)
+        refute is_nil(key)
+        refute is_nil(line)
+        refute is_nil(module)
+        refute is_nil(pid)
+      end
+    )
   end
 end
