@@ -221,5 +221,65 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
     end
+
+    test "in Calcinator.index/3" do
+      meta = checkout_meta()
+      count = 2
+      Factory.insert_list(count, :test_author)
+
+      CustomTrace.start(group: "TestAuthor", key: "index")
+
+      {:ok, %{"data" => data}} = Calcinator.index(
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView},
+        %{
+          "meta" => meta
+        },
+        %{base_uri: %URI{}}
+      )
+
+      CustomTrace.finish()
+
+      assert length(data) == count
+
+      assert [
+               %PryIn.Interaction{
+                 context: context,
+                 custom_group: "TestAuthor",
+                 custom_key: "index",
+                 custom_metrics: custom_metrics,
+                 type: :custom_trace
+               }
+             ] = InteractionStore.get_state.finished_interactions
+
+      assert is_list(context)
+      assert length(context) == 2
+
+      assert {"calcinator/can/actions/index/targets/Calcinator.Resources.TestAuthor/authorization_module",
+               "Calcinator.Authorization.SubjectLess"} in context
+      assert {"calcinator/can/actions/index/targets/Calcinator.Resources.TestAuthor/subject",
+               "nil"} in context
+
+      assert is_list(custom_metrics)
+      assert length(custom_metrics) == 1
+
+      Enum.each(
+        custom_metrics,
+        fn custom_metric ->
+          assert %PryIn.Interaction.CustomMetric{
+                   duration: duration,
+                   file: file,
+                   function: "can/3",
+                   key: "calcinator_can_index",
+                   line: line,
+                   module: Calcinator,
+                   pid: pid
+                 } = custom_metric
+          refute is_nil(duration)
+          refute is_nil(file)
+          refute is_nil(line)
+          refute is_nil(pid)
+        end
+      )
+    end
   end
 end

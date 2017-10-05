@@ -120,6 +120,21 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :delete, %ecto_schema_module{})
 
+  #### `:index`
+
+  There is one call to authorize `:index`.
+
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :index
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: ecto_schema_module})
+
+      authorization_module.can?(subject, :index, ecto_schema_module)
+
   #### `:show`
 
   ##### `Calcinator.get_related_resource/3`
