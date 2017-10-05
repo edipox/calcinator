@@ -410,5 +410,101 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
     end
+
+    test "in Calcinator.update/3" do
+      meta = checkout_meta()
+      test_tag = Factory.insert(:test_tag)
+      %TestPost{id: id} = Factory.insert(:test_post, tags: [test_tag])
+      updated_body = "Updated Body"
+      updated_test_tag = Factory.insert(:test_tag)
+
+      CustomTrace.start(group: "TestPost", key: "update")
+
+      {:ok, _} = Calcinator.update(
+        %Calcinator{
+          associations_by_include: %{
+            "author" => :author,
+            "tags" => :tags
+          },
+          ecto_schema_module: TestPost,
+          resources_module: TestPosts,
+          view_module: TestPostView
+        },
+        %{
+          "id" => to_string(id),
+          "data" => %{
+            "type" => "test-posts",
+            "id" => to_string(id),
+            "attributes" => %{
+              "body" => updated_body
+            },
+            # Test `many_to_many` update does replacement
+            "relationships" => %{
+              "tags" => %{
+                "data" => [
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(updated_test_tag.id)
+                  }
+                ]
+              }
+            }
+          },
+          "include" => "author,tags",
+          "meta" => meta
+        }
+      )
+
+      CustomTrace.finish()
+
+      assert [
+               %PryIn.Interaction{
+                 context: context,
+                 custom_group: "TestPost",
+                 custom_key: "update",
+                 custom_metrics: custom_metrics,
+                 type: :custom_trace
+               }
+             ] = InteractionStore.get_state.finished_interactions
+
+      assert is_list(context)
+      assert length(context) == 4
+
+      assert {"calcinator/can/actions/update/targets/%Ecto.Changeset{data: %Calcinator.Resources.TestPost{}}/" <>
+              "authorization_module",
+               "Calcinator.Authorization.SubjectLess"} in context
+      assert {"calcinator/can/actions/update/targets/%Ecto.Changeset{data: %Calcinator.Resources.TestPost{}}/subject",
+               "nil"} in context
+      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/authorization_module",
+               "Calcinator.Authorization.SubjectLess"} in context
+      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/subject",
+               "nil"} in context
+
+      assert is_list(custom_metrics)
+      assert length(custom_metrics) == 2
+
+      custom_metric_keys = Enum.map(custom_metrics, fn %PryIn.Interaction.CustomMetric{key: key} -> key end)
+
+      assert "calcinator_can_show" in custom_metric_keys
+      assert "calcinator_can_update" in custom_metric_keys
+
+      Enum.each(
+        custom_metrics,
+        fn custom_metric ->
+          assert %PryIn.Interaction.CustomMetric{
+                   duration: duration,
+                   file: file,
+                   function: "can/3",
+                   line: line,
+                   module: Calcinator,
+                   pid: pid
+                 } = custom_metric
+          refute is_nil(duration)
+          refute is_nil(file)
+          refute is_nil(line)
+          refute is_nil(pid)
+        end
+      )
+    end
   end
 end

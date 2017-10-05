@@ -89,6 +89,8 @@ defmodule Calcinator.Instrument do
                                           },
                                           target: ecto_schema_module})
 
+  Before
+
       authorization_module.can?(subject, :create, ecto_schema_module)
 
   If the `subject` can create `ecto_schema_module` structs in general, then a second call will check if the specific
@@ -102,6 +104,8 @@ defmodule Calcinator.Instrument do
                                              ecto_schema_module: ecto_schema_module
                                            },
                                            target: %Ecto.Changeset{data: %ecto_schema_module{}}})
+
+  Before
 
       authorization_module.can?(subject, :create, %Ecto.Changeset{data: %ecto_schema_module{}})
 
@@ -133,6 +137,8 @@ defmodule Calcinator.Instrument do
                                           },
                                           target: ecto_schema_module})
 
+  Before
+
       authorization_module.can?(subject, :index, ecto_schema_module)
 
   #### `:show`
@@ -140,7 +146,10 @@ defmodule Calcinator.Instrument do
   ##### `Calcinator.get_related_resource/3`
 
   There is not a special `action` for authorizing `Calcinator.get_related_resource/3`, instead the `source` is authorized
-  for `:show`.  **NOTE: This is the same pattern as for `Calcinator.show/2` and `Calcinator.show_relationship/3`.**
+  for `:show`.
+
+  *NOTE: This is the same pattern as for `Calcinator.show/2`, `Calcinator.show_relationship/3`, and
+  `Calcinator.update/2`.*
 
       calcinator_can(:start,
                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
@@ -150,27 +159,34 @@ defmodule Calcinator.Instrument do
                                             ecto_schema_module: ecto_schema_module
                                           },
                                           target: %ecto_schema_module{}})
+
+  Before
 
       authorization_module.can?(subject, :show, %ecto_schema_module{})
 
   If the `source` can be shown, then its checked if the `related` can be show in an association ascent under `source`.
-  **NOTE: This is the same pattern as for `Calcinator.show_relationship/3`.**
 
-     calcinator_can(:start,
-                    compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                    runtime_metdata :: %{action: :show
-                                         calcinator: %Calcinator{
-                                           authorizaton_module: module
-                                           ecto_schema_module: ecto_schema_module
-                                         },
-                                         target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
+  *NOTE: This is the same pattern as for `Calcinator.show_relationship/3`.*
 
-     authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :show
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
+
+  Before
+
+      authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
 
   ##### `Calcinator.show/2`
 
-  The primary data is authorized for `:show`. **NOTE: This is the same pattern as the authorization to `:show` the
-  `source` for `Calcinator.get_related_resource/3` and `Calcinator.show_relationship/3`.
+  The primary data is authorized for `:show`.
+
+  *NOTE: This is the same pattern as the authorization to `:show` the `source` for `Calcinator.get_related_resource/3`,
+  `Calcinator.show_relationship/3`, and `Calcinator.update/2`.*
 
       calcinator_can(:start,
                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
@@ -180,13 +196,18 @@ defmodule Calcinator.Instrument do
                                             ecto_schema_module: ecto_schema_module
                                           },
                                           target: %ecto_schema_module{}})
+
+  Before
 
       authorization_module.can?(subject, :show, %ecto_schema_module{})
 
   ##### `Calcinator.show_relationship/3`
 
   There is not a special `action` for authorizing `Calcinator.show_relationship/3`, instead the `source` is authorized
-  for `:show`.  **NOTE: This is the same pattern as for `Calcinator.show/2` and `Calcinator.get_related_resource/3`.**
+  for `:show`.
+
+  *NOTE: This is the same pattern as for `Calcinator.show/2`, `Calcinator.get_related_resource/3`, and
+  `Calcinator.update/2`.*
 
       calcinator_can(:start,
                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
@@ -197,21 +218,63 @@ defmodule Calcinator.Instrument do
                                           },
                                           target: %ecto_schema_module{}})
 
+  Before
+
       authorization_module.can?(subject, :show, %ecto_schema_module{})
 
   If the `source` can be shown, then its checked if the `related` can be show in an association ascent under `source`.
-  **NOTE: This is the same pattern as for `Calcinator.get_related_resource/3`.**
 
-     calcinator_can(:start,
-                    compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                    runtime_metdata :: %{action: :show
-                                         calcinator: %Calcinator{
-                                           authorizaton_module: module
-                                           ecto_schema_module: ecto_schema_module
-                                         },
-                                         target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
+  *NOTE: This is the same pattern as for `Calcinator.get_related_resource/3`.*
 
-     authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :show
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
+
+  Before
+
+      authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
+
+  ##### `Calcinator.update/3`
+
+  Before a `target` can be updated, it is checked that `subject` can `:show` the target. **NOTE: This is the same
+  pattern as for `Calcinator.show/2`, `Calcinator.get_related_resource/3`, and `Calcinator.show_relatonship/3`.**
+
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :show
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: %ecto_schema_module{}})
+
+  Before
+
+      authorization_module.can?(subject, :show, %ecto_schema_module{})
+
+  #### `:update`
+
+  ##### `Calcinator.update/3`
+
+  If a `target` is authorized for `:show`, it is checked if the `subject` can update the `Ecto.Changeset.t`.
+
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :update
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: %Ecto.Changeset{data: %ecto_schema_module{}}})
+
+  Before
+
+      authorization_module.can?(subject, :update, %Ecto.Changeset{data: %ecto_schema_module{}})
 
   """
 
