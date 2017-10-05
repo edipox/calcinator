@@ -140,7 +140,7 @@ defmodule Calcinator.Instrument do
   ##### `Calcinator.get_related_resource/3`
 
   There is not a special `action` for authorizing `Calcinator.get_related_resource/3`, instead the `source` is authorized
-  for `:show`.
+  for `:show`.  **NOTE: This is the same pattern as for `Calcinator.show/3`.**
 
       calcinator_can(:start,
                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
@@ -151,7 +151,7 @@ defmodule Calcinator.Instrument do
                                           },
                                           target: %ecto_schema_module{}})
 
-      authorization_module.can?(subejct, :show, %ecto_schema_module{})
+      authorization_module.can?(subject, :show, %ecto_schema_module{})
 
   If the `source` can be shown, then its checked if the `related` can be show in an association ascent under `source`
 
@@ -165,6 +165,22 @@ defmodule Calcinator.Instrument do
                                          target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
 
      authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
+
+  ##### `Calcinator.show/2`
+
+  The primary data is authorized for `:show`. **NOTE: This is the same pattern as the authorization to `:show` the
+  `source` for `Calcinator.get_related_resource/3`.
+
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :create
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: %ecto_schema_module{}})
+
+      authorization_module.can?(subject, :show, %ecto_schema_module{})
 
   """
 
