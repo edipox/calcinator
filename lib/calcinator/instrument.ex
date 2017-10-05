@@ -120,6 +120,37 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :delete, %ecto_schema_module{})
 
+  #### `:show`
+
+  ##### `Calcinator.get_related_resource/3`
+
+  There is not a special `action` for authorizing `Calcinator.get_related_resource/3`, instead the `source` is authorized
+  for `:show`.
+
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :create
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: %ecto_schema_module{}})
+
+      authorization_module.can?(subejct, :show, %ecto_schema_module{})
+
+  If the `source` can be shown, then its checked if the `related` can be show in an association ascent under `source`
+
+     calcinator_can(:start,
+                    compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                    runtime_metdata :: %{action: :create
+                                         calcinator: %Calcinator{
+                                           authorizaton_module: module
+                                           ecto_schema_module: ecto_schema_module
+                                         },
+                                         target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
+
+     authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
+
   """
 
   require Logger
