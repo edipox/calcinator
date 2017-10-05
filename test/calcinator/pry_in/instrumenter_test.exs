@@ -338,5 +338,77 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
     end
+
+    test "in Calcinator.show_relationship/3" do
+      meta = checkout_meta()
+      %TestPost{author: %TestAuthor{}, id: id} = Factory.insert(:test_post)
+
+      CustomTrace.start(group: "TestPost", key: "show_relationship")
+
+      {:ok, _} = Calcinator.show_relationship(
+        %Calcinator{ecto_schema_module: TestPost, resources_module: TestPosts, view_module: TestPostView},
+        %{
+          "post_id" => id,
+          "meta" => meta
+        },
+        %{
+          related: %{
+            view_module: TestAuthorView
+          },
+          source: %{
+            association: :author,
+            id_key: "post_id"
+          }
+        }
+      )
+
+      CustomTrace.finish()
+
+      assert [
+               %PryIn.Interaction{
+                 context: context,
+                 custom_group: "TestPost",
+                 custom_key: "show_relationship",
+                 custom_metrics: custom_metrics,
+                 type: :custom_trace
+               }
+             ] = InteractionStore.get_state.finished_interactions
+
+      assert is_list(context)
+      assert length(context) == 4
+
+      assert {"calcinator/can/actions/show/targets/" <>
+              "[%Calcinator.Resources.TestAuthor{}, %Calcinator.Resources.TestPost{}]/authorization_module",
+               "Calcinator.Authorization.SubjectLess"} in context
+      assert {"calcinator/can/actions/show/targets/" <>
+              "[%Calcinator.Resources.TestAuthor{}, %Calcinator.Resources.TestPost{}]/subject",
+               "nil"} in context
+      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/authorization_module",
+               "Calcinator.Authorization.SubjectLess"} in context
+      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/subject",
+               "nil"} in context
+
+      assert is_list(custom_metrics)
+      assert length(custom_metrics) == 2
+
+      Enum.each(
+        custom_metrics,
+        fn custom_metric ->
+          assert %PryIn.Interaction.CustomMetric{
+                   duration: duration,
+                   file: file,
+                   function: "can/3",
+                   key: "calcinator_can_show",
+                   line: line,
+                   module: Calcinator,
+                   pid: pid
+                 } = custom_metric
+          refute is_nil(duration)
+          refute is_nil(file)
+          refute is_nil(line)
+          refute is_nil(pid)
+        end
+      )
+    end
   end
 end
