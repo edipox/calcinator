@@ -105,6 +105,21 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :create, %Ecto.Changeset{data: %ecto_schema_module{}})
 
+  #### `:delete`
+
+  There is only one call to authorize `:delete`.
+
+      calcinator_can(:start,
+                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                     runtime_metdata :: %{action: :create
+                                          calcinator: %Calcinator{
+                                            authorizaton_module: module
+                                            ecto_schema_module: ecto_schema_module
+                                          },
+                                          target: %ecto_schema_module{}})
+
+      authorization_module.can?(subject, :delete, %ecto_schema_module{})
+
   """
 
   require Logger

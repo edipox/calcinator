@@ -3,7 +3,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
   import Calcinator.Resources.Ecto.Repo.Repo.Case
 
-  alias Calcinator.Resources.Ecto.Repo.{Factory, TestPosts}
+  alias Calcinator.Resources.Ecto.Repo.{Factory, TestAuthors, TestPosts}
   alias Calcinator.Resources.{TestAuthor, TestPost}
   alias Calcinator.TestPostView
   alias PryIn.{CustomTrace, InteractionStore}
@@ -73,21 +73,80 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert is_list(custom_metrics)
       assert length(custom_metrics) == 2
 
-      Enum.each(custom_metrics, fn custom_metric ->
-        assert %PryIn.Interaction.CustomMetric{
-                 duration: duration,
-                 file: file,
-                 function: "can/3",
-                 key: "calcinator_can_create",
-                 line: line,
-                 module: Calcinator,
-                 pid: pid
-               } = custom_metric
-        refute is_nil(duration)
-        refute is_nil(file)
-        refute is_nil(line)
-        refute is_nil(pid)
-      end
+      Enum.each(
+        custom_metrics,
+        fn custom_metric ->
+          assert %PryIn.Interaction.CustomMetric{
+                   duration: duration,
+                   file: file,
+                   function: "can/3",
+                   key: "calcinator_can_create",
+                   line: line,
+                   module: Calcinator,
+                   pid: pid
+                 } = custom_metric
+          refute is_nil(duration)
+          refute is_nil(file)
+          refute is_nil(line)
+          refute is_nil(pid)
+        end
+      )
+    end
+
+    test "in Calcinator.delete/2" do
+      meta = checkout_meta()
+      %TestAuthor{id: id} = Factory.insert(:test_author)
+
+      CustomTrace.start(group: "TestAuthor", key: "delete")
+
+      :ok = Calcinator.delete(
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView},
+        %{
+          "id" => id,
+          "meta" => meta
+        }
+      )
+
+      CustomTrace.finish()
+
+      assert [
+               %PryIn.Interaction{
+                 context: context,
+                 custom_group: "TestAuthor",
+                 custom_key: "delete",
+                 custom_metrics: custom_metrics,
+                 type: :custom_trace
+               }
+             ] = InteractionStore.get_state.finished_interactions
+
+      assert is_list(context)
+      assert length(context) == 2
+
+      assert {"calcinator/can/actions/delete/targets/%Calcinator.Resources.TestAuthor{}/authorization_module",
+               "Calcinator.Authorization.SubjectLess"} in context
+      assert {"calcinator/can/actions/delete/targets/%Calcinator.Resources.TestAuthor{}/subject",
+               "nil"} in context
+
+      assert is_list(custom_metrics)
+      assert length(custom_metrics) == 1
+
+      Enum.each(
+        custom_metrics,
+        fn custom_metric ->
+          assert %PryIn.Interaction.CustomMetric{
+                   duration: duration,
+                   file: file,
+                   function: "can/3",
+                   key: "calcinator_can_delete",
+                   line: line,
+                   module: Calcinator,
+                   pid: pid
+                 } = custom_metric
+          refute is_nil(duration)
+          refute is_nil(file)
+          refute is_nil(line)
+          refute is_nil(pid)
+        end
       )
     end
   end
