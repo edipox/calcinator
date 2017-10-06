@@ -46,7 +46,7 @@ if Code.ensure_loaded?(PryIn) do
     def calcinator_authorization(
           :stop,
           time_diff,
-          %{
+          metadata = %{
             action: action,
             calcinator: %{
               authorization_module: authorization_module,
@@ -75,7 +75,13 @@ if Code.ensure_loaded?(PryIn) do
           module: module_name(module),
           pid: inspect(self())
         ]
-        InteractionStore.add_custom_metric(self(), data)
+
+        full_data = case Map.fetch(metadata, :offset) do
+          {:ok, offset} -> Keyword.put(data, :offset, offset)
+          :error -> data
+        end
+
+        InteractionStore.add_custom_metric(self(), full_data)
       end
     end
 

@@ -430,6 +430,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                  key: key,
                  line: line,
                  module: module,
+                 offset: offset,
                  pid: pid
                } = custom_metric
         assert is_binary(function)
@@ -438,6 +439,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         assert is_binary(key)
         assert is_integer(line)
         assert is_binary(module)
+        assert is_integer(offset)
         assert is_binary(pid)
       end
     )
