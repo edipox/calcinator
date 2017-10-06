@@ -68,9 +68,9 @@ defmodule Calcinator.Instrument do
 
   ### Events
 
-  ### `:calcinator_can`
+  ### `:calcinator_authorization`
 
-  `:calcinator_can` occurs around calls to the `authorization_module.can?/3` in `Calcinator.can?/3` to measure how long
+  `:calcinator_authorization` occurs around calls to the `authorization_module.can?/3` in `Calcinator.can?/3` to measure how long
   it takes to authorize actions on the primary target.
 
   #### `:create`
@@ -80,14 +80,15 @@ defmodule Calcinator.Instrument do
   The first call will use the `ecto_schema_module` as the `target` to check if `ecto_schema_module` structs can be
   created in general by the `subject`.
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :create
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: ecto_schema_module})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :create
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: ecto_schema_module})
 
   Before
 
@@ -96,14 +97,15 @@ defmodule Calcinator.Instrument do
   If the `subject` can create `ecto_schema_module` structs in general, then a second call will check if the specific
   `Ecto.Changeset.t` can be created.
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metadata :: %{action: :create,
-                                           calcinator: %Calcinator{
-                                             authorizaton_module: module
-                                             ecto_schema_module: ecto_schema_module
-                                           },
-                                           target: %Ecto.Changeset{data: %ecto_schema_module{}}})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metadata :: %{action: :create,
+                                                     calcinator: %Calcinator{
+                                                       authorizaton_module: module
+                                                       ecto_schema_module: ecto_schema_module
+                                                     },
+                                                     target: %Ecto.Changeset{data: %ecto_schema_module{}}})
 
   Before
 
@@ -113,14 +115,15 @@ defmodule Calcinator.Instrument do
 
   There is only one call to authorize `:delete`.
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :delete
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: %ecto_schema_module{}})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :delete
+                                                  calcinator: %Calcinator{
+                                                    authorizaton_module: module
+                                                    ecto_schema_module: ecto_schema_module
+                                                  },
+                                                  target: %ecto_schema_module{}})
 
       authorization_module.can?(subject, :delete, %ecto_schema_module{})
 
@@ -128,14 +131,15 @@ defmodule Calcinator.Instrument do
 
   There is one call to authorize `:index`.
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :index
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: ecto_schema_module})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :index
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: ecto_schema_module})
 
   Before
 
@@ -151,14 +155,15 @@ defmodule Calcinator.Instrument do
   *NOTE: This is the same pattern as for `Calcinator.show/2`, `Calcinator.show_relationship/3`, and
   `Calcinator.update/2`.*
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :show
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: %ecto_schema_module{}})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :show
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: %ecto_schema_module{}})
 
   Before
 
@@ -168,14 +173,15 @@ defmodule Calcinator.Instrument do
 
   *NOTE: This is the same pattern as for `Calcinator.show_relationship/3`.*
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :show
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :show
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
 
   Before
 
@@ -188,14 +194,15 @@ defmodule Calcinator.Instrument do
   *NOTE: This is the same pattern as the authorization to `:show` the `source` for `Calcinator.get_related_resource/3`,
   `Calcinator.show_relationship/3`, and `Calcinator.update/2`.*
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :show
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: %ecto_schema_module{}})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :show
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: %ecto_schema_module{}})
 
   Before
 
@@ -209,14 +216,15 @@ defmodule Calcinator.Instrument do
   *NOTE: This is the same pattern as for `Calcinator.show/2`, `Calcinator.get_related_resource/3`, and
   `Calcinator.update/2`.*
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :show
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: %ecto_schema_module{}})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :show
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: %ecto_schema_module{}})
 
   Before
 
@@ -226,14 +234,15 @@ defmodule Calcinator.Instrument do
 
   *NOTE: This is the same pattern as for `Calcinator.get_related_resource/3`.*
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :show
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :show
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: [%related_ecto_schema_module{}, %ecto_schema_module{}])
 
   Before
 
@@ -244,14 +253,15 @@ defmodule Calcinator.Instrument do
   Before a `target` can be updated, it is checked that `subject` can `:show` the target. **NOTE: This is the same
   pattern as for `Calcinator.show/2`, `Calcinator.get_related_resource/3`, and `Calcinator.show_relatonship/3`.**
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :show
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: %ecto_schema_module{}})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :show
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: %ecto_schema_module{}})
 
   Before
 
@@ -263,14 +273,15 @@ defmodule Calcinator.Instrument do
 
   If a `target` is authorized for `:show`, it is checked if the `subject` can update the `Ecto.Changeset.t`.
 
-      calcinator_can(:start,
-                     compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
-                     runtime_metdata :: %{action: :update
-                                          calcinator: %Calcinator{
-                                            authorizaton_module: module
-                                            ecto_schema_module: ecto_schema_module
-                                          },
-                                          target: %Ecto.Changeset{data: %ecto_schema_module{}}})
+      calcinator_authorization(:start,
+                               compile_metadata ::
+                                 %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                               runtime_metdata :: %{action: :update
+                                                    calcinator: %Calcinator{
+                                                      authorizaton_module: module
+                                                      ecto_schema_module: ecto_schema_module
+                                                    },
+                                                    target: %Ecto.Changeset{data: %ecto_schema_module{}}})
 
   Before
 
@@ -296,7 +307,7 @@ defmodule Calcinator.Instrument do
 
   ### Examples
 
-      instrument :calcinator_can, %{action: action, calcinator: calcinator, target: target}, fn ->
+      instrument :calcinator_authorization, %{action: action, calcinator: calcinator, target: target}, fn ->
         ...
       end
 

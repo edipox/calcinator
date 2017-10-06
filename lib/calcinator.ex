@@ -78,37 +78,27 @@ defmodule Calcinator do
     allow_sandbox_access(state, params, resources_module.sandboxed?())
   end
 
-  # for docs
-  def authorized(calcinator, resource_or_related)
-
   # Filters a related resource that does not exist
   @spec authorized(t, related :: nil) :: nil
-  def authorized(%__MODULE__{}, nil), do: nil
-
   # Filters `struct` or list of `struct`s to only those that can be shown
   @spec authorized(t, unfiltered :: struct) :: struct
-  def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered = %_{}) do
-    authorization_module.filter_associations_can(unfiltered, subject, :show)
-  end
-
   @spec authorized(t, unfiltered :: [struct]) :: [struct]
-  def authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered)
-      when is_list(unfiltered) do
-    authorization_module.filter_associations_can(unfiltered, subject, :show)
+  def authorized(calcinator = %__MODULE__{}, resource_or_related) do
+    instrument :calcinator_authorization, %{action: :show, calcinator: calcinator, target: resource_or_related}, fn ->
+      instrumented_authorized(calcinator, resource_or_related)
+    end
   end
 
   @spec can(t, Authorization.action, Authorizaton.target) :: :ok | {:error, :unauthorized}
-  def can(calcinator = %__MODULE__{authorization_module: authorization_module, subject: subject}, action, target)
-      when action in @actions and
-           not is_nil(authorization_module) and
-           (is_atom(target) or is_map(target) or is_list(target)) do
-    instrument :calcinator_can, %{action: action, calcinator: calcinator, target: target}, fn ->
-      if authorization_module.can?(subject, action, target) do
-        :ok
-      else
-        {:error, :unauthorized}
+  def can(calcinator = %__MODULE__{}, action, target)
+      when action in @actions and (is_atom(target) or is_map(target) or is_list(target)) do
+    instrument(
+      :calcinator_authorization,
+      %{action: action, calcinator: calcinator, target: target},
+      fn ->
+        instrumented_can(calcinator, action, target)
       end
-    end
+    )
   end
 
   @spec changeset(t, Ecto.Schema.t, insertable_params) :: {:ok, Ecto.Changeset.t} |
@@ -696,6 +686,39 @@ defmodule Calcinator do
     document
     |> Document.to_params
     |> ToParams.nested_to_foreign_keys(ecto_schema_module)
+  end
+
+  @spec instrumented_authorized(t, related :: nil) :: nil
+  defp instrumented_authorized(%__MODULE__{}, nil), do: nil
+
+  # Filters `struct` or list of `struct`s to only those that can be shown
+  @spec instrumented_authorized(t, unfiltered :: struct) :: struct
+  defp instrumented_authorized(
+         %__MODULE__{authorization_module: authorization_module, subject: subject},
+         unfiltered = %_{}
+       ) do
+    authorization_module.filter_associations_can(unfiltered, subject, :show)
+  end
+
+  @spec instrumented_authorized(t, unfiltered :: [struct]) :: [struct]
+  defp instrumented_authorized(%__MODULE__{authorization_module: authorization_module, subject: subject}, unfiltered)
+      when is_list(unfiltered) do
+    authorization_module.filter_associations_can(unfiltered, subject, :show)
+  end
+
+  @spec instrumented_can(t, Authorization.action, Authorizaton.target) :: :ok | {:error, :unauthorized}
+  defp instrumented_can(
+         %__MODULE__{authorization_module: authorization_module, subject: subject},
+         action,
+         target
+       ) when action in @actions and
+              not is_nil(authorization_module) and
+              (is_atom(target) or is_map(target) or is_list(target)) do
+    if authorization_module.can?(subject, action, target) do
+      :ok
+    else
+      {:error, :unauthorized}
+    end
   end
 
   @spec list(t, params) :: {:ok, [Ecto.Schema.t], Resources.pagination} |

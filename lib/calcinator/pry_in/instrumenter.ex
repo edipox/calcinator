@@ -4,7 +4,9 @@ if Code.ensure_loaded?(PryIn) do
     @moduledoc """
     Collects metrics about
 
-    * `Calcinator.can/3`
+    * `:calcinator_authorization`
+      * `Calcinator.authorized/2`
+      * `Calcinator.can/3`
 
     Activate via:
 
@@ -24,12 +26,12 @@ if Code.ensure_loaded?(PryIn) do
     ## Calcinator.Instrumenter event callbacks
 
     @doc """
-    Collects metrics about `Calcinator.can/3` calls.
+    Collects metrics about `Calcinator.Authorization` behaviour calls from `Calcinator`.
 
     Metrics are only collected inside of tracked interactions
     """
 
-    def calcinator_can(:start, %{file: file, function: function, line: line, module: module}, runtime_metadata) do
+    def calcinator_authorization(:start, %{file: file, function: function, line: line, module: module}, runtime_metadata) do
       metadata = Map.merge(runtime_metadata, %{file: file, function: function, line: line, module: module})
 
       if InteractionStore.has_pid?(self()) do
@@ -41,7 +43,7 @@ if Code.ensure_loaded?(PryIn) do
       end
     end
 
-    def calcinator_can(
+    def calcinator_authorization(
           :stop,
           time_diff,
           %{
@@ -58,15 +60,17 @@ if Code.ensure_loaded?(PryIn) do
           }
         ) do
       if InteractionStore.has_pid?(self()) do
-        target_prefix = "calcinator/can/actions/#{action}/targets/#{target_name(target)}"
-        InteractionStore.put_context(self(), "#{target_prefix}/subject", subject_name(subject))
-        InteractionStore.put_context(self(), "#{target_prefix}/authorization_module", module_name(authorization_module))
+        prefix = "calcinator/authorization/#{:erlang.unique_integer([:positive])}"
+        InteractionStore.put_context(self(), "#{prefix}/authorization_module", module_name(authorization_module))
+        InteractionStore.put_context(self(), "#{prefix}/subject", subject_name(subject))
+        InteractionStore.put_context(self(), "#{prefix}/action", to_string(action))
+        InteractionStore.put_context(self(), "#{prefix}/target", target_name(target))
 
         data = [
           duration: System.convert_time_unit(time_diff, :native, :microseconds),
           file: file,
           function: function,
-          key: "calcinator_can_#{action}",
+          key: "calcinator_authorization",
           line: line,
           module: module_name(module),
           pid: inspect(self())
@@ -75,7 +79,7 @@ if Code.ensure_loaded?(PryIn) do
       end
     end
 
-    def calcinator_can(:stop, _time_diff, _), do: :ok
+    def calcinator_authorization(:stop, _time_diff, _), do: :ok
 
     ## Private Functions
 

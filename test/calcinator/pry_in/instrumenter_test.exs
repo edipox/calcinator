@@ -8,114 +8,130 @@ defmodule Calcinator.PryIn.InstrumenterTest do
   alias Calcinator.{TestAuthorView, TestPostView}
   alias PryIn.{CustomTrace, InteractionStore}
 
-  describe "calcinator_can/3" do
+  @authorization_module "Calcinator.Authorization.SubjectLess"
+  @subject "nil"
+
+  describe "calcinator_authorization/3" do
     test "in Calcinator.create/2" do
       meta = checkout_meta()
 
       %TestAuthor{id: author_id} = Factory.insert(:test_author)
       body = "First Post!"
 
-      %{context: context, custom_metrics: custom_metrics} = custom_trace %{group: "TestPost", key: "create"}, fn ->
-        assert {:ok, _} = Calcinator.create(
-                 %Calcinator{
-                   associations_by_include: %{
-                     "author" => :author
-                   },
-                   ecto_schema_module: TestPost,
-                   resources_module: TestPosts,
-                   view_module: TestPostView
-                 },
-                 %{
-                   "meta" => meta,
-                   "data" => %{
-                     "type" => "test-posts",
-                     "attributes" => %{
-                       "body" => body
+      %{
+        context_by_key_list: context_by_key_list,
+        custom_metric_count: custom_metric_count,
+        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+      } = custom_trace(
+        %{group: "TestPost", key: "create"},
+        fn ->
+          assert {:ok, _} = Calcinator.create(
+                   %Calcinator{
+                     associations_by_include: %{
+                       "author" => :author
                      },
-                     "relationships" => %{
-                       "author" => %{
-                         "data" => %{
-                           "type" => "test-authors",
-                           "id" => to_string(author_id)
+                     ecto_schema_module: TestPost,
+                     resources_module: TestPosts,
+                     view_module: TestPostView
+                   },
+                   %{
+                     "meta" => meta,
+                     "data" => %{
+                       "type" => "test-posts",
+                       "attributes" => %{
+                         "body" => body
+                       },
+                       "relationships" => %{
+                         "author" => %{
+                           "data" => %{
+                             "type" => "test-authors",
+                             "id" => to_string(author_id)
+                           }
                          }
                        }
-                     }
-                   },
-                   "include" => "author"
-                 }
-               )
-      end
-
-      custom_metric_count = 2
-
-      assert length(context) == custom_metric_count * 2
-
-      assert {"calcinator/can/actions/create/targets/Calcinator.Resources.TestPost/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/create/targets/Calcinator.Resources.TestPost/subject", "nil"} in context
-
-      assert {"calcinator/can/actions/create/targets/%Ecto.Changeset{data: %Calcinator.Resources.TestPost{}}/" <>
-              "authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/create/targets/%Ecto.Changeset{data: %Calcinator.Resources.TestPost{}}/subject",
-               "nil"} in context
-
-      assert length(custom_metrics) == custom_metric_count
-
-      Enum.each(
-        custom_metrics,
-        fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{
-                   function: "can/3",
-                   key: "calcinator_can_create",
-                   module: "Calcinator",
-                 } = custom_metric
+                     },
+                     "include" => "author"
+                   }
+                 )
         end
       )
+
+      ecto_schema_module = "Calcinator.Resources.TestPost"
+
+      # can(subject, :create, ecto_schema_module)
+      assert %{"action" => "create",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => ecto_schema_module} in context_by_key_list
+      # can(subject, :create, changeset)
+      assert %{"action" => "create",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => "%Ecto.Changeset{data: %#{ecto_schema_module}{}}"} in context_by_key_list
+      # authorized(calcinator, created)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => "%#{ecto_schema_module}{}"} in context_by_key_list
+
+      assert custom_metric_count == 3
+
+      assert custom_metric_count_by_function_by_module_by_key == %{
+               "calcinator_authorization" => %{
+                 "Calcinator" => %{
+                   "authorized/2" => 1,
+                   "can/3" => 2
+                 }
+               }
+             }
     end
 
     test "in Calcinator.delete/2" do
       meta = checkout_meta()
       %TestAuthor{id: id} = Factory.insert(:test_author)
 
-      %{context: context, custom_metrics: custom_metrics} = custom_trace %{group: "TestAuthor", key: "delete"}, fn ->
-        :ok = Calcinator.delete(
-          %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView},
-          %{
-            "id" => id,
-            "meta" => meta
-          }
-        )
-      end
-
-      custom_metric_count = 1
-
-      assert length(context) == custom_metric_count * 2
-
-      assert {"calcinator/can/actions/delete/targets/%Calcinator.Resources.TestAuthor{}/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/delete/targets/%Calcinator.Resources.TestAuthor{}/subject",
-               "nil"} in context
-
-      assert length(custom_metrics) == custom_metric_count
-
-      Enum.each(
-        custom_metrics,
-        fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{
-                   function: "can/3",
-                   key: "calcinator_can_delete",
-                   module: "Calcinator",
-                 } = custom_metric
+      %{
+        context_by_key_list: context_by_key_list,
+        custom_metric_count: custom_metric_count,
+        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+      } = custom_trace(
+        %{group: "TestAuthor", key: "delete"},
+        fn ->
+          :ok = Calcinator.delete(
+            %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView},
+            %{
+              "id" => id,
+              "meta" => meta
+            }
+          )
         end
       )
+
+      assert %{"action" => "delete",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => "%Calcinator.Resources.TestAuthor{}"} in context_by_key_list
+
+      assert custom_metric_count == 1
+
+      assert %{
+               "calcinator_authorization" => %{
+                 "Calcinator" => %{
+                   "can/3" => 1
+                 }
+               }
+             } == custom_metric_count_by_function_by_module_by_key
     end
 
     test "in Calcinator.get_related_resource/3" do
       meta = checkout_meta()
       %TestPost{author: %TestAuthor{}, id: id} = Factory.insert(:test_post)
 
-      %{context: context, custom_metrics: custom_metrics} = custom_trace(
+      %{
+        context_by_key_list: context_by_key_list,
+        custom_metric_count: custom_metric_count,
+        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+      } = custom_trace(
         %{group: "TestPost", key: "get_related_resource"},
         fn ->
           {:ok, _} = Calcinator.get_related_resource(
@@ -137,34 +153,35 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
 
-      custom_metric_count = 2
+      source = "%Calcinator.Resources.TestPost{}"
+      related = "%Calcinator.Resources.TestAuthor{}"
 
-      assert length(context) == custom_metric_count * 2
+      # can(subject, :show, source)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => source} in context_by_key_list
+      # can(subject, :show, [related, source])
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => "[#{related}, #{source}]"} in context_by_key_list
+      # authorized(calcinator, related)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => related} in context_by_key_list
 
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/subject",
-               "nil"} in context
+      assert custom_metric_count == 3
 
-      assert {"calcinator/can/actions/show/targets/" <>
-              "[%Calcinator.Resources.TestAuthor{}, %Calcinator.Resources.TestPost{}]/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/show/targets/" <>
-              "[%Calcinator.Resources.TestAuthor{}, %Calcinator.Resources.TestPost{}]/subject",
-               "nil"} in context
-
-      assert length(custom_metrics) == custom_metric_count
-
-      Enum.each(
-        custom_metrics,
-        fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{
-                   function: "can/3",
-                   key: "calcinator_can_show",
-                   module: "Calcinator"
-                 } = custom_metric
-        end
-      )
+      assert custom_metric_count_by_function_by_module_by_key == %{
+               "calcinator_authorization" => %{
+                 "Calcinator" => %{
+                   "authorized/2" => 1,
+                   "can/3" => 2
+                 }
+               }
+             }
     end
 
     test "in Calcinator.index/3" do
@@ -172,7 +189,11 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       count = 2
       Factory.insert_list(count, :test_author)
 
-      %{context: context, custom_metrics: custom_metrics} = custom_trace %{group: "TestAuthor", key: "index"}, fn ->
+      %{
+        context_by_key_list: context_by_key_list,
+        custom_metric_count: custom_metric_count,
+        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+      } = custom_trace %{group: "TestAuthor", key: "index"}, fn ->
         assert {:ok, %{"data" => data}} = Calcinator.index(
                  %Calcinator{
                    ecto_schema_module: TestAuthor,
@@ -188,71 +209,77 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         assert length(data) == count
       end
 
-      custom_metric_count = 1
+      assert %{"action" => "index",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => "Calcinator.Resources.TestAuthor"} in context_by_key_list
 
-      assert length(context) == custom_metric_count * 2
+      assert custom_metric_count == 1
 
-      assert {"calcinator/can/actions/index/targets/Calcinator.Resources.TestAuthor/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/index/targets/Calcinator.Resources.TestAuthor/subject",
-               "nil"} in context
-
-      assert length(custom_metrics) == 1
-
-      Enum.each(
-        custom_metrics,
-        fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{
-                   function: "can/3",
-                   key: "calcinator_can_index",
-                   module: "Calcinator",
-                 } = custom_metric
-        end
-      )
+      assert custom_metric_count_by_function_by_module_by_key == %{
+               "calcinator_authorization" => %{
+                 "Calcinator" => %{
+                   "can/3" => 1
+                 }
+               }
+             }
     end
 
     test "in Calcinator.show/3" do
       meta = checkout_meta()
       test_author = Factory.insert(:test_author)
 
-      %{context: context, custom_metrics: custom_metrics} = custom_trace %{group: "TestAuthor", key: "show"}, fn ->
-        {:ok, _} = Calcinator.show(
-          %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView},
-          %{
-            "id" => test_author.id,
-            "meta" => meta
-          }
-        )
-      end
-
-      custom_metric_count = 1
-
-      assert length(context) == custom_metric_count * 2
-
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestAuthor{}/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestAuthor{}/subject",
-               "nil"} in context
-
-      assert length(custom_metrics) == custom_metric_count
-
-      Enum.each(
-        custom_metrics,
-        fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{
-                   function: "can/3",
-                   key: "calcinator_can_show",
-                   module: "Calcinator",
-                 } = custom_metric
+      %{
+        context_by_key_list: context_by_key_list,
+        custom_metric_count: custom_metric_count,
+        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+      } = custom_trace(
+        %{group: "TestAuthor", key: "show"},
+        fn ->
+          {:ok, _} = Calcinator.show(
+            %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView},
+            %{
+              "id" => test_author.id,
+              "meta" => meta
+            }
+          )
         end
       )
+
+      resource = "%Calcinator.Resources.TestAuthor{}"
+
+      # can(subject, :show, resource)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => resource} in context_by_key_list
+      # authorized(calcinator, resource)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => resource} in context_by_key_list
+
+      assert custom_metric_count == 2
+
+      assert custom_metric_count_by_function_by_module_by_key == %{
+               "calcinator_authorization" => %{
+                 "Calcinator" => %{
+                   "authorized/2" => 1,
+                   "can/3" => 1
+                 }
+               }
+             }
     end
 
     test "in Calcinator.show_relationship/3" do
       meta = checkout_meta()
       %TestPost{author: %TestAuthor{}, id: id} = Factory.insert(:test_post)
 
-      %{context: context, custom_metrics: custom_metrics} = custom_trace(
+      %{
+        context_by_key_list: context_by_key_list,
+        custom_metric_count: custom_metric_count,
+        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+      } = custom_trace(
         %{group: "TestPost", key: "show_relationship"},
         fn ->
           {:ok, _} = Calcinator.show_relationship(
@@ -274,33 +301,35 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
 
-      custom_metric_count = 2
+      source = "%Calcinator.Resources.TestPost{}"
+      related = "%Calcinator.Resources.TestAuthor{}"
 
-      assert length(context) == custom_metric_count * 2
+      # can(subject, :show, source)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => source} in context_by_key_list
+      # can(subject, :show, [related, source])
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => "[#{related}, #{source}]"} in context_by_key_list
+      # authorized(calcinator, related)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => related} in context_by_key_list
 
-      assert {"calcinator/can/actions/show/targets/" <>
-              "[%Calcinator.Resources.TestAuthor{}, %Calcinator.Resources.TestPost{}]/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/show/targets/" <>
-              "[%Calcinator.Resources.TestAuthor{}, %Calcinator.Resources.TestPost{}]/subject",
-               "nil"} in context
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/subject",
-               "nil"} in context
+      assert custom_metric_count == 3
 
-      assert length(custom_metrics) == custom_metric_count
-
-      Enum.each(
-        custom_metrics,
-        fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{
-                   function: "can/3",
-                   key: "calcinator_can_show",
-                   module: "Calcinator"
-                 } = custom_metric
-        end
-      )
+      assert custom_metric_count_by_function_by_module_by_key == %{
+               "calcinator_authorization" => %{
+                 "Calcinator" => %{
+                   "authorized/2" => 1,
+                   "can/3" => 2
+                 }
+               }
+             }
     end
 
     test "in Calcinator.update/3" do
@@ -310,73 +339,79 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       updated_body = "Updated Body"
       updated_test_tag = Factory.insert(:test_tag)
 
-      %{context: context, custom_metrics: custom_metrics} = custom_trace %{group: "TestPost", key: "update"}, fn ->
-        {:ok, _} = Calcinator.update(
-          %Calcinator{
-            associations_by_include: %{
-              "author" => :author,
-              "tags" => :tags
-            },
-            ecto_schema_module: TestPost,
-            resources_module: TestPosts,
-            view_module: TestPostView
-          },
-          %{
-            "id" => to_string(id),
-            "data" => %{
-              "type" => "test-posts",
-              "id" => to_string(id),
-              "attributes" => %{
-                "body" => updated_body
+      %{
+        context_by_key_list: context_by_key_list,
+        custom_metric_count: custom_metric_count,
+        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+      } = custom_trace(
+        %{group: "TestPost", key: "update"},
+        fn ->
+          {:ok, _} = Calcinator.update(
+            %Calcinator{
+              associations_by_include: %{
+                "author" => :author,
+                "tags" => :tags
               },
-              # Test `many_to_many` update does replacement
-              "relationships" => %{
-                "tags" => %{
-                  "data" => [
-                    %{
-                      "type" => "test-tags",
-                      "id" => to_string(updated_test_tag.id)
-                    }
-                  ]
-                }
-              }
+              ecto_schema_module: TestPost,
+              resources_module: TestPosts,
+              view_module: TestPostView
             },
-            "include" => "author,tags",
-            "meta" => meta
-          }
-        )
-      end
-
-      custom_metric_count = 2
-
-      assert length(context) == custom_metric_count * 2
-
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/show/targets/%Calcinator.Resources.TestPost{}/subject",
-               "nil"} in context
-
-      assert {"calcinator/can/actions/update/targets/%Ecto.Changeset{data: %Calcinator.Resources.TestPost{}}/" <>
-              "authorization_module",
-               "Calcinator.Authorization.SubjectLess"} in context
-      assert {"calcinator/can/actions/update/targets/%Ecto.Changeset{data: %Calcinator.Resources.TestPost{}}/subject",
-               "nil"} in context
-
-      assert length(custom_metrics) == custom_metric_count
-
-      custom_metric_keys = Enum.map(custom_metrics, fn %PryIn.Interaction.CustomMetric{key: key} -> key end)
-
-      assert "calcinator_can_show" in custom_metric_keys
-      assert "calcinator_can_update" in custom_metric_keys
-
-      assert_custom_metrics_filled(custom_metrics)
-
-      Enum.each(
-        custom_metrics,
-        fn custom_metric ->
-          assert %PryIn.Interaction.CustomMetric{function: "can/3", module: "Calcinator"} = custom_metric
+            %{
+              "id" => to_string(id),
+              "data" => %{
+                "type" => "test-posts",
+                "id" => to_string(id),
+                "attributes" => %{
+                  "body" => updated_body
+                },
+                # Test `many_to_many` update does replacement
+                "relationships" => %{
+                  "tags" => %{
+                    "data" => [
+                      %{
+                        "type" => "test-tags",
+                        "id" => to_string(updated_test_tag.id)
+                      }
+                    ]
+                  }
+                }
+              },
+              "include" => "author,tags",
+              "meta" => meta
+            }
+          )
         end
       )
+
+      before_update = "%Calcinator.Resources.TestPost{}"
+      updated = "%Calcinator.Resources.TestPost{}"
+
+      # can(subject, :show, before_update)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => before_update} in context_by_key_list
+      # can(subject, :update, changeset)
+      assert %{"action" => "update",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => "%Ecto.Changeset{data: #{before_update}}"} in context_by_key_list
+      # authorized(calcinator, updated)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => updated} in context_by_key_list
+
+      assert custom_metric_count == 3
+
+      assert %{
+              "calcinator_authorization"=> %{
+               "Calcinator" => %{
+      "authorized/2" => 1,
+               "can/3"=> 2
+        }
+      }
+             } == custom_metric_count_by_function_by_module_by_key
     end
   end
 
@@ -397,13 +432,13 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                  module: module,
                  pid: pid
                } = custom_metric
-        refute is_nil(function)
-        refute is_nil(duration)
-        refute is_nil(file)
-        refute is_nil(key)
-        refute is_nil(line)
-        refute is_nil(module)
-        refute is_nil(pid)
+        assert is_binary(function)
+        assert is_integer(duration)
+        assert is_binary(file)
+        assert is_binary(key)
+        assert is_integer(line)
+        assert is_binary(module)
+        assert is_binary(pid)
       end
     )
   end
@@ -432,6 +467,38 @@ defmodule Calcinator.PryIn.InstrumenterTest do
     assert is_list(custom_metrics)
     assert_custom_metrics_filled(custom_metrics)
 
-    %{context: context, custom_metrics: custom_metrics}
+    context_by_key_list = context
+                          |> Stream.map(
+                               fn {"calcinator/authorization/" <> suffix, value} ->
+                                 [id, key] = String.split(suffix, "/")
+                                 {id, key, value}
+                               end
+                             )
+                          |> Enum.group_by(fn {id, _, _} -> id end)
+                          |> Enum.sort_by(fn {id, _} -> id end)
+                          |> Enum.map(
+                               fn {id, entries} ->
+                                 Enum.into(entries, %{}, fn {^id, key, value} -> {key, value} end)
+                               end
+                             )
+
+    custom_metric_count = length(custom_metrics)
+
+    assert length(context_by_key_list) == custom_metric_count
+
+    custom_metric_count_by_function_by_module_by_key =
+      custom_metrics
+      |> Enum.reduce(
+           %{},
+           fn (%PryIn.Interaction.CustomMetric{function: function, key: key, module: module}, acc) ->
+             update_in(acc, [Access.key(key, %{}), Access.key(module, %{}), Access.key(function, 0)], &(&1 + 1))
+           end
+         )
+
+    %{
+      context_by_key_list: context_by_key_list,
+      custom_metric_count: custom_metric_count,
+      custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+    }
   end
 end
