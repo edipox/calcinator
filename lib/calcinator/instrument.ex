@@ -68,12 +68,12 @@ defmodule Calcinator.Instrument do
 
   ### Events
 
-  ### `:calcinator_authorization`
+  #### `:calcinator_authorization`
 
   `:calcinator_authorization` occurs around calls to the `authorization_module.can?/3` in `Calcinator.can?/3` to measure how long
   it takes to authorize actions on the primary target.
 
-  #### `:create`
+  ##### `:create`
 
   There are two calls to authorize `:create`.
 
@@ -111,7 +111,7 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :create, %Ecto.Changeset{data: %ecto_schema_module{}})
 
-  #### `:delete`
+  ##### `:delete`
 
   There is only one call to authorize `:delete`.
 
@@ -127,7 +127,7 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :delete, %ecto_schema_module{})
 
-  #### `:index`
+  ##### `:index`
 
   There is one call to authorize `:index`.
 
@@ -145,9 +145,9 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :index, ecto_schema_module)
 
-  #### `:show`
+  ##### `:show`
 
-  ##### `Calcinator.get_related_resource/3`
+  ###### `Calcinator.get_related_resource/3`
 
   There is not a special `action` for authorizing `Calcinator.get_related_resource/3`, instead the `source` is authorized
   for `:show`.
@@ -187,7 +187,7 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
 
-  ##### `Calcinator.show/2`
+  ###### `Calcinator.show/2`
 
   The primary data is authorized for `:show`.
 
@@ -208,7 +208,7 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :show, %ecto_schema_module{})
 
-  ##### `Calcinator.show_relationship/3`
+  ###### `Calcinator.show_relationship/3`
 
   There is not a special `action` for authorizing `Calcinator.show_relationship/3`, instead the `source` is authorized
   for `:show`.
@@ -248,7 +248,7 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :show, [%related_ecto_schema_module{}, %ecto_schema_module{}])
 
-  ##### `Calcinator.update/3`
+  ###### `Calcinator.update/3`
 
   Before a `target` can be updated, it is checked that `subject` can `:show` the target. **NOTE: This is the same
   pattern as for `Calcinator.show/2`, `Calcinator.get_related_resource/3`, and `Calcinator.show_relatonship/3`.**
@@ -267,9 +267,9 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :show, %ecto_schema_module{})
 
-  #### `:update`
+  ##### `:update`
 
-  ##### `Calcinator.update/3`
+  ###### `Calcinator.update/3`
 
   If a `target` is authorized for `:show`, it is checked if the `subject` can update the `Ecto.Changeset.t`.
 
