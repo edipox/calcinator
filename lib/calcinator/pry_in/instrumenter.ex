@@ -33,16 +33,8 @@ if Code.ensure_loaded?(PryIn) do
     Metrics are only collected inside of tracked interactions
     """
 
-    def calcinator_authorization(:start, %{file: file, function: function, line: line, module: module}, runtime_metadata) do
-      metadata = Map.merge(runtime_metadata, %{file: file, function: function, line: line, module: module})
-
-      if InteractionStore.has_pid?(self()) do
-        now = utc_unix_datetime()
-        offset = now - InteractionStore.get_field(self(), :start_time)
-        Map.put(metadata, :offset, offset)
-      else
-        metadata
-      end
+    def calcinator_authorization(:start, compile_metadata, runtime_metadata) do
+      start(compile_metadata, runtime_metadata)
     end
 
     def calcinator_authorization(
@@ -54,52 +46,26 @@ if Code.ensure_loaded?(PryIn) do
               authorization_module: authorization_module,
               subject: subject
             },
-            file: file,
-            function: function,
-            line: line,
-            module: module,
             target: target
           }
         ) do
       if InteractionStore.has_pid?(self()) do
-        prefix = unique_prefix("calcinator_authorization")
+        event = "calcinator_authorization"
+        prefix = unique_prefix(event)
         InteractionStore.put_context(self(), "#{prefix}/authorization_module", module_name(authorization_module))
         InteractionStore.put_context(self(), "#{prefix}/subject", subject_name(subject))
         InteractionStore.put_context(self(), "#{prefix}/action", to_string(action))
         InteractionStore.put_context(self(), "#{prefix}/target", target_name(target))
 
-        data = [
-          duration: System.convert_time_unit(time_diff, :native, :microseconds),
-          file: file,
-          function: function,
-          key: "calcinator_authorization",
-          line: line,
-          module: module_name(module),
-          pid: inspect(self())
-        ]
-
-        full_data = case Map.fetch(metadata, :offset) do
-          {:ok, offset} -> Keyword.put(data, :offset, offset)
-          :error -> data
-        end
-
-        InteractionStore.add_custom_metric(self(), full_data)
+        metadata
+        |> Map.merge(%{key: event, time_diff: time_diff})
+        |> add_custom_metric()
       end
     end
 
     def calcinator_authorization(:stop, _time_diff, _), do: :ok
 
-    def calcinator_view(:start, %{file: file, function: function, line: line, module: module}, runtime_metadata) do
-      metadata = Map.merge(runtime_metadata, %{file: file, function: function, line: line, module: module})
-
-      if InteractionStore.has_pid?(self()) do
-        now = utc_unix_datetime()
-        offset = now - InteractionStore.get_field(self(), :start_time)
-        Map.put(metadata, :offset, offset)
-      else
-        metadata
-      end
-    end
+    def calcinator_view(:start, compile_metadata, runtime_metadata), do: start(compile_metadata, runtime_metadata)
 
     def calcinator_view(
           :stop,
@@ -109,38 +75,42 @@ if Code.ensure_loaded?(PryIn) do
             calcinator: %{
               view_module: view_module
             },
-            callback: callback,
-            file: file,
-            function: function,
-            line: line,
-            module: module
+            callback: callback
           }
         ) do
       if InteractionStore.has_pid?(self()) do
         put_calcinator_view_context(%{args: args, callback: callback, view_module: view_module})
 
-        data = [
-          duration: System.convert_time_unit(time_diff, :native, :microseconds),
-          file: file,
-          function: function,
-          key: "calcinator_view",
-          line: line,
-          module: module_name(module),
-          pid: inspect(self())
-        ]
-
-        full_data = case Map.fetch(metadata, :offset) do
-          {:ok, offset} -> Keyword.put(data, :offset, offset)
-          :error -> data
-        end
-
-        InteractionStore.add_custom_metric(self(), full_data)
+        metadata
+        |> Map.merge(%{key: "calcinator_view", time_diff: time_diff})
+        |> add_custom_metric()
       end
     end
 
     #def calcinator_view(:stop, _time_diff, metadata), do: (IO.inspect(metadata); :ok)
 
     ## Private Functions
+
+    defp add_custom_metric(
+           metadata = %{file: file, function: function, key: key, line: line, module: module, time_diff: time_diff}
+         ) do
+      data = [
+        duration: System.convert_time_unit(time_diff, :native, :microseconds),
+        file: file,
+        function: function,
+        key: key,
+        line: line,
+        module: module_name(module),
+        pid: inspect(self())
+      ]
+
+      full_data = case Map.fetch(metadata, :offset) do
+        {:ok, offset} -> Keyword.put(data, :offset, offset)
+        :error -> data
+      end
+
+      InteractionStore.add_custom_metric(self(), full_data)
+    end
 
     defp put_calcinator_view_context(
            %{
@@ -199,6 +169,18 @@ if Code.ensure_loaded?(PryIn) do
       options
       |> Map.put(:prefix, unique_prefix("calcinator_view"))
       |> put_calcinator_view_context()
+    end
+
+    defp start(%{file: file, function: function, line: line, module: module}, runtime_metadata) do
+      metadata = Map.merge(runtime_metadata, %{file: file, function: function, line: line, module: module})
+
+      if InteractionStore.has_pid?(self()) do
+        now = utc_unix_datetime()
+        offset = now - InteractionStore.get_field(self(), :start_time)
+        Map.put(metadata, :offset, offset)
+      else
+        metadata
+      end
     end
 
     defp subject_name(nil), do: "nil"
