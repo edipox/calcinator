@@ -195,7 +195,7 @@ defmodule Calcinator do
          :ok <- can(state, :create, changeset),
          {:ok, created} <- create_changeset(state, changeset, params) do
       authorized = authorized(state, created)
-      {:ok, view_module.show(authorized, %{params: params, subject: subject})}
+      {:ok, view(state, :show, [authorized, %{params: params, subject: subject}])}
     end
   end
 
@@ -334,8 +334,7 @@ defmodule Calcinator do
   def index(
         state = %__MODULE__{
           ecto_schema_module: ecto_schema_module,
-          subject: subject,
-          view_module: view_module,
+          subject: subject
         },
         params,
         %{base_uri: base_uri}
@@ -347,9 +346,10 @@ defmodule Calcinator do
 
       {
         :ok,
-        view_module.index(
-          authorized,
-          %{base_uri: base_uri, pagination: authorized_pagination, params: params, subject: subject}
+        view(
+          state,
+          :index,
+          [authorized, %{base_uri: base_uri, pagination: authorized_pagination, params: params, subject: subject}]
         )
       }
     end
@@ -391,12 +391,12 @@ defmodule Calcinator do
                            {:error, :unauthorized} |
                            {:error, Document.t} |
                            {:error, reason :: term}
-  def show(state = %__MODULE__{subject: subject, view_module: view_module}, params = %{"id" => _}) do
+  def show(state = %__MODULE__{subject: subject}, params = %{"id" => _}) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, shown} <- get(state, params),
          :ok <- can(state, :show, shown) do
       authorized = authorized(state, shown)
-      {:ok, view_module.show(authorized, %{params: params, subject: subject})}
+      {:ok, view(state, :show, [authorized, %{params: params, subject: subject}])}
     end
   end
 
@@ -489,7 +489,7 @@ defmodule Calcinator do
                              {:error, Document.t} |
                              {:error, Ecto.Changeset.t} |
                              {:error, reason :: term}
-  def update(state = %__MODULE__{subject: subject, view_module: view_module}, params) do
+  def update(state = %__MODULE__{subject: subject}, params) do
     with :ok <- allow_sandbox_access(state, params),
          {:ok, updatable} <- get(state, params),
          :ok <- can(state, :show, updatable),
@@ -501,7 +501,7 @@ defmodule Calcinator do
       # DO NOT `:ok <- can(state, :show, updated)` because user can update to attributees they can't view, but we need
       # to send back the updated resource
       authorized = authorized(state, updated)
-      {:ok, view_module.show(authorized, %{params: params, subject: subject})}
+      {:ok, view(state, :show, [authorized, %{params: params, subject: subject}])}
     end
   end
 
@@ -801,8 +801,14 @@ defmodule Calcinator do
     {status, changeset}
   end
 
+  defp view(calcinator = %__MODULE__{view_module: view_module}, callback, args) do
+    instrument :calcinator_view, %{calcinator: calcinator, callback: callback, args: args}, fn ->
+      apply(view_module, callback, args)
+    end
+  end
+
   defp view_related_property(
-         %__MODULE__{subject: subject, view_module: view_module},
+         calcinator = %__MODULE__{subject: subject, view_module: view_module},
          %{
            params: params,
            related: related = %{
@@ -817,8 +823,8 @@ defmodule Calcinator do
       :resource -> :get_related_resource
     end
 
-    apply(
-      view_module,
+    view(
+      calcinator,
       function_name,
       [
         resource,

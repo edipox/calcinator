@@ -11,70 +11,83 @@ defmodule Calcinator.PryIn.InstrumenterTest do
   @authorization_module "Calcinator.Authorization.SubjectLess"
   @subject "nil"
 
-  describe "calcinator_authorization/3" do
-    test "in Calcinator.create/2" do
+  describe "in Calcinator" do
+    test "create/2" do
       meta = checkout_meta()
 
       %TestAuthor{id: author_id} = Factory.insert(:test_author)
       body = "First Post!"
 
-      %{
-        context_by_key_list: context_by_key_list,
-        custom_metric_count: custom_metric_count,
-        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
-      } = custom_trace(
-        %{group: "TestPost", key: "create"},
-        fn ->
-          assert {:ok, _} = Calcinator.create(
-                   %Calcinator{
-                     associations_by_include: %{
-                       "author" => :author
-                     },
-                     ecto_schema_module: TestPost,
-                     resources_module: TestPosts,
-                     view_module: TestPostView
-                   },
-                   %{
-                     "meta" => meta,
-                     "data" => %{
-                       "type" => "test-posts",
-                       "attributes" => %{
-                         "body" => body
-                       },
-                       "relationships" => %{
-                         "author" => %{
-                           "data" => %{
-                             "type" => "test-authors",
-                             "id" => to_string(author_id)
-                           }
-                         }
-                       }
-                     },
-                     "include" => "author"
-                   }
-                 )
-        end
-      )
+      assert %{
+               context_by_key_list_by_event: %{
+                 "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+                 "calcinator_view" => calcinator_view_context_by_key_list
+               },
+               custom_metric_count: custom_metric_count,
+               custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+             } = custom_trace(
+               %{group: "TestPost", key: "create"},
+               fn ->
+                 assert {:ok, _} = Calcinator.create(
+                          %Calcinator{
+                            associations_by_include: %{
+                              "author" => :author
+                            },
+                            ecto_schema_module: TestPost,
+                            resources_module: TestPosts,
+                            view_module: TestPostView
+                          },
+                          %{
+                            "meta" => meta,
+                            "data" => %{
+                              "type" => "test-posts",
+                              "attributes" => %{
+                                "body" => body
+                              },
+                              "relationships" => %{
+                                "author" => %{
+                                  "data" => %{
+                                    "type" => "test-authors",
+                                    "id" => to_string(author_id)
+                                  }
+                                }
+                              }
+                            },
+                            "include" => "author"
+                          }
+                        )
+               end
+             )
 
       ecto_schema_module = "Calcinator.Resources.TestPost"
+      created = "%#{ecto_schema_module}{}"
 
       # can(subject, :create, ecto_schema_module)
       assert %{"action" => "create",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => ecto_schema_module} in context_by_key_list
+               "target" => ecto_schema_module} in calcinator_authorization_context_by_key_list
       # can(subject, :create, changeset)
-      assert %{"action" => "create",
+      assert %{
+               "action" => "create",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "%Ecto.Changeset{data: %#{ecto_schema_module}{}}"} in context_by_key_list
+               "target" => "%Ecto.Changeset{data: %#{ecto_schema_module}{}}"
+             } in calcinator_authorization_context_by_key_list
       # authorized(calcinator, created)
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "%#{ecto_schema_module}{}"} in context_by_key_list
+               "target" => created} in calcinator_authorization_context_by_key_list
 
-      assert custom_metric_count == 3
+      assert %{
+               "callback" => "show",
+               "resource" => created,
+               "subject" => @subject,
+               "view_module" => "Calcinator.TestPostView"
+             } in calcinator_view_context_by_key_list
+
+      assert custom_metric_count == 4
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
@@ -82,16 +95,23 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                    "authorized/2" => 1,
                    "can/3" => 2
                  }
+               },
+               "calcinator_view" => %{
+                 "Calcinator" => %{
+                   "view/3" => 1
+                 }
                }
              }
     end
 
-    test "in Calcinator.delete/2" do
+    test "delete/2" do
       meta = checkout_meta()
       %TestAuthor{id: id} = Factory.insert(:test_author)
 
       %{
-        context_by_key_list: context_by_key_list,
+        context_by_key_list_by_event: %{
+          "calcinator_authorization" => calcinator_authorization_context_by_key_list
+        },
         custom_metric_count: custom_metric_count,
         custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
       } = custom_trace(
@@ -110,7 +130,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"action" => "delete",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "%Calcinator.Resources.TestAuthor{}"} in context_by_key_list
+               "target" => "%Calcinator.Resources.TestAuthor{}"} in calcinator_authorization_context_by_key_list
 
       assert custom_metric_count == 1
 
@@ -123,12 +143,15 @@ defmodule Calcinator.PryIn.InstrumenterTest do
              } == custom_metric_count_by_function_by_module_by_key
     end
 
-    test "in Calcinator.get_related_resource/3" do
+    test "get_related_resource/3" do
       meta = checkout_meta()
       %TestPost{author: %TestAuthor{}, id: id} = Factory.insert(:test_post)
 
       %{
-        context_by_key_list: context_by_key_list,
+        context_by_key_list_by_event: %{
+          "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_view" => calcinator_view_context_by_key_list
+        },
         custom_metric_count: custom_metric_count,
         custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
       } = custom_trace(
@@ -160,19 +183,28 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => source} in context_by_key_list
+               "target" => source} in calcinator_authorization_context_by_key_list
       # can(subject, :show, [related, source])
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "[#{related}, #{source}]"} in context_by_key_list
+               "target" => "[#{related}, #{source}]"} in calcinator_authorization_context_by_key_list
       # authorized(calcinator, related)
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => related} in context_by_key_list
+               "target" => related} in calcinator_authorization_context_by_key_list
 
-      assert custom_metric_count == 3
+      assert %{
+               "callback" => "get_related_resource",
+               "related_resource" => related,
+               "source_association" => "author",
+               "source_resource" => source,
+               "subject" => @subject,
+               "view_module" => "Calcinator.TestPostView"
+             } in calcinator_view_context_by_key_list
+
+      assert custom_metric_count == 4
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
@@ -180,57 +212,82 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                    "authorized/2" => 1,
                    "can/3" => 2
                  }
+               },
+               "calcinator_view" => %{
+                 "Calcinator" => %{
+                   "view/3" => 1
+                 }
                }
              }
     end
 
-    test "in Calcinator.index/3" do
+    test "index/3" do
       meta = checkout_meta()
       count = 2
       Factory.insert_list(count, :test_author)
 
-      %{
-        context_by_key_list: context_by_key_list,
-        custom_metric_count: custom_metric_count,
-        custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
-      } = custom_trace %{group: "TestAuthor", key: "index"}, fn ->
-        assert {:ok, %{"data" => data}} = Calcinator.index(
-                 %Calcinator{
-                   ecto_schema_module: TestAuthor,
-                   resources_module: TestAuthors,
-                   view_module: TestAuthorView
-                 },
-                 %{
-                   "meta" => meta
-                 },
-                 %{base_uri: %URI{}}
-               )
+      assert %{
+               context_by_key_list_by_event: %{
+                 "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+                 "calcinator_view" => calcinator_view_context_by_key_list
+               },
+               custom_metric_count: custom_metric_count,
+               custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+             } = custom_trace %{group: "TestAuthor", key: "index"}, fn ->
+               assert {:ok, %{"data" => data}} = Calcinator.index(
+                        %Calcinator{
+                          ecto_schema_module: TestAuthor,
+                          resources_module: TestAuthors,
+                          view_module: TestAuthorView
+                        },
+                        %{
+                          "meta" => meta
+                        },
+                        %{base_uri: %URI{}}
+                      )
 
-        assert length(data) == count
-      end
+               assert length(data) == count
+             end
+
+      ecto_schema_module = "Calcinator.Resources.TestAuthor"
 
       assert %{"action" => "index",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "Calcinator.Resources.TestAuthor"} in context_by_key_list
+               "target" => ecto_schema_module} in calcinator_authorization_context_by_key_list
 
-      assert custom_metric_count == 1
+      assert %{
+               "callback" => "index",
+               "resources" => "[%#{ecto_schema_module}{}, %#{ecto_schema_module}{}]",
+               "subject" => @subject,
+               "view_module" => "Calcinator.TestAuthorView"
+             } in calcinator_view_context_by_key_list
+
+      assert custom_metric_count == 2
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "can/3" => 1
                  }
+               },
+               "calcinator_view" => %{
+                 "Calcinator" => %{
+                   "view/3" => 1
+                 }
                }
              }
     end
 
-    test "in Calcinator.show/3" do
+    test "show/3" do
       meta = checkout_meta()
       test_author = Factory.insert(:test_author)
 
       %{
-        context_by_key_list: context_by_key_list,
+        context_by_key_list_by_event: %{
+          "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_view" => calcinator_view_context_by_key_list
+        },
         custom_metric_count: custom_metric_count,
         custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
       } = custom_trace(
@@ -252,14 +309,21 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => resource} in context_by_key_list
+               "target" => resource} in calcinator_authorization_context_by_key_list
       # authorized(calcinator, resource)
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => resource} in context_by_key_list
+               "target" => resource} in calcinator_authorization_context_by_key_list
 
-      assert custom_metric_count == 2
+      assert %{
+               "callback" => "show",
+               "resource" => resource,
+               "subject" => @subject,
+               "view_module" => "Calcinator.TestAuthorView"
+             } in calcinator_view_context_by_key_list
+
+      assert custom_metric_count == 3
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
@@ -267,16 +331,24 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                    "authorized/2" => 1,
                    "can/3" => 1
                  }
+               },
+               "calcinator_view" => %{
+                 "Calcinator" => %{
+                   "view/3" => 1
+                 }
                }
              }
     end
 
-    test "in Calcinator.show_relationship/3" do
+    test "show_relationship/3" do
       meta = checkout_meta()
       %TestPost{author: %TestAuthor{}, id: id} = Factory.insert(:test_post)
 
       %{
-        context_by_key_list: context_by_key_list,
+        context_by_key_list_by_event: %{
+          "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_view" => calcinator_view_context_by_key_list
+        },
         custom_metric_count: custom_metric_count,
         custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
       } = custom_trace(
@@ -308,19 +380,28 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => source} in context_by_key_list
+               "target" => source} in calcinator_authorization_context_by_key_list
       # can(subject, :show, [related, source])
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "[#{related}, #{source}]"} in context_by_key_list
+               "target" => "[#{related}, #{source}]"} in calcinator_authorization_context_by_key_list
       # authorized(calcinator, related)
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => related} in context_by_key_list
+               "target" => related} in calcinator_authorization_context_by_key_list
 
-      assert custom_metric_count == 3
+      assert %{
+               "callback" => "show_relationship",
+               "related_resource" => related,
+               "source_association" => "author",
+               "source_resource" => source,
+               "subject" => @subject,
+               "view_module" => "Calcinator.TestPostView"
+             } in calcinator_view_context_by_key_list
+
+      assert custom_metric_count == 4
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
@@ -328,11 +409,16 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                    "authorized/2" => 1,
                    "can/3" => 2
                  }
+               },
+               "calcinator_view" => %{
+                 "Calcinator" => %{
+                   "view/3" => 1
+                 }
                }
              }
     end
 
-    test "in Calcinator.update/3" do
+    test "update/3" do
       meta = checkout_meta()
       test_tag = Factory.insert(:test_tag)
       %TestPost{id: id} = Factory.insert(:test_post, tags: [test_tag])
@@ -340,7 +426,10 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       updated_test_tag = Factory.insert(:test_tag)
 
       %{
-        context_by_key_list: context_by_key_list,
+        context_by_key_list_by_event: %{
+          "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_view" => calcinator_view_context_by_key_list
+        },
         custom_metric_count: custom_metric_count,
         custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
       } = custom_trace(
@@ -390,19 +479,25 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => before_update} in context_by_key_list
+               "target" => before_update} in calcinator_authorization_context_by_key_list
       # can(subject, :update, changeset)
       assert %{"action" => "update",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "%Ecto.Changeset{data: #{before_update}}"} in context_by_key_list
+               "target" => "%Ecto.Changeset{data: #{before_update}}"} in calcinator_authorization_context_by_key_list
       # authorized(calcinator, updated)
       assert %{"action" => "show",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => updated} in context_by_key_list
+               "target" => updated} in calcinator_authorization_context_by_key_list
 
-      assert custom_metric_count == 3
+      assert %{"callback" => "show",
+               "resource" => updated,
+               "subject" => @subject,
+               "view_module" => "Calcinator.TestPostView"
+             } in calcinator_view_context_by_key_list
+
+      assert custom_metric_count == 4
 
       assert %{
               "calcinator_authorization"=> %{
@@ -410,7 +505,12 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       "authorized/2" => 1,
                "can/3"=> 2
         }
-      }
+      },
+               "calcinator_view" => %{
+                 "Calcinator" => %{
+                   "view/3" => 1
+                 }
+               }
              } == custom_metric_count_by_function_by_module_by_key
     end
   end
@@ -469,24 +569,40 @@ defmodule Calcinator.PryIn.InstrumenterTest do
     assert is_list(custom_metrics)
     assert_custom_metrics_filled(custom_metrics)
 
-    context_by_key_list = context
-                          |> Stream.map(
-                               fn {"calcinator/authorization/" <> suffix, value} ->
-                                 [id, key] = String.split(suffix, "/")
-                                 {id, key, value}
-                               end
-                             )
-                          |> Enum.group_by(fn {id, _, _} -> id end)
-                          |> Enum.sort_by(fn {id, _} -> id end)
-                          |> Enum.map(
-                               fn {id, entries} ->
-                                 Enum.into(entries, %{}, fn {^id, key, value} -> {key, value} end)
-                               end
-                             )
+    context_by_key_list_by_event = context
+                                   |> Stream.map(
+                                        fn {compound_key, value} ->
+                                          [event, id, key] = String.split(compound_key, "/")
+                                          {event, id, key, value}
+                                        end
+                                      )
+                                   |> Enum.group_by(fn {event, _, _, _} -> event end)
+                                   |> Enum.into(
+                                        %{},
+                                        fn {event, entries} ->
+                                          context_by_key_list =
+                                            entries
+                                            |> Enum.group_by(fn {_, id, _, _} -> id end)
+                                            |> Enum.map(
+                                                 fn {id, entries} ->
+                                                   Enum.into(
+                                                     entries,
+                                                     %{},
+                                                     fn {^event, ^id, key, value} -> {key, value} end
+                                                   )
+                                                 end
+                                               )
+                                          {event, context_by_key_list}
+                                        end
+                                      )
 
     custom_metric_count = length(custom_metrics)
+    context_by_key_count = context_by_key_list_by_event
+                           |> Map.values()
+                           |> Stream.map(&length/1)
+                           |> Enum.sum()
 
-    assert length(context_by_key_list) == custom_metric_count
+    assert context_by_key_count == custom_metric_count
 
     custom_metric_count_by_function_by_module_by_key =
       custom_metrics
@@ -498,7 +614,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
          )
 
     %{
-      context_by_key_list: context_by_key_list,
+      context_by_key_list_by_event: context_by_key_list_by_event,
       custom_metric_count: custom_metric_count,
       custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
     }

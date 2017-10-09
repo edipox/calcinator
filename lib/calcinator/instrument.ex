@@ -287,6 +287,83 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :update, %Ecto.Changeset{data: %ecto_schema_module{}})
 
+  #### `:calcinator_view`
+
+  `calcinator` splits rendering into calling the `view_module` and then encoding to the underlying transport.  Only
+  calling `view_module` happens during the `:calcinator_view` event.
+
+  The general format has the `args` passed to the `Calcinator.View.t` `callback`
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata ::
+                        %{args: args, calcinator: %Calcinator{view_module: Calcinator.View.t}, callback: atom})
+
+  ##### `:get_related_resources` or `:show_relationship`
+
+  For the `Calcinator.View.get_related_resources/2` and `Calcinator.View.show_relations/2` callback, the `args` are the
+  same because `show_relationship` uses the same `source` and `related`, but only shows the Resource Identifier
+  (`id` and `type`) instead of the full Resource (`id`, `type`, `attributes`, and `relationships`).
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata ::
+                        %{args: [related_resources :: nil | struct | [struct],
+                                 %{related: %{resource: related_resource},
+                                   source: %{association: source_association, resource: source_resource},
+                                   subject: subject}],
+                          calcinator: %Calcinator{view_module: Calcinator.View.t},
+                          callback: :index})
+
+   The `args` have 2 elements.
+
+  1. `related_resource` - The related resource(s) whose `id` (or ids) would be used for `show_relationship`.
+     Can be one of three formats
+     * `nil` - `belongs_to` or `has_one` `source_association` that has no entry
+     * `struct` - `belongs_to` or `has_one` `source_association` that has an entry
+     * `[struct]` - `has_many` `source_association`
+  2. `options`
+     * `:related`
+       * `:resource` - `related_resources`.  Matches the first argument.
+     * `:source`
+       * `association` - the name of the associaton on `source_resource` that contained `related_resources`
+       * `resource` - `struct` of the starting primary data.
+     * `:subject` - the subject that is authorized to see source and related resources
+
+  ##### `:index`
+
+  For the `Calcinator.View.index/2` callback.
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata ::
+                        %{args: [resources, %{subject: subject}],
+                          calcinator: %Calcinator{view_module: Calcinator.View.t},
+                          callback: :index})
+
+  The `args` have 2 elements.
+
+  1. `resources` - The index resources
+  2. `options`
+     * `:subject` - the subject that is authorized to see `resources`
+
+  ##### `:show`
+
+  For the `Calcinator.View.show/2` callback.
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata ::
+                        %{args: [resource, %{subject: subject}],
+                          calcinator: %Calcinator{view_module: Calcinator.View.t},
+                          callback: :show})
+
+  The `args` have 2 elements.
+
+  1. `resource` - The resource to be shown
+  2. `options`
+     * `:subject` - the subject that is authorized to see `resource`
+
   """
 
   require Logger
