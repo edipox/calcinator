@@ -18,9 +18,28 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
       %TestAuthor{id: author_id} = Factory.insert(:test_author)
       body = "First Post!"
+      params = %{
+        "meta" => meta,
+        "data" => %{
+          "type" => "test-posts",
+          "attributes" => %{
+            "body" => body
+          },
+          "relationships" => %{
+            "author" => %{
+              "data" => %{
+                "type" => "test-authors",
+                "id" => to_string(author_id)
+              }
+            }
+          }
+        },
+        "include" => "author"
+      }
 
       assert %{
                context_by_key_list_by_event: %{
+                 "alembic" => alembic_context_by_key_list,
                  "calcinator_authorization" => calcinator_authorization_context_by_key_list,
                  "calcinator_resources" => calcinator_resources_context_by_key_list,
                  "calcinator_view" => calcinator_view_context_by_key_list
@@ -39,27 +58,12 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                             resources_module: TestPosts,
                             view_module: TestPostView
                           },
-                          %{
-                            "meta" => meta,
-                            "data" => %{
-                              "type" => "test-posts",
-                              "attributes" => %{
-                                "body" => body
-                              },
-                              "relationships" => %{
-                                "author" => %{
-                                  "data" => %{
-                                    "type" => "test-authors",
-                                    "id" => to_string(author_id)
-                                  }
-                                }
-                              }
-                            },
-                            "include" => "author"
-                          }
+                          params
                         )
                end
              )
+
+      assert %{"action" => ":create", "params" => inspect(params)} in alembic_context_by_key_list
 
       resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
       ecto_schema_module = "Calcinator.Resources.TestPost"
@@ -115,9 +119,14 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestPostView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 8
+      assert custom_metric_count == 9
 
       assert custom_metric_count_by_function_by_module_by_key == %{
+               "alembic" => %{
+                 "Calcinator" => %{
+                   "document/2" => 1
+                 }
+               },
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "authorized/2" => 1,
@@ -594,9 +603,33 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       %TestPost{id: id} = Factory.insert(:test_post, tags: [test_tag])
       updated_body = "Updated Body"
       updated_test_tag = Factory.insert(:test_tag)
+      params = %{
+        "id" => to_string(id),
+        "data" => %{
+          "type" => "test-posts",
+          "id" => to_string(id),
+          "attributes" => %{
+            "body" => updated_body
+          },
+          # Test `many_to_many` update does replacement
+          "relationships" => %{
+            "tags" => %{
+              "data" => [
+                %{
+                  "type" => "test-tags",
+                  "id" => to_string(updated_test_tag.id)
+                }
+              ]
+            }
+          }
+        },
+        "include" => "author,tags",
+        "meta" => meta
+      }
 
       %{
         context_by_key_list_by_event: %{
+          "alembic" => alembic_context_by_key_list,
           "calcinator_authorization" => calcinator_authorization_context_by_key_list,
           "calcinator_resources" => calcinator_resources_context_by_key_list,
           "calcinator_view" => calcinator_view_context_by_key_list
@@ -616,32 +649,12 @@ defmodule Calcinator.PryIn.InstrumenterTest do
               resources_module: TestPosts,
               view_module: TestPostView
             },
-            %{
-              "id" => to_string(id),
-              "data" => %{
-                "type" => "test-posts",
-                "id" => to_string(id),
-                "attributes" => %{
-                  "body" => updated_body
-                },
-                # Test `many_to_many` update does replacement
-                "relationships" => %{
-                  "tags" => %{
-                    "data" => [
-                      %{
-                        "type" => "test-tags",
-                        "id" => to_string(updated_test_tag.id)
-                      }
-                    ]
-                  }
-                }
-              },
-              "include" => "author,tags",
-              "meta" => meta
-            }
+            params
           )
         end
       )
+
+      assert %{"action" => ":update", "params" => inspect(params)} in alembic_context_by_key_list
 
       resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
       before_update = "%Calcinator.Resources.TestPost{}"
@@ -694,10 +707,15 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestPostView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 9
+      assert custom_metric_count == 10
 
       assert %{
-              "calcinator_authorization"=> %{
+              "alembic" => %{
+                 "Calcinator" => %{
+                   "document/2" => 1
+                 }
+               },
+               "calcinator_authorization"=> %{
                "Calcinator" => %{
       "authorized/2" => 1,
                "can/3"=> 2

@@ -589,18 +589,20 @@ defmodule Calcinator do
 
   @spec document(params, FromJson.action) :: {:ok, Document.t} | {:error, Document.t}
   defp document(raw_params, action) do
-    Document.from_json(
-      raw_params,
-      %Alembic.Error{
-        meta: %{
-          "action" => action,
-          "sender" => :client
-        },
-        source: %Source{
-          pointer: ""
+    instrument :alembic, %{action: action, params: raw_params}, fn ->
+      Document.from_json(
+        raw_params,
+        %Alembic.Error{
+          meta: %{
+            "action" => action,
+            "sender" => :client
+          },
+          source: %Source{
+            pointer: ""
+          }
         }
-      }
-    )
+      )
+    end
   end
 
   @spec get(t, params) :: {:ok, Ecto.Schema.t} |

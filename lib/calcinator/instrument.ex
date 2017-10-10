@@ -68,6 +68,14 @@ defmodule Calcinator.Instrument do
 
   ### Events
 
+  #### `:alembic`
+
+  When `Calcinator` calls `Alembic.Document.from_json/2`
+
+      alembic(:start
+              compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+              runtime_metdata :: %{action: :create | :update, params: params})
+
   #### `:calcinator_authorization`
 
   `:calcinator_authorization` occurs around calls to the `authorization_module.can?/3` in `Calcinator.can?/3` to measure how long

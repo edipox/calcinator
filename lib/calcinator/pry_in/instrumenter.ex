@@ -4,6 +4,7 @@ if Code.ensure_loaded?(PryIn) do
     @moduledoc """
     Collects metrics about
 
+    * `:alembic`
     * `:calcinator_authorization`
       * `Calcinator.authorized/2`
       * `Calcinator.can/3`
@@ -25,9 +26,22 @@ if Code.ensure_loaded?(PryIn) do
 
     alias PryIn.InteractionStore
 
-    # Functions
+    def alembic(:start, compile_metadata, runtime_metadata), do: start(compile_metadata, runtime_metadata)
 
-    ## Calcinator.Instrumenter event callbacks
+    def alembic(:stop, time_diff, metadata = %{action: action, params: params}) do
+      if InteractionStore.has_pid?(self()) do
+        event = "alembic"
+        prefix = unique_prefix(event)
+        InteractionStore.put_context(self(), "#{prefix}/action", inspect(action))
+        InteractionStore.put_context(self(), "#{prefix}/params", inspect(params))
+
+        metadata
+        |> Map.merge(%{key: event, time_diff: time_diff})
+        |> add_custom_metric()
+      end
+    end
+
+    def alembic(:stop, _time_diff, _), do: :ok
 
     @doc """
     Collects metrics about `Calcinator.Authorization` behaviour calls from `Calcinator`.
