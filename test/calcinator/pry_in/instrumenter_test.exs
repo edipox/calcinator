@@ -5,6 +5,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
   alias Calcinator.Resources.Ecto.Repo.{Factory, TestAuthors, TestPosts}
   alias Calcinator.Resources.{TestAuthor, TestPost}
+  alias Calcinator.Meta.Beam
   alias Calcinator.{TestAuthorView, TestPostView}
   alias PryIn.{CustomTrace, InteractionStore}
 
@@ -21,6 +22,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{
                context_by_key_list_by_event: %{
                  "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+                 "calcinator_resources" => calcinator_resources_context_by_key_list,
                  "calcinator_view" => calcinator_view_context_by_key_list
                },
                custom_metric_count: custom_metric_count,
@@ -59,7 +61,33 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                end
              )
 
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
       ecto_schema_module = "Calcinator.Resources.TestPost"
+      creatable = "%#{ecto_schema_module}{}"
+      changeset = "%Ecto.Changeset{data: #{creatable}}"
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "insert",
+               "changeset" => changeset,
+               "query_options" => inspect(
+                 %{
+                   associations: [:author],
+                   filters: %{},
+                   meta: meta,
+                   page: nil,
+                   sorts: []
+                 }
+               ),
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "changeset",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+
       created = "%#{ecto_schema_module}{}"
 
       # can(subject, :create, ecto_schema_module)
@@ -72,7 +100,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "action" => "create",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "%Ecto.Changeset{data: %#{ecto_schema_module}{}}"
+               "target" => changeset
              } in calcinator_authorization_context_by_key_list
       # authorized(calcinator, created)
       assert %{"action" => "show",
@@ -87,13 +115,18 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestPostView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 4
+      assert custom_metric_count == 8
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "authorized/2" => 1,
                    "can/3" => 2
+                 }
+               },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 4
                  }
                },
                "calcinator_view" => %{
@@ -110,7 +143,8 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
       %{
         context_by_key_list_by_event: %{
-          "calcinator_authorization" => calcinator_authorization_context_by_key_list
+          "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_resources" => calcinator_resources_context_by_key_list
         },
         custom_metric_count: custom_metric_count,
         custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
@@ -127,17 +161,59 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
 
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestAuthors"
+      target = "%Calcinator.Resources.TestAuthor{}"
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "get",
+               "id" => to_string(id),
+               "query_options" => inspect(
+                 %{
+                   associations: [],
+                   filters: %{},
+                   meta: meta,
+                   page: nil,
+                   sorts: []
+                 }
+               ),
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "changeset",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "delete",
+               "changeset" => "%Ecto.Changeset{data: #{target}}",
+               "query_options" => inspect(
+                 %{
+                   associations: [],
+                   filters: %{},
+                   meta: meta,
+                   page: nil,
+                   sorts: []
+                 }
+               ),
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+
       assert %{"action" => "delete",
                "authorization_module" => @authorization_module,
                "subject" => @subject,
-               "target" => "%Calcinator.Resources.TestAuthor{}"} in calcinator_authorization_context_by_key_list
+               "target" => target} in calcinator_authorization_context_by_key_list
 
-      assert custom_metric_count == 1
+      assert custom_metric_count == 6
 
       assert %{
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "can/3" => 1
+                 }
+               },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 5
                  }
                }
              } == custom_metric_count_by_function_by_module_by_key
@@ -150,6 +226,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       %{
         context_by_key_list_by_event: %{
           "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_resources" => calcinator_resources_context_by_key_list,
           "calcinator_view" => calcinator_view_context_by_key_list
         },
         custom_metric_count: custom_metric_count,
@@ -175,6 +252,20 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           )
         end
       )
+
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "get",
+               "id" => to_string(id),
+               "query_options" => "%{associations: [:author]}",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
       source = "%Calcinator.Resources.TestPost{}"
       related = "%Calcinator.Resources.TestAuthor{}"
@@ -204,13 +295,18 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestPostView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 4
+      assert custom_metric_count == 7
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "authorized/2" => 1,
                    "can/3" => 2
+                 }
+               },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 3
                  }
                },
                "calcinator_view" => %{
@@ -229,6 +325,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{
                context_by_key_list_by_event: %{
                  "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+                 "calcinator_resources" => calcinator_resources_context_by_key_list,
                  "calcinator_view" => calcinator_view_context_by_key_list
                },
                custom_metric_count: custom_metric_count,
@@ -256,6 +353,27 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "subject" => @subject,
                "target" => ecto_schema_module} in calcinator_authorization_context_by_key_list
 
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestAuthors"
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "list",
+               "query_options" => inspect(
+                 %{
+                   associations: [],
+                   filters: %{},
+                   meta: meta,
+                   page: nil,
+                   sorts: []
+                 }
+               ),
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+
       assert %{
                "callback" => "index",
                "resources" => "[%#{ecto_schema_module}{}, %#{ecto_schema_module}{}]",
@@ -263,12 +381,17 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestAuthorView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 2
+      assert custom_metric_count == 5
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "can/3" => 1
+                 }
+               },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 3
                  }
                },
                "calcinator_view" => %{
@@ -286,6 +409,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       %{
         context_by_key_list_by_event: %{
           "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_resources" => calcinator_resources_context_by_key_list,
           "calcinator_view" => calcinator_view_context_by_key_list
         },
         custom_metric_count: custom_metric_count,
@@ -303,7 +427,28 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
 
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestAuthors"
       resource = "%Calcinator.Resources.TestAuthor{}"
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "get",
+               "id" => to_string(test_author.id),
+               "query_options" => inspect(
+                 %{
+                   associations: [],
+                   filters: %{},
+                   meta: meta,
+                   page: nil,
+                   sorts: []
+                 }
+               ),
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
       # can(subject, :show, resource)
       assert %{"action" => "show",
@@ -323,13 +468,18 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestAuthorView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 3
+      assert custom_metric_count == 6
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "authorized/2" => 1,
                    "can/3" => 1
+                 }
+               },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 3
                  }
                },
                "calcinator_view" => %{
@@ -347,6 +497,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       %{
         context_by_key_list_by_event: %{
           "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_resources" => calcinator_resources_context_by_key_list,
           "calcinator_view" => calcinator_view_context_by_key_list
         },
         custom_metric_count: custom_metric_count,
@@ -372,6 +523,20 @@ defmodule Calcinator.PryIn.InstrumenterTest do
           )
         end
       )
+
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "get",
+               "id" => to_string(id),
+               "query_options" => "%{associations: [:author]}",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
       source = "%Calcinator.Resources.TestPost{}"
       related = "%Calcinator.Resources.TestAuthor{}"
@@ -401,13 +566,18 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestPostView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 4
+      assert custom_metric_count == 7
 
       assert custom_metric_count_by_function_by_module_by_key == %{
                "calcinator_authorization" => %{
                  "Calcinator" => %{
                    "authorized/2" => 1,
                    "can/3" => 2
+                 }
+               },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 3
                  }
                },
                "calcinator_view" => %{
@@ -428,6 +598,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       %{
         context_by_key_list_by_event: %{
           "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+          "calcinator_resources" => calcinator_resources_context_by_key_list,
           "calcinator_view" => calcinator_view_context_by_key_list
         },
         custom_metric_count: custom_metric_count,
@@ -472,7 +643,33 @@ defmodule Calcinator.PryIn.InstrumenterTest do
         end
       )
 
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
       before_update = "%Calcinator.Resources.TestPost{}"
+      inspected_query_options = inspect %{
+        associations: [:author, :tags],
+        filters: %{},
+        meta: meta,
+        page: nil,
+        sorts: []
+      }
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "get", "id" => "\"#{id}\"",
+               "query_options" => inspected_query_options,
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "changeset",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "update",
+               "changeset" => "%Ecto.Changeset{data: #{before_update}}",
+               "query_options" => inspected_query_options,
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+
       updated = "%Calcinator.Resources.TestPost{}"
 
       # can(subject, :show, before_update)
@@ -497,7 +694,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "view_module" => "Calcinator.TestPostView"
              } in calcinator_view_context_by_key_list
 
-      assert custom_metric_count == 4
+      assert custom_metric_count == 9
 
       assert %{
               "calcinator_authorization"=> %{
@@ -506,6 +703,11 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "can/3"=> 2
         }
       },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 5
+                 }
+               },
                "calcinator_view" => %{
                  "Calcinator" => %{
                    "view/3" => 1

@@ -74,8 +74,8 @@ defmodule Calcinator do
   ## Client Functions
 
   @spec allow_sandbox_access(t, params) :: :ok | {:error, :sandbox_access_disallowed} | {:error, :sandbox_token_missing}
-  def allow_sandbox_access(state = %__MODULE__{resources_module: resources_module}, params) do
-    allow_sandbox_access(state, params, resources_module.sandboxed?())
+  def allow_sandbox_access(state = %__MODULE__{}, params) do
+    allow_sandbox_access(state, params, resources(state, :sandboxed?, []))
   end
 
   # Filters a related resource that does not exist
@@ -104,21 +104,21 @@ defmodule Calcinator do
   @spec changeset(t, Ecto.Schema.t, insertable_params) :: {:ok, Ecto.Changeset.t} |
                                                           {:error, Ecto.Changeset.t} |
                                                           {:error, :ownership}
-  def changeset(%__MODULE__{resources_module: resources_module}, updatable, updatable_params) do
-    with {:ok, changeset} <- resources_module.changeset(updatable, updatable_params) do
+  def changeset(calcinator, updatable, updatable_params) do
+    with {:ok, changeset} <- resources(calcinator, :changeset, [updatable, updatable_params]) do
       status_changeset(changeset)
     end
   end
 
-  @spec get(module, params, id_key :: String.t, Resources.query_options) :: {:ok, Ecto.Schema.t} |
-                                                                            {:error, {:not_found, parameter}} |
-                                                                            {:error, :ownership} |
-                                                                            {:error, :timeout} |
-                                                                            {:error, reason :: term}
-  def get(resources_module, params, id_key, query_options) when is_map(query_options) do
-    with {:error, :not_found} <- params
-                                 |> Map.fetch!(id_key)
-                                 |> resources_module.get(query_options) do
+  @spec get(t, params, id_key :: String.t, Resources.query_options) :: {:ok, Ecto.Schema.t} |
+                                                                       {:error, {:not_found, parameter}} |
+                                                                       {:error, :ownership} |
+                                                                       {:error, :timeout} |
+                                                                       {:error, reason :: term}
+  def get(calcinator = %__MODULE__{}, params, id_key, query_options) when is_map(query_options) do
+    id = Map.fetch!(params, id_key)
+
+    with {:error, :not_found} <- resources(calcinator, :get, [id, query_options]) do
       {:error, {:not_found, id_key}}
     end
   end
@@ -128,13 +128,9 @@ defmodule Calcinator do
                                                          {:error, Ecto.Changeset.t} |
                                                          {:error, :bad_gateway} |
                                                          {:error, :not_found}
-  def update_changeset(
-        state = %__MODULE__{resources_module: resources_module},
-        changeset = %Ecto.Changeset{},
-        params
-      ) do
+  def update_changeset(state = %__MODULE__{}, changeset = %Ecto.Changeset{}, params) do
     with {:ok, query_options} <- params_to_query_options(state, params) do
-      resources_module.update(changeset, query_options)
+      resources(state, :update, [changeset, query_options])
     end
   end
 
@@ -532,7 +528,7 @@ defmodule Calcinator do
           :ok | {:error, :sandbox_access_disallowed} | {:error, :sandbox_token_missing}
 
   defp allow_sandbox_access(
-         %__MODULE__{resources_module: resources_module},
+         calcinator,
          %{
            "meta" => %{
              "beam" => encoded_beam_meta
@@ -540,9 +536,8 @@ defmodule Calcinator do
          },
          true
        ) when is_binary(encoded_beam_meta) do
-    encoded_beam_meta
-    |> Meta.Beam.decode
-    |> resources_module.allow_sandbox_access()
+    beam = Meta.Beam.decode(encoded_beam_meta)
+    resources(calcinator, :allow_sandbox_access, [beam])
   end
 
   defp allow_sandbox_access(%__MODULE__{}, params, true) when is_map(params), do: {:error, :sandbox_token_missing}
@@ -565,13 +560,8 @@ defmodule Calcinator do
   end
 
   @spec changeset(t, insertable_params) :: {:ok, Ecto.Changeset.t} | {:error, Ecto.Changeset.t} | {:error, :ownership}
-  defp changeset(
-         %__MODULE__{resources_module: resources_module},
-         insertable_params
-       )
-       when not is_nil(resources_module) and is_atom(resources_module) and
-            is_map(insertable_params) do
-    with {:ok, changeset} <- resources_module.changeset(insertable_params) do
+  defp changeset(calcinator, insertable_params) when is_map(insertable_params) do
+    with {:ok, changeset} <- resources(calcinator, :changeset, [insertable_params]) do
       status_changeset(changeset)
     end
   end
@@ -583,10 +573,9 @@ defmodule Calcinator do
                                                          {:error, :timeout} |
                                                          {:error, Document.t} |
                                                          {:error, Ecto.Changeset.t}
-  defp create_changeset(state = %__MODULE__{resources_module: resources_module}, changeset = %Ecto.Changeset{}, params)
-       when not is_nil(resources_module) and is_atom(resources_module) do
+  defp create_changeset(state, changeset = %Ecto.Changeset{}, params) do
     with {:ok, query_options} <- params_to_query_options(state, params) do
-      resources_module.insert(changeset, query_options)
+      resources(state, :insert, [changeset, query_options])
     end
   end
 
@@ -594,8 +583,8 @@ defmodule Calcinator do
                                                                           {:error, :ownership} |
                                                                           {:error, :timeout} |
                                                                           {:error, Ecto.Changeset.t}
-  defp delete_changeset(%__MODULE__{resources_module: resources_module}, changeset, query_options) do
-    resources_module.delete(changeset, query_options)
+  defp delete_changeset(calcinator = %__MODULE__{}, changeset, query_options) do
+    resources(calcinator, :delete, [changeset, query_options])
   end
 
   @spec document(params, FromJson.action) :: {:ok, Document.t} | {:error, Document.t}
@@ -632,9 +621,7 @@ defmodule Calcinator do
                                                    {:error, :timeout} |
                                                    {:error, Document.t} |
                                                    {:error, reason :: term}
-  defp get(%__MODULE__{resources_module: resources_module}, params, query_options) do
-    get(resources_module, params, "id", query_options)
-  end
+  defp get(calcinator, params, query_options), do: get(calcinator, params, "id", query_options)
 
   @spec get_maybe_authorized_related(t, Ecto.Schema.t, atom) ::
           {:ok, nil} | {:ok, Ecto.Schema.t} | {:error, :unauthorized}
@@ -673,12 +660,8 @@ defmodule Calcinator do
              {:error, :timeout} |
              {:error, Document.t} |
              {:error, term}
-  defp get_source(
-         %{resources_module: resources_module},
-         params,
-         %{association: association, id_key: id_key}
-       ) do
-    get(resources_module, params, id_key, %{associations: [association]})
+  defp get_source(calcinator, params, %{association: association, id_key: id_key}) do
+    get(calcinator, params, id_key, %{associations: [association]})
   end
 
   @spec insertable_params(t, Document.t) :: insertable_params
@@ -725,9 +708,9 @@ defmodule Calcinator do
                            {:error, :timeout} |
                            {:error, Document.t} |
                            {:error, reason :: term}
-  defp list(state = %__MODULE__{resources_module: resources_module}, params) do
-    with {:ok, query_options} <- params_to_query_options(state, params) do
-      resources_module.list(query_options)
+  defp list(calcinator, params) do
+    with {:ok, query_options} <- params_to_query_options(calcinator, params) do
+      resources(calcinator, :list, [query_options])
     end
   end
 
@@ -788,6 +771,12 @@ defmodule Calcinator do
           }
         )
       }
+    end
+  end
+
+  defp resources(calcinator = %__MODULE__{resources_module: resources_module}, callback, args) do
+    instrument :calcinator_resources, %{calcinator: calcinator, callback: callback, args: args}, fn ->
+      apply(resources_module, callback, args)
     end
   end
 

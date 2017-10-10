@@ -7,6 +7,8 @@ if Code.ensure_loaded?(PryIn) do
     * `:calcinator_authorization`
       * `Calcinator.authorized/2`
       * `Calcinator.can/3`
+    * `:calcinator_resources`
+      * `resources_module` calls
     * `:calcinator_view`
       * `view_module` calls
 
@@ -65,6 +67,30 @@ if Code.ensure_loaded?(PryIn) do
 
     def calcinator_authorization(:stop, _time_diff, _), do: :ok
 
+    def calcinator_resources(:start, compile_metadata, runtime_metadata), do: start(compile_metadata, runtime_metadata)
+
+    def calcinator_resources(
+          :stop,
+          time_diff,
+          metadata = %{
+            args: args,
+            calcinator: %{
+              resources_module: resources_module
+            },
+            callback: callback
+          }
+        ) do
+      if InteractionStore.has_pid?(self()) do
+        put_calcinator_resources_context(%{args: args, callback: callback, resources_module: resources_module})
+
+        metadata
+        |> Map.merge(%{key: "calcinator_resources", time_diff: time_diff})
+        |> add_custom_metric()
+      end
+    end
+
+    def calcinator_resources(:stop, _time_diff, _), do: :ok
+
     def calcinator_view(:start, compile_metadata, runtime_metadata), do: start(compile_metadata, runtime_metadata)
 
     def calcinator_view(
@@ -110,6 +136,69 @@ if Code.ensure_loaded?(PryIn) do
       end
 
       InteractionStore.add_custom_metric(self(), full_data)
+    end
+
+    defp put_calcinator_resources_context(
+           %{
+             args: [changeset, query_options],
+             callback: callback,
+             prefix: prefix,
+             resources_module: resources_module
+           }
+         ) when callback in ~w(delete insert update)a do
+      put_calcinator_resources_context(%{callback: callback, prefix: prefix, resources_module: resources_module})
+      InteractionStore.put_context(self(), "#{prefix}/changeset", target_name(changeset))
+      InteractionStore.put_context(self(), "#{prefix}/query_options", inspect(query_options))
+    end
+
+    defp put_calcinator_resources_context(
+           %{
+             args: [beam],
+             callback: callback = :allow_sandbox_access,
+             prefix: prefix,
+             resources_module: resources_module
+           }
+         ) do
+      put_calcinator_resources_context(%{callback: callback, prefix: prefix, resources_module: resources_module})
+      InteractionStore.put_context(self(), "#{prefix}/beam", inspect(beam))
+    end
+
+    defp put_calcinator_resources_context(
+           %{args: [id, query_options], callback: callback = :get, prefix: prefix, resources_module: resources_module}
+         ) do
+      put_calcinator_resources_context(%{callback: callback, prefix: prefix, resources_module: resources_module})
+      InteractionStore.put_context(self(), "#{prefix}/id", inspect(id))
+      InteractionStore.put_context(self(), "#{prefix}/query_options", inspect(query_options))
+    end
+
+    defp put_calcinator_resources_context(
+           %{args: [query_options], callback: callback = :list, prefix: prefix, resources_module: resources_module}
+         ) do
+      put_calcinator_resources_context(%{callback: callback, prefix: prefix, resources_module: resources_module})
+      InteractionStore.put_context(self(), "#{prefix}/query_options", inspect(query_options))
+    end
+
+    defp put_calcinator_resources_context(
+           %{args: [], callback: callback = :sandboxed?, prefix: prefix, resources_module: resources_module}
+         ) do
+      put_calcinator_resources_context(%{callback: callback, prefix: prefix, resources_module: resources_module})
+    end
+
+    defp put_calcinator_resources_context(
+           %{callback: callback, prefix: prefix, resources_module: resources_module}
+         ) do
+      InteractionStore.put_context(self(), "#{prefix}/resources_module", module_name(resources_module))
+      InteractionStore.put_context(self(), "#{prefix}/callback", to_string(callback))
+    end
+
+    defp put_calcinator_resources_context(options) when is_map(options) do
+      if Map.has_key?(options, :prefix) do
+        raise ArgumentError, "Unsupported callback (#{inspect(options[:callback])}) with options (#{inspect(options)})"
+      else
+        options
+        |> Map.put(:prefix, unique_prefix("calcinator_resources"))
+        |> put_calcinator_resources_context()
+      end
     end
 
     defp put_calcinator_view_context(
@@ -166,9 +255,13 @@ if Code.ensure_loaded?(PryIn) do
     end
 
     defp put_calcinator_view_context(options) when is_map(options) do
-      options
-      |> Map.put(:prefix, unique_prefix("calcinator_view"))
-      |> put_calcinator_view_context()
+      if Map.has_key?(options, :prefix) do
+        raise ArgumentError, "Unsupported callback (#{inspect(options[:callback])})"
+      else
+        options
+        |> Map.put(:prefix, unique_prefix("calcinator_view"))
+        |> put_calcinator_view_context()
+      end
     end
 
     defp start(%{file: file, function: function, line: line, module: module}, runtime_metadata) do

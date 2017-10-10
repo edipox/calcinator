@@ -287,6 +287,76 @@ defmodule Calcinator.Instrument do
 
       authorization_module.can?(subject, :update, %Ecto.Changeset{data: %ecto_schema_module{}})
 
+  #### `:calcinator_resources`
+
+  The `:calcinator_resources` event is fired around any `resources_module` call by `Calcinator`.
+
+  The general format has the `args` passed to the `Calcinator.Resources.t` `callback`
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata :: %{args: args,
+                                            calcinator: %Calcinator{resources_module: Calcinator.Resources.t},
+                                            callback: atom})
+
+  ##### `Calcinator.Resources.allow_sandbox_access/1`
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata :: %{args: [beam],
+                                            calcinator: %Calcinator{resources_module: Calcinator.Resources.t},
+                                            callback: :allow_sandbox_access})
+
+  The only argument is the opaque `beam` data structure that is used to allow sandbox access.
+
+  ##### `Calcinator.Resources.delete/2`, `Calcinator.Resources.insert/2`, and `Calcinator.Resources.update/2`
+
+      calcinator_resources(:start,
+                           compile_metadata ::
+                             %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                           runtime_metadata :: %{args: [changeset, query_options],
+                                                 calcinator: %Calcinator{resources_module: Calcinator.Resources.t},
+                                                 callback: :delete | :insert | :update})
+
+  `Calcinator.Resources.delete/2`, `Calcinator.Resources.insert/2`, and `Calcinator.Resources.update/2` all take 2
+  arguments:
+
+  1. `changeset` - `Ecto.Changeset.t`
+  2. `query_options` - `Calcinator.Resoures.query_options`
+
+  ##### `Calcinator.Resources.get/2`
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata :: %{args: [id, query_options],
+                                            calcinator: %Calcinator{resources_module: Calcinator.Resources.t},
+                                            callback: :get})
+
+  Arguments
+
+  1. `id` - ID of resource to lookup (`String.t` or `non_neg_integer`)
+  2. `query_options` - `Calcinator.Resoures.query_options`
+
+  ##### `Calcinator.Resources.list/1`
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata :: %{args: [query_options],
+                                            calcinator: %Calcinator{resources_module: Calcinator.Resources.t},
+                                            callback: :list})
+
+  Arguments
+
+  1. `query_options` - `Calcinator.Resoures.query_options`
+
+  ##### `Calcinator.Resources.sandboxed?/0`
+
+      calcinator_view(:start,
+                      compile_metadata :: %{module: module, function: String.t, file: String.t, line: non_neg_integer},
+                      runtime_metadata :: %{args: [],
+                                            calcinator: %Calcinator{resources_module: Calcinator.Resources.t},
+                                            callback: :sandboxed?})
+
   #### `:calcinator_view`
 
   `calcinator` splits rendering into calling the `view_module` and then encoding to the underlying transport.  Only
