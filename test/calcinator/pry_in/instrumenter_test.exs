@@ -2,15 +2,185 @@ defmodule Calcinator.PryIn.InstrumenterTest do
   use Calcinator.PryIn.Case
 
   import Calcinator.Resources.Ecto.Repo.Repo.Case
+  import Phoenix.ConnTest
+  import Plug.Conn
+  import Calcinator.Router.Helpers
 
   alias Calcinator.Resources.Ecto.Repo.{Factory, TestAuthors, TestPosts}
   alias Calcinator.Resources.{TestAuthor, TestPost}
   alias Calcinator.Meta.Beam
-  alias Calcinator.{TestAuthorView, TestPostView}
+  alias Calcinator.{Endpoint, TestAuthorView, TestPostView}
   alias PryIn.{CustomTrace, InteractionStore}
 
   @authorization_module "Calcinator.Authorization.SubjectLess"
+  @controller "Calcinator.TestPostController"
+  @endpoint Calcinator.Endpoint
   @subject "nil"
+
+  describe "in Calcinator.Controller" do
+    setup ~w(setup_conn setup_meta)a
+
+    test "create/3", %{conn: conn, meta: meta} do
+      test_author = %TestAuthor{id: author_id} = Factory.insert(:test_author)
+      body = "First Post!"
+      formatted_author_id = to_string(author_id)
+      params = %{
+        "meta" => meta,
+        "data" => %{
+          "type" => "test-posts",
+          "attributes" => %{
+            "body" => body
+          },
+          "relationships" => %{
+            "author" => %{
+              "data" => %{
+                "type" => "test-authors",
+                "id" => formatted_author_id
+              }
+            }
+          }
+        },
+        "include" => "author"
+      }
+
+      assert %{
+               context_by_key_list_by_event: %{
+                 "alembic" => alembic_context_by_key_list,
+                 "calcinator_authorization" => calcinator_authorization_context_by_key_list,
+                 "calcinator_resources" => calcinator_resources_context_by_key_list,
+                 "calcinator_view" => calcinator_view_context_by_key_list
+               },
+               custom_metric_count: custom_metric_count,
+               custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
+             } = request(%{controller: @controller, action: "create"}, fn ->
+        conn = post(conn, test_post_path(conn, :create), params)
+
+        assert %{
+                 "data" => %{
+                   "type" => "test-posts",
+                   "id" => id,
+                   "attributes" => %{
+                     "body" => ^body
+                   },
+                   "relationships" => %{
+                     "author" => %{
+                       "data" => %{
+                         "type" => "test-authors",
+                         "id" => ^formatted_author_id
+                       }
+                     }
+                   }
+                 },
+                 "included" => included
+               } = json_response(conn, :created)
+        assert is_binary(id)
+        assert is_list(included)
+        assert length(included) == 1
+
+        included_by_id_by_type = Enum.reduce(
+          included,
+          %{},
+          fn (resource = %{"type" => type, "id" => id}, acc) ->
+            put_in(acc, [Access.key(type, %{}), id], resource)
+          end
+        )
+
+        test_author_by_id = included_by_id_by_type["test-authors"]
+
+        assert is_map(test_author_by_id)
+
+        test_author_name = test_author.name
+
+        assert %{
+                 "attributes" => %{
+                   "name" => ^test_author_name
+                 }
+               } = test_author_by_id[formatted_author_id]
+      end)
+
+      assert %{"action" => ":create", "params" => inspect(params)} in alembic_context_by_key_list
+
+      resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
+      ecto_schema_module = "Calcinator.Resources.TestPost"
+      creatable = "%#{ecto_schema_module}{}"
+      changeset = "%Ecto.Changeset{data: #{creatable}}"
+
+      assert %{"callback" => "sandboxed?",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"beam" => meta
+                         |> Beam.get()
+                         |> inspect(),
+               "callback" => "allow_sandbox_access",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "insert",
+               "changeset" => changeset,
+               "query_options" => inspect(
+                 %{
+                   associations: [:author],
+                   filters: %{},
+                   meta: meta,
+                   page: nil,
+                   sorts: []
+                 }
+               ),
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+      assert %{"callback" => "changeset",
+               "resources_module" => resources_module} in calcinator_resources_context_by_key_list
+
+      created = "%#{ecto_schema_module}{}"
+
+      # can(subject, :create, ecto_schema_module)
+      assert %{"action" => "create",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => ecto_schema_module} in calcinator_authorization_context_by_key_list
+      # can(subject, :create, changeset)
+      assert %{
+               "action" => "create",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => changeset
+             } in calcinator_authorization_context_by_key_list
+      # authorized(calcinator, created)
+      assert %{"action" => "show",
+               "authorization_module" => @authorization_module,
+               "subject" => @subject,
+               "target" => created} in calcinator_authorization_context_by_key_list
+
+      assert %{
+               "callback" => "show",
+               "resource" => created,
+               "subject" => @subject,
+               "view_module" => "Calcinator.TestPostView"
+             } in calcinator_view_context_by_key_list
+
+      assert custom_metric_count == 9
+
+      assert custom_metric_count_by_function_by_module_by_key == %{
+               "alembic" => %{
+                 "Calcinator" => %{
+                   "document/2" => 1
+                 }
+               },
+               "calcinator_authorization" => %{
+                 "Calcinator" => %{
+                   "authorized/2" => 1,
+                   "can/3" => 2
+                 }
+               },
+               "calcinator_resources" => %{
+                 "Calcinator" => %{
+                   "resources/3" => 4
+                 }
+               },
+               "calcinator_view" => %{
+                 "Calcinator" => %{
+                   "view/3" => 1
+                 }
+               }
+             }
+    end
+  end
 
   describe "in Calcinator" do
     test "create/2" do
@@ -766,21 +936,27 @@ defmodule Calcinator.PryIn.InstrumenterTest do
   end
 
   defp custom_trace(%{group: group, key: key}, fun) do
-    CustomTrace.start(group: group, key: key)
+    interaction fn ->
+      CustomTrace.start(group: group, key: key)
 
-    try do
-      fun.()
-    after
-      CustomTrace.finish()
+      try do
+        fun.()
+      after
+        CustomTrace.finish()
+      end
+
+      assert [%PryIn.Interaction{custom_group: ^group, custom_key: ^key, type: :custom_trace}] =
+               InteractionStore.get_state.finished_interactions
     end
+  end
+
+  defp interaction(fun) do
+    fun.()
 
     assert [
              %PryIn.Interaction{
                context: context,
-               custom_group: ^group,
-               custom_key: ^key,
-               custom_metrics: custom_metrics,
-               type: :custom_trace
+               custom_metrics: custom_metrics
              }
            ] = InteractionStore.get_state.finished_interactions
 
@@ -838,5 +1014,34 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       custom_metric_count: custom_metric_count,
       custom_metric_count_by_function_by_module_by_key: custom_metric_count_by_function_by_module_by_key
     }
+  end
+
+  def jsonapify_conn(conn) do
+    conn
+    |> recycle()
+    |> put_req_header("content-type", "application/vnd.api+json")
+    |> put_req_header("accept", "application/vnd.api+json")
+  end
+
+  defp request(%{action: action, controller: controller}, fun) do
+    interaction fn ->
+      fun.()
+
+      assert [%PryIn.Interaction{action: ^action, controller: ^controller, type: :request}] =
+               InteractionStore.get_state.finished_interactions
+    end
+  end
+
+  defp setup_conn(_) do
+    {:ok, _} = Endpoint.start_link()
+
+    conn = build_conn()
+           |> jsonapify_conn()
+
+    %{conn: conn}
+  end
+
+  defp setup_meta(_) do
+    %{meta: checkout_meta()}
   end
 end

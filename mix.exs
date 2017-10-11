@@ -58,7 +58,9 @@ defmodule Calcinator.Mixfile do
     [applications: applications(env)]
   end
 
-  defp applications(:test), do: [:ecto, :ex_machina, :faker, :mix, :postgrex, :pryin | applications(:dev)]
+  defp applications(:test) do
+    [:ecto, :ex_machina, :faker, :mix, :phoenix, :plug, :postgrex, :pryin | applications(:dev)]
+  end
   defp applications(_), do: ~w(alembic ja_serializer logger)a
 
   # Dependencies can be Hex packages:

@@ -1,6 +1,11 @@
 use Mix.Config
 
 config :calcinator,
+       Calcinator.Endpoint,
+       instrumenters: [PryIn.Instrumenter],
+       secret_key_base: "WUUiQKAzwOqYmugHEp5mBtPC4AJ8I16tZTIbxT5ZvOpZNrIIUFek1lrHWOTMAHHk"
+
+config :calcinator,
        Calcinator.Resources.Ecto.Repo.Repo,
        adapter: Ecto.Adapters.Postgres,
        database: "calcinator_test",
@@ -17,6 +22,11 @@ config :calcinator,
 # Print only warnings and errors during test
 config :logger,
        level: :warn
+
+# Add JSON:API to known mimes
+config :mime, :types, %{
+  "application/vnd.api+json" => ["json-api"]
+}
 
 config :phoenix, :format_encoders,
        "json-api": Poison
