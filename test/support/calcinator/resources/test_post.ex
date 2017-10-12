@@ -15,7 +15,7 @@ defmodule Calcinator.Resources.TestPost do
     timestamps()
 
     belongs_to :author, TestAuthor
-    has_many :comments, TestComment
+    has_many :comments, TestComment, foreign_key: :post_id
     many_to_many :tags,
                  TestTag,
                  join_keys: [
