@@ -208,7 +208,7 @@ defmodule MyAppWeb.PostView do
   end
 end
 ```
---- `apps/my_app_web/lib/my_app_web/post_view.ex`
+-- `apps/my_app_web/lib/my_app_web/post_view.ex`
 
 The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
 to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
@@ -247,13 +247,14 @@ defmodule MyAppWeb.PostController do
   def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
 end
 ```
---- `apps/my_app_web/lib/my_app_web/post_controller.ex`
+-- `apps/my_app_web/lib/my_app_web/post_controller.ex`
 
 ###### Public Read-only Controller
 
 *NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
 read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
 
+```
 defmodule MyAppWeb.PostController do
   @moduledoc """
   Allows public reading of `MyApp.Post` that are fetched from `MyApp.Repo`.
@@ -271,7 +272,7 @@ defmodule MyAppWeb.PostController do
       }
 end
 ```
---- `apps/my_app_web/lib/my_app_web/post_controller.ex`
+-- `apps/my_app_web/lib/my_app_web/post_controller.ex`
 
 #### RabbitMQ
 
@@ -468,7 +469,7 @@ defmodule LocalAppWeb.PostView do
   end
 end
 ```
---- `apps/local_app_web/lib/local_app_web/post_view.ex`
+-- `apps/local_app_web/lib/local_app_web/post_view.ex`
 
 The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
 to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
@@ -507,13 +508,14 @@ defmodule LocalAppWeb.PostController do
   def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
 end
 ```
---- `apps/local_app_web/lib/local_app_web/post_controller.ex`
+-- `apps/local_app_web/lib/local_app_web/post_controller.ex`
 
 ###### Public Read-only Controller
 
 *NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
 read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
 
+```
 defmodule LocalAppWeb.PostController do
   @moduledoc """
   Allows public reading of `%RemoteApp.Post{}` that are fetched from remote server over RPC.
@@ -531,7 +533,7 @@ defmodule LocalAppWeb.PostController do
       }
 end
 ```
---- `apps/local_app_web/lib/local_app_web/post_controller.ex`
+-- `apps/local_app_web/lib/local_app_web/post_controller.ex`
 
 ## Instrumentation
 
