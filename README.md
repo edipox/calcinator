@@ -208,7 +208,7 @@ defmodule MyAppWeb.PostView do
   end
 end
 ```
---- `apps/my_app_web/lib/my_app_web/post_view.ex`
+-- `apps/my_app_web/lib/my_app_web/post_view.ex`
 
 The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
 to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
@@ -247,7 +247,7 @@ defmodule MyAppWeb.PostController do
   def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
 end
 ```
---- `apps/my_app_web/lib/my_app_web/post_controller.ex`
+-- `apps/my_app_web/lib/my_app_web/post_controller.ex`
 
 ###### Public Read-only Controller
 
@@ -271,7 +271,7 @@ defmodule MyAppWeb.PostController do
       }
 end
 ```
---- `apps/my_app_web/lib/my_app_web/post_controller.ex`
+-- `apps/my_app_web/lib/my_app_web/post_controller.ex`
 
 #### RabbitMQ
 
@@ -468,7 +468,7 @@ defmodule LocalAppWeb.PostView do
   end
 end
 ```
---- `apps/local_app_web/lib/local_app_web/post_view.ex`
+-- `apps/local_app_web/lib/local_app_web/post_view.ex`
 
 The `relationships/2` override is counter to `JaSerializer`'s own recommendations.  It recommends doing a `Repo` call
 to load associations on demand, but that is against the Phoenix Core recommendations to make view modules side-effect
@@ -507,7 +507,7 @@ defmodule LocalAppWeb.PostController do
   def put_subject(conn = %Conn{assigns: %{user: user}}, _), do: Controller.put_subject(conn, user)
 end
 ```
---- `apps/local_app_web/lib/local_app_web/post_controller.ex`
+-- `apps/local_app_web/lib/local_app_web/post_controller.ex`
 
 ###### Public Read-only Controller
 
@@ -531,7 +531,7 @@ defmodule LocalAppWeb.PostController do
       }
 end
 ```
---- `apps/local_app_web/lib/local_app_web/post_controller.ex`
+-- `apps/local_app_web/lib/local_app_web/post_controller.ex`
 
 ## Instrumentation
 
