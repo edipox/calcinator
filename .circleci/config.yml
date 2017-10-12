@@ -148,6 +148,7 @@ jobs:
             - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
             - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
+      - run: mix compile --no-warnings-as-errors
       - run: mix dialyze --no-analyse
 
       - save_cache: &dialyze_save_cache_mix_lock
