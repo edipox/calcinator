@@ -3,56 +3,94 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Changelog](#changelog)
-  - [v4.0.1](#v401)
-    - [Bug Fixes](#bug-fixes)
-  - [v4.0.0](#v400)
+  - [v5.0.0](#v500)
     - [Enhancements](#enhancements)
-    - [Bug Fixes](#bug-fixes-1)
+    - [Bug Fixes](#bug-fixes)
     - [Incompatible Changes](#incompatible-changes)
-  - [v3.0.0](#v300)
+  - [v4.0.1](#v401)
+    - [Bug Fixes](#bug-fixes-1)
+  - [v4.0.0](#v400)
     - [Enhancements](#enhancements-1)
     - [Bug Fixes](#bug-fixes-2)
     - [Incompatible Changes](#incompatible-changes-1)
-  - [v2.4.0](#v240)
+  - [v3.0.0](#v300)
     - [Enhancements](#enhancements-2)
-  - [v2.3.1](#v231)
     - [Bug Fixes](#bug-fixes-3)
-  - [v2.3.0](#v230)
+    - [Incompatible Changes](#incompatible-changes-2)
+  - [v2.4.0](#v240)
     - [Enhancements](#enhancements-3)
-  - [v2.2.0](#v220)
-    - [Enhancements](#enhancements-4)
-  - [v2.1.0](#v210)
-    - [Enhancements](#enhancements-5)
+  - [v2.3.1](#v231)
     - [Bug Fixes](#bug-fixes-4)
-  - [v2.0.0](#v200)
+  - [v2.3.0](#v230)
+    - [Enhancements](#enhancements-4)
+  - [v2.2.0](#v220)
+    - [Enhancements](#enhancements-5)
+  - [v2.1.0](#v210)
     - [Enhancements](#enhancements-6)
     - [Bug Fixes](#bug-fixes-5)
-    - [Incompatible Changes](#incompatible-changes-2)
-  - [v1.7.0](#v170)
+  - [v2.0.0](#v200)
     - [Enhancements](#enhancements-7)
     - [Bug Fixes](#bug-fixes-6)
-  - [v1.6.0](#v160)
+    - [Incompatible Changes](#incompatible-changes-3)
+  - [v1.7.0](#v170)
     - [Enhancements](#enhancements-8)
-  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-7)
-  - [v1.5.0](#v150)
+  - [v1.6.0](#v160)
     - [Enhancements](#enhancements-9)
+  - [v1.5.1](#v151)
     - [Bug Fixes](#bug-fixes-8)
-  - [v1.4.0](#v140)
+  - [v1.5.0](#v150)
     - [Enhancements](#enhancements-10)
-  - [v1.3.0](#v130)
-    - [Enhancements](#enhancements-11)
     - [Bug Fixes](#bug-fixes-9)
-  - [v1.2.0](#v120)
+  - [v1.4.0](#v140)
+    - [Enhancements](#enhancements-11)
+  - [v1.3.0](#v130)
     - [Enhancements](#enhancements-12)
     - [Bug Fixes](#bug-fixes-10)
-  - [v1.1.0](#v110)
+  - [v1.2.0](#v120)
     - [Enhancements](#enhancements-13)
     - [Bug Fixes](#bug-fixes-11)
+  - [v1.1.0](#v110)
+    - [Enhancements](#enhancements-14)
+    - [Bug Fixes](#bug-fixes-12)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Changelog
+
+## v5.0.0
+
+### Enhancements
+* [#31](https://github.com/C-S-D/calcinator/pull/31) - [@KronicDeth](https://github.com/KronicDeth)
+  * `Calcinator` now instruments calls to subsystem with events, similar to `Phoenix` instrumentation.
+
+    | event                      | subsystem                  |
+    |----------------------------|----------------------------|
+    | `alembic`                  | `Alembic`                  |
+    | `calcinator_authorization` | `Calcinator.Authorization` |
+    | `calcinator_resources`     | `Calcinator.Resources`     |
+    | `calcinator_view`          | `Calcinator.View`          |
+
+    Instrumenters can be configured with
+
+    ```elixir
+    config :calcinator,
+               instrumenters: [...]
+    ```
+
+    * [`pryin`](https://github.com/pryin-io/pryin) instrumentation can be configured following the [`pryin` installation instructions](https://github.com/pryin-io/pryin#installation) and then adding `Calcinator.PryIn.Instrumenter` to your `:calcinator` config
+
+       ```elixir
+       config :calcinator,
+               :instrumenters: [Calcinator.PryIn.Instrumenter]
+
+    * Custom instrumenters can be created following the docs in `Calcinator.Instrument`
+
+### Bug Fixes
+* [#31](https://github.com/C-S-D/calcinator/pull/31) - The `@typedoc` and `@type` for `Calcinator.t` now has all the current struct fields documented and typed. - [@KronicDeth](https://github.com/KronicDeth)
+
+### Incompatible Changes
+* [#31](https://github.com/C-S-D/calcinator/pull/31) - In order to facilitate passing the entire `Calcinator.t` struct to `calcinator_resources` event callbacks in instrumenters, `Calcinator. get(Calcinator.Resources.t, params, id_key :: String.t, Resources.query_options)` has changed to `Calcinator. get(Calcinator.t, params, id_key :: String.t, Resources.query_options)`: The first argument must be the entire `Calcinator.t` struct instead of the `Calcinator.Resources.t` module that was in the `Calcinator.t` `resources_module` field. - [@KronicDeth](https://github.com/KronicDeth)
 
 ## v4.0.1
 

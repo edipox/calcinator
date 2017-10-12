@@ -1,5 +1,23 @@
 # Upgrading
 
+## v5.0.0
+
+### `Calcinator.get/4` first argument
+
+In order to support passing the entire `Calcinator.t` struct to `calcinator_resources` event callbacks in instrumenters (`Callback.Instrumenter`), `Calcinator.get/4` now requires a `Calcinator.t` for the first argument instead of the `Calcinator.Resources.t` module.
+
+Before
+
+```elixir
+Calcinator.get(calcinator.resources_module, params, "id", query_options)
+```
+
+After
+
+```elixir
+Calcinator.get(calcinator, params, "id", query_options)
+```
+
 ## v4.0.0
 
 ### `Calcinator.Resources.changeset/1,2` return types

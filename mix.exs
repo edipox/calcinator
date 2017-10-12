@@ -29,7 +29,7 @@ defmodule Calcinator.Mixfile do
       test_coverage: [
         tool: ExCoveralls
       ],
-      version: "4.0.1"
+      version: "5.0.0"
     ]
   end
 
@@ -120,7 +120,7 @@ defmodule Calcinator.Mixfile do
 
   defp docs do
     [
-      extras: ~w(CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE.md README.md)
+      extras: ~w(CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE.md README.md UPGRADING.md)
     ]
   end
 
