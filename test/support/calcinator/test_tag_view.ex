@@ -3,7 +3,7 @@ defmodule Calcinator.TestTagView do
   View for `Calcinator.TestTag`
   """
 
-  alias Calcinator.{RelatedView, RelationshipView, TestPostView}
+  alias Calcinator.TestPostView
 
   use JaSerializer.PhoenixView
   use Calcinator.JaSerializer.PhoenixView,
@@ -19,16 +19,6 @@ defmodule Calcinator.TestTagView do
 
   has_many :posts,
            serializers: TestPostView
-
-  # Functions
-
-  def render("get_related_resource.json-api", options) do
-    RelatedView.render("get_related_resource.json-api", Map.put(options, :view, __MODULE__))
-  end
-
-  def render("show_relationship.json-api", options) do
-    RelationshipView.render("show_relationship.json-api", Map.put(options, :view, __MODULE__))
-  end
 
   ## JaSerializer.PhoenixView callbacks
 

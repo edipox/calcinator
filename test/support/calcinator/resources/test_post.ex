@@ -5,7 +5,7 @@ defmodule Calcinator.Resources.TestPost do
 
   use Ecto.Schema
 
-  import Ecto.Changeset, only: [cast: 3, validate_required: 2]
+  import Ecto.Changeset, only: [validate_required: 2]
 
   alias Calcinator.Resources.{TestAuthor, TestComment, TestTag}
 
@@ -31,12 +31,6 @@ defmodule Calcinator.Resources.TestPost do
   def changeset(changeset) do
     changeset
     |> validate_required(required_fields())
-  end
-
-  def changeset(data, params) do
-    data
-    |> cast(params, optional_fields() ++ required_fields())
-    |> changeset()
   end
 
   def optional_fields, do: []

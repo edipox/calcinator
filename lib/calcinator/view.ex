@@ -27,6 +27,11 @@ defmodule Calcinator.View do
   """
   @type subject :: term
 
+  @typedoc """
+  A module that implements the `Calcinator.View` behaviour.
+  """
+  @type t :: module
+
   # Callbacks
 
   @doc """

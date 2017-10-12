@@ -532,3 +532,34 @@ defmodule LocalAppWeb.PostController do
 end
 ```
 --- `apps/local_app_web/lib/local_app_web/post_controller.ex`
+
+## Instrumentation
+
+`Calcinator` supports instrumentation similar to `Phoenix`: calls in `Calcinator` will fire instrumentation events around calls to subsystems.
+
+| event                      | subsystem                  |
+|----------------------------|----------------------------|
+| `alembic`                  | `Alembic`                  |
+| `calcinator_authorization` | `Calcinator.Authorization` |
+| `calcinator_resources`     | `Calcinator.Resources`     |
+| `calcinator_view`          | `Calcinator.View`          |
+
+### PryIn.IO
+
+`Calcinator` ships with support for [pryin.io](https://pryin.io).
+
+You can turn on PryIn support following the [`pryin` installation instructions](https://github.com/pryin-io/pryin#installation) and then adding `Calcinator.PryIn.Instrumenter` to your `:calcinator` config
+
+```
+config :calcinator,
+       instrumenters: [Calcinator.PryIn.Instrumenter]
+```
+
+### Custom
+
+You can write your own Instrumenter following the instructions in the `Calcinator.Instrument` documentation and then configuring `:calcinator` to use your custom instrumenter.
+
+```
+config :calcinator,
+       instrumenters: [MyLib.Calcinator.Instrumenter]
+```

@@ -29,7 +29,7 @@ defmodule Calcinator.Mixfile do
       test_coverage: [
         tool: ExCoveralls
       ],
-      version: "4.0.1"
+      version: "5.0.0"
     ]
   end
 
@@ -42,6 +42,7 @@ defmodule Calcinator.Mixfile do
 
   defp aliases do
     [
+      "compile": "compile --warnings-as-errors",
       "test": ["calcinator.ecto.wait", "ecto.drop", "ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
@@ -57,7 +58,9 @@ defmodule Calcinator.Mixfile do
     [applications: applications(env)]
   end
 
-  defp applications(:test), do: [:ecto, :ex_machina, :faker, :mix, :postgrex | applications(:dev)]
+  defp applications(:test) do
+    [:ecto, :ex_machina, :faker, :mix, :phoenix, :plug, :postgrex, :pryin | applications(:dev)]
+  end
   defp applications(_), do: ~w(alembic ja_serializer logger)a
 
   # Dependencies can be Hex packages:
@@ -100,6 +103,8 @@ defmodule Calcinator.Mixfile do
       {:junit_formatter, "~> 1.0", only: :test},
       # Phoenix.Controller is used in Calcinator.Controller.Error
       {:phoenix, "~> 1.0", optional: true},
+      # Testing PryIn instrumenter
+      {:pryin, "~> 1.0", optional: true},
       # PostgreSQL DB access for Calcinator.Resources.Ecto.Repo.Repo used in tests
       {:postgrex, "~> 0.13.0", only: :test},
       # UUID for `errors` `0` `id` in `Calcinator.Controller.backing_store_error`
@@ -115,7 +120,7 @@ defmodule Calcinator.Mixfile do
 
   defp docs do
     [
-      extras: ~w(CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE.md README.md)
+      extras: ~w(CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE.md README.md UPGRADING.md)
     ]
   end
 
