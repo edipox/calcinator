@@ -77,7 +77,7 @@ defmodule Calcinator.Mixfile do
       # JSONAPI document coding
       {:alembic, "~> 3.4"},
       # Static Analysis
-      {:credo, "0.8.6", only: :test},
+      {:credo, "0.8.8", only: :test},
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
       {
