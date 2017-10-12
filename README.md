@@ -254,6 +254,7 @@ end
 *NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
 read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
 
+```
 defmodule MyAppWeb.PostController do
   @moduledoc """
   Allows public reading of `MyApp.Post` that are fetched from `MyApp.Repo`.
@@ -514,6 +515,7 @@ end
 *NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
 read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
 
+```
 defmodule LocalAppWeb.PostController do
   @moduledoc """
   Allows public reading of `%RemoteApp.Post{}` that are fetched from remote server over RPC.
