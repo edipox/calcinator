@@ -1,12 +1,15 @@
 defmodule Calcinator.PryIn.InstrumenterTest do
   use Calcinator.PryIn.Case
 
+  require Ecto.Query
+
   import Calcinator.Resources.Ecto.Repo.Repo.Case
+  import Ecto.Query
   import Phoenix.ConnTest
   import Plug.Conn
   import Calcinator.Router.Helpers
 
-  alias Calcinator.Resources.Ecto.Repo.{Factory, TestAuthors, TestPosts}
+  alias Calcinator.Resources.Ecto.Repo.{Factory, Repo, TestAuthors, TestPosts}
   alias Calcinator.Resources.{TestAuthor, TestPost}
   alias Calcinator.Meta.Beam
   alias Calcinator.{Endpoint, TestAuthorView, TestPostView}
@@ -102,7 +105,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
       resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
       ecto_schema_module = "Calcinator.Resources.TestPost"
-      creatable = "%#{ecto_schema_module}{}"
+      creatable = "%#{ecto_schema_module}{id: nil}"
       changeset = "%Ecto.Changeset{data: #{creatable}}"
 
       assert %{"callback" => "sandboxed?",
@@ -127,7 +130,8 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"callback" => "changeset",
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
-      created = "%#{ecto_schema_module}{}"
+      created_id = Repo.one!(from tp in TestPost, select: tp.id)
+      created = "%#{ecto_schema_module}{id: #{created_id}}"
 
       # can(subject, :create, ecto_schema_module)
       assert %{"action" => "create",
@@ -237,7 +241,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
       resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
       ecto_schema_module = "Calcinator.Resources.TestPost"
-      creatable = "%#{ecto_schema_module}{}"
+      creatable = "%#{ecto_schema_module}{id: nil}"
       changeset = "%Ecto.Changeset{data: #{creatable}}"
 
       assert %{"callback" => "sandboxed?",
@@ -262,7 +266,8 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"callback" => "changeset",
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
-      created = "%#{ecto_schema_module}{}"
+      created_id = Repo.one!(from tp in TestPost, select: tp.id)
+      created = "%#{ecto_schema_module}{id: #{created_id}}"
 
       # can(subject, :create, ecto_schema_module)
       assert %{"action" => "create",
@@ -341,7 +346,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       )
 
       resources_module = "Calcinator.Resources.Ecto.Repo.TestAuthors"
-      target = "%Calcinator.Resources.TestAuthor{}"
+      target = "%Calcinator.Resources.TestAuthor{id: #{id}}"
 
       assert %{"callback" => "sandboxed?",
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
@@ -400,7 +405,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
     test "get_related_resource/3" do
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{}, id: id} = Factory.insert(:test_post)
+      %TestPost{author: %TestAuthor{id: related_id}, id: id} = Factory.insert(:test_post)
 
       %{
         context_by_key_list_by_event: %{
@@ -446,8 +451,8 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "query_options" => "%{associations: [:author]}",
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
-      source = "%Calcinator.Resources.TestPost{}"
-      related = "%Calcinator.Resources.TestAuthor{}"
+      source = "%Calcinator.Resources.TestPost{id: #{id}}"
+      related = "%Calcinator.Resources.TestAuthor{id: #{related_id}}"
 
       # can(subject, :show, source)
       assert %{"action" => "show",
@@ -499,7 +504,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
     test "index/3" do
       meta = checkout_meta()
       count = 2
-      Factory.insert_list(count, :test_author)
+      test_authors = Factory.insert_list(count, :test_author)
 
       assert %{
                context_by_key_list_by_event: %{
@@ -553,12 +558,22 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                ),
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
-      assert %{
-               "callback" => "index",
-               "resources" => "[%#{ecto_schema_module}{}, %#{ecto_schema_module}{}]",
-               "subject" => @subject,
-               "view_module" => "Calcinator.TestAuthorView"
-             } in calcinator_view_context_by_key_list
+      assert [
+               %{
+                 "callback" => "index",
+                 "resources" => resources,
+                 "subject" => @subject,
+                 "view_module" => "Calcinator.TestAuthorView"
+               }
+             ] = calcinator_view_context_by_key_list
+
+      resource_elements = ~r/\[(?<resource_one>.+), (?<resource_two>.+)\]/
+                          |> Regex.named_captures(resources)
+                          |> Map.values()
+
+      Enum.each test_authors, fn test_author ->
+        assert "%#{ecto_schema_module}{id: #{test_author.id}}" in resource_elements
+      end
 
       assert custom_metric_count == 5
 
@@ -607,7 +622,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       )
 
       resources_module = "Calcinator.Resources.Ecto.Repo.TestAuthors"
-      resource = "%Calcinator.Resources.TestAuthor{}"
+      resource = "%Calcinator.Resources.TestAuthor{id: #{test_author.id}}"
 
       assert %{"callback" => "sandboxed?",
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
@@ -671,7 +686,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
 
     test "show_relationship/3" do
       meta = checkout_meta()
-      %TestPost{author: %TestAuthor{}, id: id} = Factory.insert(:test_post)
+      %TestPost{author: %TestAuthor{id: related_id}, id: id} = Factory.insert(:test_post)
 
       %{
         context_by_key_list_by_event: %{
@@ -717,8 +732,8 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "query_options" => "%{associations: [:author]}",
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
-      source = "%Calcinator.Resources.TestPost{}"
-      related = "%Calcinator.Resources.TestAuthor{}"
+      source = "%Calcinator.Resources.TestPost{id: #{id}}"
+      related = "%Calcinator.Resources.TestAuthor{id: #{related_id}}"
 
       # can(subject, :show, source)
       assert %{"action" => "show",
@@ -827,7 +842,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
       assert %{"action" => ":update", "params" => inspect(params)} in alembic_context_by_key_list
 
       resources_module = "Calcinator.Resources.Ecto.Repo.TestPosts"
-      before_update = "%Calcinator.Resources.TestPost{}"
+      before_update = "%Calcinator.Resources.TestPost{id: #{id}}"
       inspected_query_options = inspect %{
         associations: [:author, :tags],
         filters: %{},
@@ -853,7 +868,7 @@ defmodule Calcinator.PryIn.InstrumenterTest do
                "query_options" => inspected_query_options,
                "resources_module" => resources_module} in calcinator_resources_context_by_key_list
 
-      updated = "%Calcinator.Resources.TestPost{}"
+      updated = "%Calcinator.Resources.TestPost{id: #{id}}"
 
       # can(subject, :show, before_update)
       assert %{"action" => "show",

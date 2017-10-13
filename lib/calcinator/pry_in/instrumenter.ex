@@ -291,14 +291,14 @@ if Code.ensure_loaded?(PryIn) do
     end
 
     defp subject_name(nil), do: "nil"
-    defp subject_name(%subject_module{}), do: "%#{module_name(subject_module)}{}"
+    defp subject_name(%subject_module{id: id}), do: "%#{module_name(subject_module)}{id: #{inspect(id)}}"
 
     defp target_name(nil), do: "nil"
     defp target_name(target) when is_atom(target), do: module_name(target)
     defp target_name(%target_module{data: data}) when target_module == Ecto.Changeset do
       "%#{module_name(target_module)}{data: #{target_name(data)}}"
     end
-    defp target_name(%target_module{}), do: "%#{target_name(target_module)}{}"
+    defp target_name(%target_module{id: id}), do: "%#{target_name(target_module)}{id: #{inspect(id)}}"
     defp target_name(association_ascent) when is_list(association_ascent) do
       "[#{Enum.map_join(association_ascent, ", ", &target_name/1)}]"
     end
