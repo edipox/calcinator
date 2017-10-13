@@ -94,11 +94,14 @@
     * `faker` `0.9.0`
     * `junit_formatter` `2.0.0`
     * `uuid` `1.1.8`
+* [#33](https://github.com/C-S-D/calcinator/pull/33) - Include the `id` field subject and target structs in `Calcinator.PryIn.Instrumenter` context entries. - [@KronicDeth](https://github.com/KronicDeth)
 
 ### Bug Fixes
 * [#31](https://github.com/C-S-D/calcinator/pull/31) - The `@typedoc` and `@type` for `Calcinator.t` now has all the current struct fields documented and typed. - [@KronicDeth](https://github.com/KronicDeth)
 * [#32](https://github.com/C-S-D/calcinator/pull/32) - [@KronicDeth](https://github.com/KronicDeth)
-
+  * README formatting
+    * Consistently use `--` instead of `---` for path marker as `--` becomes em dash in Markdown to HTML conversion
+    * Add missing \`\`\` for code blocks.
 
 ### Incompatible Changes
 * [#31](https://github.com/C-S-D/calcinator/pull/31) - In order to facilitate passing the entire `Calcinator.t` struct to `calcinator_resources` event callbacks in instrumenters, `Calcinator. get(Calcinator.Resources.t, params, id_key :: String.t, Resources.query_options)` has changed to `Calcinator. get(Calcinator.t, params, id_key :: String.t, Resources.query_options)`: The first argument must be the entire `Calcinator.t` struct instead of the `Calcinator.Resources.t` module that was in the `Calcinator.t` `resources_module` field. - [@KronicDeth](https://github.com/KronicDeth)
@@ -108,9 +111,6 @@
 ### Bug Fixes
 * [#30](https://github.com/C-S-D/calcinator/pull/30) - [@KronicDeth](https://github.com/KronicDeth)
   * `Calcinator.Resources.changeset/1,2` is allowed to get `many_to_many` associations from the backing store, so during testing, this means that the sandbox access must be allowed prior to calling `changeset`.  This was already the case for other actions, but for `create`, `allow_sandbox_access` was not called until the `Ecto.Changeset.t` was authorized and about to be created.
-* README formatting
-  * Consistently use `--` instead of `---` for path marker as `--` becomes em dash in Markdown to HTML conversion
-  * Add missing ``` for code blocks.
 
 ## v4.0.0
 
