@@ -94,6 +94,7 @@
     * `faker` `0.9.0`
     * `junit_formatter` `2.0.0`
     * `uuid` `1.1.8`
+* [#33](https://github.com/C-S-D/calcinator/pull/33) - Include the `id` field subject and target structs in `Calcinator.PryIn.Instrumenter` context entries. - [@KronicDeth](https://github.com/KronicDeth)
 
 ### Bug Fixes
 * [#31](https://github.com/C-S-D/calcinator/pull/31) - The `@typedoc` and `@type` for `Calcinator.t` now has all the current struct fields documented and typed. - [@KronicDeth](https://github.com/KronicDeth)
