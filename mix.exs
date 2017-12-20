@@ -29,7 +29,7 @@ defmodule Calcinator.Mixfile do
       test_coverage: [
         tool: ExCoveralls
       ],
-      version: "4.0.1"
+      version: "4.0.2"
     ]
   end
 
