@@ -74,7 +74,7 @@ defmodule Calcinator.Mixfile do
       # JSONAPI document coding
       {:alembic, "~> 3.4"},
       # Static Analysis
-      {:credo, "0.8.6", only: :test},
+      {:credo, "0.8.10", only: :test},
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
       {
@@ -94,7 +94,7 @@ defmodule Calcinator.Mixfile do
       # Calcinator.Resources.Ecto.Repo tests
       {:ex_machina, "~> 2.0", only: :test},
       # Fake data for tests, so we don't have to come up with our own sequences for ExMachina
-      {:faker, "~> 0.8.0", only: :test},
+      {:faker, "~> 0.9.0", only: :test},
       {:ja_serializer, ">= 0.11.2 and < 0.13.0"},
       # JUnit formatter, so that CircleCI can consume test output for CircleCI UI
       {:junit_formatter, "~> 1.0", only: :test},
