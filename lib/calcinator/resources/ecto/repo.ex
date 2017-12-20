@@ -371,9 +371,9 @@ defmodule Calcinator.Resources.Ecto.Repo do
   @spec update(module, Ecto.Schema.t, Resources.params, Resources.query_options) ::
           {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
   def update(module, data, params, query_options) when is_map(params) and is_map(query_options) do
-    data
-    |> module.changeset(params)
-    |> module.update(query_options)
+    with {:ok, changeset} <- module.changeset(data, params) do
+      module.update(changeset, query_options)
+    end
   end
 
   ## Private Functions
