@@ -50,6 +50,11 @@ defmodule Calcinator.PryIn.Api.Test do
     {:reply, :ok, listeners}
   end
 
+  @impl GenServer
+  def init([]) do
+    {:ok, []}
+  end
+
   ## Private Functons
 
   defp send_to_listeners(listeners, message) do
