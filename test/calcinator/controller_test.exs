@@ -101,6 +101,87 @@ defmodule Calcinator.ControllerTest do
       assert test_tags_by_id[to_string(second_tag_id)] == test_tag_resource(second_test_tag)
     end
 
+    test "{:ok, rendered} with sparse fieldset", %{conn: conn} do
+      meta = checkout_meta()
+
+      test_author = %TestAuthor{id: author_id} = Factory.insert(:test_author)
+      %TestTag{id: first_tag_id} = Factory.insert(:test_tag)
+      %TestTag{id: second_tag_id} = Factory.insert(:test_tag)
+      body = "First Post!"
+
+      conn = Calcinator.Controller.create(
+        conn,
+        %{
+          "fields" => %{
+            # sparse primary to prove it works on create
+            "test-posts" => "",
+            # sparse only 1 of the included to show sparsing included works, but type targeting works
+            "test-tags" => ""
+          },
+          "meta" => meta,
+          "data" => %{
+            "type" => "test-posts",
+            "attributes" => %{
+              "body" => body
+            },
+            "relationships" => %{
+              "author" => %{
+                "data" => %{
+                  "type" => "test-authors",
+                  "id" => to_string(author_id)
+                }
+              },
+              # Tests `many_to_many` support for create
+              "tags" => %{
+                "data" => [
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(first_tag_id)
+                  },
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(second_tag_id)
+                  }
+                ]
+              }
+            }
+          },
+          "include" => "author,tags"
+        },
+        %Calcinator{
+          associations_by_include: %{
+            "author" => :author,
+            "tags" => :tags
+          },
+          ecto_schema_module: TestPost,
+          resources_module: TestPosts,
+          view_module: TestPostView
+        }
+      )
+
+      assert %{
+               "data" => %{
+                 "type" => "test-posts",
+                 "attributes" => attributes
+               },
+               "included" => included
+             } = json_response(conn, :created)
+
+      assert map_size(attributes) == 0
+
+      included_by_id_by_type = resource_by_id_by_type(included)
+
+      assert included_by_id_by_type["test-authors"][to_string(author_id)] == test_author_resource(test_author)
+
+      test_tags_by_id = included_by_id_by_type["test-tags"]
+
+      assert %{"attributes" => first_test_tag_attributes} = test_tags_by_id[to_string(first_tag_id)]
+      assert map_size(first_test_tag_attributes) == 0
+
+      assert %{"attributes" => second_test_tag_attributes} = test_tags_by_id[to_string(second_tag_id)]
+      assert map_size(second_test_tag_attributes) == 0
+    end
+
     test "{:error, :sandbox_access_disallowed}", %{conn: conn} do
       meta = checkout_meta()
       Ecto.Adapters.SQL.Sandbox.checkin(Repo)
@@ -532,6 +613,45 @@ defmodule Calcinator.ControllerTest do
                }
     end
 
+    test "{:ok, rendered} for belongs_to with sparse fieldset", %{conn: conn} do
+      meta = checkout_meta()
+      %TestPost{author: author = %TestAuthor{}, id: id} = Factory.insert(:test_post)
+
+      # done by route.ex definition of route
+      conn = Conn.assign(conn, :related, %{view_module: TestAuthorView})
+      conn = Conn.assign(conn, :source, %{association: :author, id_key: "post_id"})
+
+      # route like `/posts/:post_id/author`
+      conn = Calcinator.Controller.get_related_resource(
+        conn,
+        %{
+          "post_id" => id,
+          # turn off all attributes since there's only one
+          "fields" => %{"test-authors" => ""},
+          "meta" => meta
+        },
+        %Calcinator{ecto_schema_module: TestPost, resources_module: TestPosts, view_module: TestPostView}
+      )
+
+      assert json_response(conn, :ok) ==
+               %{
+                 "jsonapi" => %{
+                   "version" => "1.0"
+                 },
+                 "data" => %{
+                   "type" => "test-authors",
+                   "id" => to_string(author.id),
+                   "attributes" => %{},
+                   "links" => %{
+                     "self" => "/api/v1/test-posts/#{id}/author"
+                   },
+                   "relationships" => %{
+                     "posts" => %{}
+                   }
+                 }
+               }
+    end
+
     test "{:ok, rendered} for has_many", %{conn: conn} do
       meta = checkout_meta()
       post = %TestPost{
@@ -564,6 +684,48 @@ defmodule Calcinator.ControllerTest do
                "attributes" => %{
                  "body" => post.body
                },
+               "links" => %{
+                 "self" => "/api/v1/test-posts/#{post.id}"
+               },
+               "relationships" => %{
+                 "tags" => %{}
+               }
+             } in data
+
+      assert links == %{"self" => "/api/v1/test-authors/#{author_id}/posts"}
+    end
+
+    test "{:ok, rendered} for has_many with sparse fieldsets", %{conn: conn} do
+      meta = checkout_meta()
+      post = %TestPost{
+        author: %TestAuthor{
+          id: author_id
+        }
+      } = Factory.insert(:test_post)
+
+      # done by route.ex definition of route
+      conn = Conn.assign(conn, :related, %{view_module: TestPostView})
+      conn = Conn.assign(conn, :source, %{association: :posts, id_key: "author_id"})
+
+      # route like `/authors/:author_id/posts`
+      conn = Calcinator.Controller.get_related_resource(
+        conn,
+        %{
+          "author_id" => author_id,
+          "fields" => %{"test-posts" => ""},
+          "meta" => meta
+        },
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+      )
+
+      assert %{"data" => data, "links" => links} = json_response(conn, :ok)
+
+      assert is_list(data)
+      assert length(data) == 1
+      assert %{
+               "type" => "test-posts",
+               "id" => to_string(post.id),
+               "attributes" => %{},
                "links" => %{
                  "self" => "/api/v1/test-posts/#{post.id}"
                },
@@ -738,6 +900,24 @@ defmodule Calcinator.ControllerTest do
       end
     end
 
+    test "{:ok, rendered} with sparse fieldset", %{conn: conn} do
+      meta = checkout_meta()
+      Factory.insert(:test_author)
+
+      conn = Calcinator.Controller.index(
+        conn,
+        %{
+          # turn off all attributes since there's only one
+          "fields" => %{"test-authors" => ""},
+          "meta" => meta
+        },
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+      )
+
+      assert %{"data" => [%{"attributes" => attributes}]} = json_response(conn, :ok)
+      assert map_size(attributes) == 0
+    end
+
     test "{:error, :sandbox_access_disallowed}", %{conn: conn} do
       meta = checkout_meta()
       count = 2
@@ -852,6 +1032,25 @@ defmodule Calcinator.ControllerTest do
 
       assert %{"data" => data} = json_response(conn, :ok)
       assert data == test_author_resource(test_author)
+    end
+
+    test "{:ok, rendered} with sparse fieldsets", %{conn: conn} do
+      meta = checkout_meta()
+      test_author = Factory.insert(:test_author)
+
+      conn = Calcinator.Controller.show(
+        conn,
+        %{
+          # turn off all attributes since there's only one
+          "fields" => %{"test-authors" => ""},
+          "id" => test_author.id,
+          "meta" => meta
+        },
+        %Calcinator{ecto_schema_module: TestAuthor, resources_module: TestAuthors, view_module: TestAuthorView}
+      )
+
+      assert %{"data" => %{"attributes" => attributes}} = json_response(conn, :ok)
+      assert map_size(attributes) == 0
     end
 
     test "{:error, {:not_found, _}}", %{conn: conn} do
@@ -1252,6 +1451,78 @@ defmodule Calcinator.ControllerTest do
       assert is_list(included)
 
       included_by_id_by_type = resource_by_id_by_type(included)
+
+      test_tag_by_id = included_by_id_by_type["test-tags"]
+
+      assert is_map(test_tag_by_id)
+      assert map_size(test_tag_by_id) == 1
+      assert test_tag_by_id[to_string(updated_test_tag.id)] == test_tag_resource(updated_test_tag)
+    end
+
+    test "{:ok, rendered} with sparse fieldset", %{conn: conn} do
+      meta = checkout_meta()
+      test_tag = Factory.insert(:test_tag)
+      %TestPost{author: test_author, id: id} = Factory.insert(:test_post, tags: [test_tag])
+      updated_body = "Updated Body"
+      updated_test_tag = Factory.insert(:test_tag)
+
+      conn = Calcinator.Controller.update(
+        conn,
+        %{
+          "id" => to_string(id),
+          "data" => %{
+            "type" => "test-posts",
+            "id" => to_string(id),
+            "attributes" => %{
+              "body" => updated_body
+            },
+            # Test `many_to_many` update does replacement
+            "relationships" => %{
+              "tags" => %{
+                "data" => [
+                  %{
+                    "type" => "test-tags",
+                    "id" => to_string(updated_test_tag.id)
+                  }
+                ]
+              }
+            }
+          },
+          "fields" => %{
+            # sparse primary
+            "test-posts" => "",
+            # sparse only 1 of the included tos how sparsing is selective
+            "test-authors" => ""
+          },
+          "include" => "author,tags",
+          "meta" => meta
+        },
+        %Calcinator{
+          associations_by_include: %{
+            "author" => :author,
+            "tags" => :tags
+          },
+          ecto_schema_module: TestPost,
+          resources_module: TestPosts,
+          view_module: TestPostView
+        }
+      )
+
+      assert %{
+               "data" => %{
+                 "type" => "test-posts",
+                 "attributes" => %{}
+               },
+               "included" => included
+             } = json_response(conn, :ok)
+      assert is_list(included)
+
+      included_by_id_by_type = resource_by_id_by_type(included)
+
+      test_author_by_id = included_by_id_by_type["test-authors"]
+
+      assert %{"attributes" => test_author_attributes} = test_author_by_id[to_string(test_author.id)]
+      assert map_size(test_author_attributes) == 0
 
       test_tag_by_id = included_by_id_by_type["test-tags"]
 

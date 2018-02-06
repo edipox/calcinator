@@ -6,6 +6,10 @@ defmodule Calcinator.JaSerializer.PhoenixView do
   alias Alembic.Pagination
   alias Plug.Conn
 
+  # Constants
+
+  @render_opts ~w(fields include)a
+
   # Macros
 
   defmacro __using__(opts) when is_list(opts) do
@@ -160,12 +164,12 @@ defmodule Calcinator.JaSerializer.PhoenixView do
 
   defp params_to_render_opts(nil), do: []
   defp params_to_render_opts(params) when is_map(params) do
-    # must only add :include to opts if "include" is in params so that default includes don't get overridden
-    case Map.fetch(params, "include") do
-      {:ok, include} ->
-        [include: include]
-      :error ->
-        []
-    end
+    # must only add opts if in params so that defaults don't get overridden
+    Enum.reduce(@render_opts, [], fn render_opts_key, render_opts ->
+      case Map.fetch(params, to_string(render_opts_key)) do
+        {:ok, render_opts_value} -> [{render_opts_key, render_opts_value} | render_opts]
+        :error -> render_opts
+      end
+    end)
   end
 end
