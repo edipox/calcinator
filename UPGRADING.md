@@ -1,5 +1,13 @@
 # Upgrading
 
+## v5.1.0
+
+`query_options[:page]` is no longer ignored when passed to `use Calcinator.Resources.Ecto.Repo`'s `list/1` by default.  To restore the old behavior change the paginator to `Calcinator.Resources.Ecto.Repo.Pagination.Ignore`:
+
+```elixir
+config :calcinator, Calcinator.Resources.Ecto.Repo, paginator: Calcinator.Resources.Ecto.Repo.Pagination.Ignore
+```
+
 ## v5.0.0
 
 ### `Calcinator.get/4` first argument
