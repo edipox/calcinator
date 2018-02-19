@@ -64,6 +64,25 @@
 ## v5.1.0
 
 ### Enhancements
+* [#37[(https://github.com/C-S-D/calcinator/pull/37) - [@KronicDeth](https://github.com/KronicDeth)
+  * `Calcinator.Resource.Ecto.Repo.list/2`  supports configurable pagination through
+
+    ```elixir
+    config :calcinator, Calcinator.Resources.Ecto.Repo, paginator: paginator
+    ```
+
+    4 `Calcinator.Resources.Ecto.Repo.Pagination` callback modules are included
+
+    * `Calcinator.Resources.Ecto.Repo.Pagination.Ignore` - `query_options[:page]` is ignored: all resources are always returned.  There is no pagination information ever returned.  This replicates the old, bugged behavior.
+    * `Calcinator.Resources.Ecto.Repo.Pagination.Disallow` - All resources with `nil` pagination is returned when `query_options[:page]` is `nil`, but an error is returns if `query_optons[:page]` is not `nil`. This is an improvement over `Calcinator.Resources.Ecto.Repo.Pagination.Ignore` because it will tell callers that `query_options[:page]` will not be honored.
+    * `Calcinator.Resources.Ecto.Repo.Pagination.Allow` - All resources with `nil` pagination is returned when `query_options[:page]` is `nil`.  A page of resources with the pagination information is returned when `query_options[:page]` is not `nil`.  **This is the default paginator.**
+    * `Calcinator.Resources.Ecto.Repo.Pagination.Require` - An error is returned when `query_options[:page]` is `nil`.  A page of resources with the pagination information is returned when `query_options[:page]` is not `nil`.  This is a stronger form of `Calcinator.Resources.Ecto.Repo.Pagination.Allow` because it forces the caller to declare what page it wants. Using `Calcinator.Resources.Ecto.Repo.Pagination.Require` (or a default and maximum size) is recommended when not paginating would have a detrimental performance impact.
+  * `Calcinator.Resources.Page.from_params/1` supports default and maximum page sizes.
+
+    ```eliir
+     config :calcinator, Calcinator.Resources.Page, size: [default: 10, maximum: 25]
+    ```
+  * Update `credo` to `0.8.10` for Elixir 1.6 compatibility.
 * [#36](https://github.com/C-S-D/calcinator/pull/36) - [@KronicDeth](https://github.com/KronicDeth)
   * Update to latest `mix.lock` format.
   * JaSerializer [supports](https://github.com/vt-elixir/ja_serializer#fields) [sparse fieldsets](http://jsonapi.org/format/#fetching-sparse-fieldsets), but `Calcinator.JaSerializer.PhoenixView`'s `params_to_render_opts/1` was only copying `params["include"]` to `opts[:include]`, so now copy over both `"include"` and `"fields"` if present.
@@ -71,6 +90,7 @@
 ### Bug Fixes
 * [#36](https://github.com/C-S-D/calcinator/pull/36) - [@KronicDeth](https://github.com/KronicDeth)
   * Fix Elixir 1.6 GenServer warning about not defining `init/1` explicitly.
+* [#37[(https://github.com/C-S-D/calcinator/pull/37) - `query_options[:page]` is no longer ignored when passed to `use Calcinator.Resources.Ecto.Repo`'s `list/1` by default.  To restore the old behavior change the paginator to `Calcinator.Resources.Ecto.Repo.Pagination.Ignore`. - [@KronicDeth](https://github.com/KronicDeth)
 
 ## v5.0.0
 

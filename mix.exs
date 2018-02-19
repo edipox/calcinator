@@ -77,7 +77,7 @@ defmodule Calcinator.Mixfile do
       # JSONAPI document coding
       {:alembic, "~> 3.4"},
       # Static Analysis
-      {:credo, "0.8.8", only: :test},
+      {:credo, "0.8.10", only: :test},
       # Type checking
       {:dialyze, "~> 0.2.1", only: :test},
       {
@@ -107,6 +107,8 @@ defmodule Calcinator.Mixfile do
       {:pryin, "~> 1.0", optional: true},
       # PostgreSQL DB access for Calcinator.Resources.Ecto.Repo.Repo used in tests
       {:postgrex, "~> 0.13.0", only: :test},
+      # Pagination in Calcinator.Resources.Ecto.Repo
+      {:scrivener_ecto, "~> 1.3.0", optional: true},
       # UUID for `errors` `0` `id` in `Calcinator.Controller.backing_store_error`
       {:uuid, "~> 1.1", optional: true}
     ]
