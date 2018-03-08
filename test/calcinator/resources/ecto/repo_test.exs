@@ -129,27 +129,21 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "sorting by field on association of primary data" do
-      first_author =
-        %TestAuthor{id: first_id, name: "Alice"} = Factory.insert(:test_author, name: "Alice")
+      first_author = %TestAuthor{id: first_id, name: "Alice"} = Factory.insert(:test_author, name: "Alice")
 
-      second_author =
-        %TestAuthor{id: second_id, name: "Bob"} = Factory.insert(:test_author, name: "Bob")
+      second_author = %TestAuthor{id: second_id, name: "Bob"} = Factory.insert(:test_author, name: "Bob")
 
       # in opposite order of create from author
-      second_author_post =
-        %TestPost{id: second_author_post_id} = Factory.insert(:test_post, author: second_author)
+      second_author_post = %TestPost{id: second_author_post_id} = Factory.insert(:test_post, author: second_author)
 
-      first_author_post =
-        %TestPost{id: first_author_post_id} = Factory.insert(:test_post, author: first_author)
+      first_author_post = %TestPost{id: first_author_post_id} = Factory.insert(:test_post, author: first_author)
 
       # prove opposite order
       assert first_id < second_id
 
-      assert NaiveDateTime.compare(second_author_post.inserted_at, first_author_post.inserted_at) ==
-               :lt
+      assert NaiveDateTime.compare(second_author_post.inserted_at, first_author_post.inserted_at) == :lt
 
-      assert {:ok, [%TestPost{id: ^first_author_post_id}, %TestPost{id: ^second_author_post_id}],
-              nil} =
+      assert {:ok, [%TestPost{id: ^first_author_post_id}, %TestPost{id: ^second_author_post_id}], nil} =
                TestPosts.list(%{
                  sorts: [
                    %Calcinator.Resources.Sort{
@@ -160,8 +154,7 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
                  ]
                })
 
-      assert {:ok, [%TestPost{id: ^second_author_post_id}, %TestPost{id: ^first_author_post_id}],
-              nil} =
+      assert {:ok, [%TestPost{id: ^second_author_post_id}, %TestPost{id: ^first_author_post_id}], nil} =
                TestPosts.list(%{
                  sorts: [
                    %Calcinator.Resources.Sort{
@@ -174,24 +167,19 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     end
 
     test "sorting by field on association of primary data with paginaton" do
-      first_author =
-        %TestAuthor{id: first_id, name: "Alice"} = Factory.insert(:test_author, name: "Alice")
+      first_author = %TestAuthor{id: first_id, name: "Alice"} = Factory.insert(:test_author, name: "Alice")
 
-      second_author =
-        %TestAuthor{id: second_id, name: "Bob"} = Factory.insert(:test_author, name: "Bob")
+      second_author = %TestAuthor{id: second_id, name: "Bob"} = Factory.insert(:test_author, name: "Bob")
 
       # in opposite order of create from author
-      second_author_post =
-        %TestPost{id: second_author_post_id} = Factory.insert(:test_post, author: second_author)
+      second_author_post = %TestPost{id: second_author_post_id} = Factory.insert(:test_post, author: second_author)
 
-      first_author_post =
-        %TestPost{id: first_author_post_id} = Factory.insert(:test_post, author: first_author)
+      first_author_post = %TestPost{id: first_author_post_id} = Factory.insert(:test_post, author: first_author)
 
       # prove opposite order
       assert first_id < second_id
 
-      assert NaiveDateTime.compare(second_author_post.inserted_at, first_author_post.inserted_at) ==
-               :lt
+      assert NaiveDateTime.compare(second_author_post.inserted_at, first_author_post.inserted_at) == :lt
 
       # ascending
       assert {:ok, [%TestPost{id: ^first_author_post_id}],
@@ -434,8 +422,7 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
     test "with page returns error" do
       Factory.insert_list(3, :test_author)
 
-      assert {:error, %Document{errors: errors}} =
-               TestAuthors.list(%{page: %{number: 2, size: 1}})
+      assert {:error, %Document{errors: errors}} = TestAuthors.list(%{page: %{number: 2, size: 1}})
 
       assert is_list(errors)
       assert length(errors) == 1
@@ -471,8 +458,7 @@ defmodule Calcinator.Resources.Ecto.RepoTest do
       count = 3
       [first_author, second_author, third_author] = Factory.insert_list(count, :test_author)
 
-      assert {:ok, list_authors, nil} =
-               TestAuthors.list(%{page: %Calcinator.Resources.Page{number: 2, size: 1}})
+      assert {:ok, list_authors, nil} = TestAuthors.list(%{page: %Calcinator.Resources.Page{number: 2, size: 1}})
 
       assert length(list_authors) == count
 

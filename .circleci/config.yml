@@ -3,7 +3,14 @@
 job_defaults: &job_defaults
   working_directory: ~/calcinator
   docker:
-    - image: circleci/elixir:1.5.1
+    - image: circleci/elixir:1.6.1
+      environment:
+        MIX_ENV: test
+
+job_defaults_1_5: &job_defaults_1_5
+  working_directory: ~/calcinator
+  docker:
+    - image: circleci/elixir:1.6.1
       environment:
         MIX_ENV: test
 
@@ -52,11 +59,11 @@ jobs:
 
       - restore_cache:
           keys:
-            - deps-{{ checksum "mix.lock" }}
+            - v2-deps-{{ checksum "mix.lock" }}
             # if `mix deps.get` changes `mix.lock`, then this one should still apply
-            - deps-{{ checksum "mix.exs" }}
+            - v2-deps-{{ checksum "mix.exs" }}
             # any previous branches deps
-            - deps
+            - v2-deps
 
       - run:
           name: "mix deps.get"
@@ -64,16 +71,16 @@ jobs:
 
       # in case `mix.exs` has changed because of a requirement change
       - save_cache:
-          key: deps
+          key: v2-deps
           paths:
             - deps
       # in case `mix.lock` is updated by `mix deps.get`
       - save_cache:
-          key: deps-{{ checksum "mix.exs" }}
+          key: v2-deps-{{ checksum "mix.exs" }}
           paths:
             - deps
       - save_cache:
-          key: deps-{{ checksum "mix.lock" }}
+          key: v2-deps-{{ checksum "mix.lock" }}
           paths:
             - deps
 
@@ -83,52 +90,133 @@ jobs:
       # `mix compile` with caching
 
       - restore_cache:
-          # prefer dialyze version of cache since it includes both `_build` AND `/home/circleci/.mix`
           keys:
-            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            - compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            - compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-            - compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+            - v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run:
           command: mix compile
 
       - save_cache: &compile_save_cache_mix_lock
-          key: compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
             # compiled deps and compiled project
             - _build
       - save_cache: &compile_save_cache_mix_exs
           <<: *compile_save_cache_mix_lock
-          key: compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          key: v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
       - save_cache:
           <<: *compile_save_cache_mix_exs
-          key: compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          key: v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       # `mix compile` picking up need for recompile is NOT guaranteed when the Erlang or Elixir version changes, so
       # don't have a general `mix-compile-{{ checksum "OTP_VERSION.lock" }}` or `mix-compile` key
 
       - persist_to_workspace:
          root: /home/circleci/calcinator
          paths:
-           - _build
-           - config
-           - deps
-           - lib
-           - priv
-           - test
+           - .formatter.exs
            - CHANGELOG.md
            - CODE_OF_CONDUCT.md
            - CONTRIBUTING.md
-           - coveralls.json
+           - ELIXIR_VERSION.lock
            - LICENSE.md
-           - mix.exs
-           - mix.lock
+           - OTP_VERSION.lock
            - README.md
            - UPGRADING.md
-           - OTP_VERSION.lock
+           - _build
+           - config
+           - coveralls.json
+           - deps
+           - lib
+           - mix.exs
+           - mix.lock
+           - priv
+           - test
+  build_1_5:
+    <<: *job_defaults_1_5
+    steps:
+      - checkout
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      # `mix deps.get` with caching
+
+      - restore_cache:
+          keys:
+            - v2-deps-{{ checksum "mix.lock" }}
+            # if `mix deps.get` changes `mix.lock`, then this one should still apply
+            - v2-deps-{{ checksum "mix.exs" }}
+            # any previous branches deps
+            - v2-deps
+
+      - run:
+          name: "mix deps.get"
+          command: mix deps.get --only test
+
+      # in case `mix.exs` has changed because of a requirement change
+      - save_cache:
+          key: v2-deps
+          paths:
+            - deps
+      # in case `mix.lock` is updated by `mix deps.get`
+      - save_cache:
+          key: v2-deps-{{ checksum "mix.exs" }}
+          paths:
+            - deps
+      - save_cache:
+          key: v2-deps-{{ checksum "mix.lock" }}
+          paths:
+            - deps
+
+      - *otp_version_lock
+      - *elixir_version_lock
+
+      # `mix compile` with caching
+
+      - restore_cache:
+          keys:
+            - v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run:
+          command: mix compile
+
+      - save_cache: &compile_save_cache_mix_lock
+          key: v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          paths:
+            # compiled deps and compiled project
+            - _build
+      - save_cache: &compile_save_cache_mix_exs
+          <<: *compile_save_cache_mix_lock
+          key: v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - save_cache:
+          <<: *compile_save_cache_mix_exs
+          key: v2-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+      # `mix compile` picking up need for recompile is NOT guaranteed when the Erlang or Elixir version changes, so
+      # don't have a general `mix-compile-{{ checksum "OTP_VERSION.lock" }}` or `mix-compile` key
+
+      - persist_to_workspace:
+         root: /home/circleci/calcinator
+         paths:
+           - CHANGELOG.md
+           - CODE_OF_CONDUCT.md
+           - CONTRIBUTING.md
            - ELIXIR_VERSION.lock
+           - LICENSE.md
+           - OTP_VERSION.lock
+           - README.md
+           - UPGRADING.md
+           - _build
+           - config
+           - coveralls.json
+           - deps
+           - lib
+           - mix.exs
+           - mix.lock
+           - priv
+           - test
   dialyze:
     <<: *job_defaults
     steps:
@@ -138,31 +226,95 @@ jobs:
       - attach_workspace:
           at: /home/circleci/calcinator
 
+      - run: mix compile --no-warnings-as-errors
+
       # `mix dialyze --no-analyse` with caching
 
       # no `restore_cache` because it is the same as `mix compile` because they both use `_build` and
       # `/home/circleci/.mix`
       - restore_cache:
           keys:
-            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            - dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+            - v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
-      - run: mix compile --no-warnings-as-errors
+      - run:
+          name: Unpack PLT cache
+          command: |
+            mkdir -p _build/test
+            cp plts/dialyze*.plt _build/test/ || true
+            mkdir -p ~/.mix
+            cp plts/dialyze*.plt ~/.mix/ || true
+
       - run: mix dialyze --no-analyse
 
+      - run:
+          name: Pack PLT cache
+          command: |
+            mkdir -p plts
+            cp _build/test/dialyze*.plt plts/
+            cp ~/.mix/dialyze*.plt plts/
+
       - save_cache: &dialyze_save_cache_mix_lock
-          key: dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
-            # deps PLT (but also compiled deps and compiled project, so mix compile should prefer this cache)
-            - _build
-            - /home/circleci/.mix
+            - plts
       - save_cache: &dialyze_save_cache_mix_exs
           <<: *dialyze_save_cache_mix_lock
-          key: dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          key: v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
       - save_cache:
           <<: *dialyze_save_cache_mix_exs
-          key: dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          key: v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run: mix dialyze
+  dialyze_1_5:
+    <<: *job_defaults_1_5
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      - run: mix compile --no-warnings-as-errors
+
+      # `mix dialyze --no-analyse` with caching
+
+      # no `restore_cache` because it is the same as `mix compile` because they both use `_build` and
+      # `/home/circleci/.mix`
+      - restore_cache:
+          keys:
+            - v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run:
+          name: Unpack PLT cache
+          command: |
+            mkdir -p _build/test
+            cp plts/dialyze*.plt _build/test/ || true
+            mkdir -p ~/.mix
+            cp plts/dialyze*.plt ~/.mix/ || true
+
+      - run: mix dialyze --no-analyse
+
+      - run:
+          name: Pack PLT cache
+          command: |
+            mkdir -p plts
+            cp _build/test/dialyze*.plt plts/
+            cp ~/.mix/dialyze*.plt plts/
+
+      - save_cache: &dialyze_save_cache_mix_lock
+          key: v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          paths:
+            - plts
+      - save_cache: &dialyze_save_cache_mix_exs
+          <<: *dialyze_save_cache_mix_lock
+          key: v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - save_cache:
+          <<: *dialyze_save_cache_mix_exs
+          key: v2-dialyze-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run: mix dialyze
   docs:
@@ -179,6 +331,32 @@ jobs:
           command: |
             mix docs 2>&1 | tee mix-docs.txt
             if grep "Closing unclosed backquotes" mix-docs.txt; then exit 1; fi
+  docs_1_5:
+    <<: *job_defaults_1_5
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      - run:
+          name: mix docs
+          command: |
+            mix docs 2>&1 | tee mix-docs.txt
+            if grep "Closing unclosed backquotes" mix-docs.txt; then exit 1; fi
+  format:
+    <<: *job_defaults
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      # Only check if formatted.  Commit authors are responsible for running `mix format` on each commit to maintain
+      # formatting.
+      - run: mix format --check-formatted
   inch:
     <<: *job_defaults
     steps:
@@ -217,6 +395,34 @@ jobs:
       - store_artifacts:
           path: _build/test/lib/calcinator
           destination: Elixir
+  test_1_5:
+    <<: *job_defaults
+    docker:
+      - image: circleci/elixir:1.5.1
+        environment:
+          MIX_ENV: test
+      - image: postgres:9.6.3-alpine
+    steps:
+      - *mix_local_hex
+      - *mix_local_rebar
+
+      - attach_workspace:
+          at: /home/circleci/calcinator
+
+      - run:
+          name: Wait for db
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+
+      - run:
+          name: "mix test"
+          command: mix coveralls.circle
+
+      - store_test_results:
+          path: _build/test/lib/calcinator
+      # so test results show up as downloadable artifacts
+      - store_artifacts:
+          path: _build/test/lib/calcinator
+          destination: Elixir
 workflows:
   version: 2
   all:
@@ -228,9 +434,25 @@ workflows:
       - docs:
           requires:
             - build
+      - format:
+          requires:
+            - build
       - inch:
           requires:
             - build
       - test:
           requires:
             - build
+
+      - build_1_5
+      - dialyze_1_5:
+          requires:
+            - build_1_5
+      - docs_1_5:
+          requires:
+            - build_1_5
+      - test_1_5:
+          requires:
+            - build_1_5
+
+
