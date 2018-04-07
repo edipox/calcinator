@@ -90,15 +90,15 @@ defmodule Calcinator.Mixfile do
         only: [:dev, :test],
         override: true
       },
-      # Code coveragei
-      {:excoveralls, "~> 0.7.2", only: :test},
-      {:ex_doc, "~> 0.17.1", only: [:dev, :test]},
+      # Code coverage
+      {:excoveralls, "~> 0.8.1", only: :test},
+      {:ex_doc, "~> 0.18.3", only: [:dev, :test]},
       # documentation coverage
       {:inch_ex, "~> 0.5.1", only: [:dev, :test]},
       # Calcinator.Resources.Ecto.Repo tests
       {:ex_machina, "~> 2.0", only: :test},
       # Fake data for tests, so we don't have to come up with our own sequences for ExMachina
-      {:faker, "~> 0.9.0", only: :test},
+      {:faker, "~> 0.10.0", only: :test},
       {:ja_serializer, ">= 0.11.2 and < 0.13.0"},
       # JUnit formatter, so that CircleCI can consume test output for CircleCI UI
       {:junit_formatter, "~> 2.0", only: :test},
@@ -108,8 +108,6 @@ defmodule Calcinator.Mixfile do
       {:pryin, "~> 1.0", optional: true},
       # PostgreSQL DB access for Calcinator.Resources.Ecto.Repo.Repo used in tests
       {:postgrex, "~> 0.13.0", only: :test},
-      # Pagination in Calcinator.Resources.Ecto.Repo
-      {:scrivener_ecto, "~> 1.3.0", optional: true},
       # UUID for `errors` `0` `id` in `Calcinator.Controller.backing_store_error`
       {:uuid, "~> 1.1", optional: true}
     ]
