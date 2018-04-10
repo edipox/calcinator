@@ -92,7 +92,7 @@ Pagination for `Calcinator.Resources.Ecto.Repo` is opt-in and needs to be config
 
 ```elixir
 config :calcinator, Calcinator.Resources.Ecto.Repo, paginator: paginator
-````
+```
 
 ##### Paginators
 
@@ -437,7 +437,7 @@ end
 *NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
 read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
 
-```
+```elixir
 defmodule MyAppWeb.PostController do
   @moduledoc """
   Allows public reading of `MyApp.Post` that are fetched from `MyApp.Repo`.
@@ -698,7 +698,7 @@ end
 *NOTE: Although it is not recommended, if you want to run without authorization (say because all data is public and
 read-only), then you can remove the `:authorization_module` configuration and `put_subject` plug.*
 
-```
+```elixir
 defmodule LocalAppWeb.PostController do
   @moduledoc """
   Allows public reading of `%RemoteApp.Post{}` that are fetched from remote server over RPC.
@@ -735,7 +735,7 @@ end
 
 You can turn on PryIn support following the [`pryin` installation instructions](https://github.com/pryin-io/pryin#installation) and then adding `Calcinator.PryIn.Instrumenter` to your `:calcinator` config
 
-```
+```elixir
 config :calcinator,
        instrumenters: [Calcinator.PryIn.Instrumenter]
 ```
@@ -744,7 +744,7 @@ config :calcinator,
 
 You can write your own Instrumenter following the instructions in the `Calcinator.Instrument` documentation and then configuring `:calcinator` to use your custom instrumenter.
 
-```
+```elixir
 config :calcinator,
        instrumenters: [MyLib.Calcinator.Instrumenter]
 ```
